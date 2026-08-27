@@ -242,6 +242,20 @@ naira columns to kobo — so it is safe to run at any time, as many times as
 you like. It replaces the previous five overlapping files, which had to be run
 in an undocumented order and failed partway through on a second run.
 
+Verified against a real PostgreSQL 16 instance: it applies cleanly from empty,
+and re-applies cleanly twice more with no errors. The rules it enforces were
+tested rather than assumed — the publish gate refuses a paid item with no bank
+account connected (and a paid tier bolted onto an already-published event),
+`events.price_kobo` tracks the cheapest active tier, issuance is idempotent
+under a replayed webhook, and with 20 concurrent sessions racing for one
+remaining ticket exactly one wins.
+
+## Setup
+
+See **[SETUP.md](SETUP.md)** for the full walkthrough: creating the Supabase
+project, running the schema, the keys you need, and selling and scanning a
+first ticket end to end. Copy `.env.example` to `.env.local` to start.
+
 ## Development
 
 Install dependencies and run:
@@ -253,8 +267,8 @@ npm run dev
 
 Open:
 
-- `http://localhost:3000/home`
-- `http://localhost:3000/overview`
+- `http://localhost:3000` — the landing page
+- `http://localhost:3000/overview` — the dashboard
 
 ## Update Protocol
 
