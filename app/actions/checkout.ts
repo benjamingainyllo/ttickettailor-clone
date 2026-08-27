@@ -245,7 +245,7 @@ export async function verifyCheckout(reference: string) {
 
     const { data: order } = await admin
       .from("orders")
-      .select("reference, status, item_title, gross_kobo")
+      .select("reference, status, item_title, gross_kobo, item_type")
       .eq("reference", reference)
       .maybeSingle();
 

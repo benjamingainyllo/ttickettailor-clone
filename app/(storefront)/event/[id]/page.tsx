@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { getEventById } from "@/app/actions/events";
+import { getEventById, type PublicTicketType } from "@/app/actions/events";
 import { createCheckoutSession } from "@/app/actions/checkout";
 import { formatKobo } from "@/lib/money";
-import { Loader2, Calendar, MapPin, Users, ExternalLink, CheckCircle2 } from "lucide-react";
+import { Loader2, Calendar, MapPin, Users, ExternalLink, CheckCircle2, Minus, Plus } from "lucide-react";
 
 export default function EventCheckoutPage({ params }: { params: { id: string } }) {
   const [event, setEvent] = useState<any>(null);
   const [host, setHost] = useState<any>(null);
+  const [ticketTypes, setTicketTypes] = useState<PublicTicketType[]>([]);
+  const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -26,6 +29,11 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
         if (res.success && res.event) {
           setEvent(res.event);
           setHost(res.host ?? null);
+          setTicketTypes(res.ticketTypes ?? []);
+          // Preselect the first tier a buyer can actually buy, so a
+          // single-tier event needs no choosing at all.
+          const firstAvailable = (res.ticketTypes ?? []).find((t) => t.available);
+          setSelectedTierId(firstAvailable?.id ?? null);
         }
       } finally {
         // Always resolve loading, even when the query fails, so the page
@@ -40,8 +48,29 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
     };
   }, [params.id]);
 
-  const priceKobo = Number(event?.price_kobo ?? 0);
+  const selectedTier = ticketTypes.find((t) => t.id === selectedTierId) ?? null;
+  const priceKobo = selectedTier?.priceKobo ?? Number(event?.price_kobo ?? 0);
   const isFree = priceKobo === 0;
+  const totalKobo = priceKobo * quantity;
+
+  // The most this tier will sell in one go: its own per-order cap, and
+  // never more than it has left.
+  const maxQuantity = selectedTier
+    ? Math.max(
+        1,
+        Math.min(
+          selectedTier.maxPerOrder,
+          selectedTier.remaining ?? selectedTier.maxPerOrder
+        )
+      )
+    : 1;
+
+  const nothingOnSale = ticketTypes.length === 0 || !ticketTypes.some((t) => t.available);
+
+  // Clamp if the buyer picks a smaller tier after choosing a big quantity.
+  useEffect(() => {
+    setQuantity((current) => Math.min(current, maxQuantity));
+  }, [maxQuantity]);
 
   const handleCheckout = () => {
     if (!email) {
@@ -56,6 +85,8 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
         itemId: event.id,
         buyerEmail: email,
         buyerName: name || undefined,
+        ticketTypeId: selectedTierId ?? undefined,
+        quantity,
       });
 
       if (res.success && res.completedWithoutPayment) {
@@ -172,10 +203,121 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
               <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-6 text-center">
                 <CheckCircle2 className="h-8 w-8 text-emerald-500" />
                 <p className="text-sm font-semibold text-white">You&apos;re in</p>
-                <p className="text-xs text-zinc-400">We sent the details to {email}.</p>
+                <p className="text-xs text-zinc-400">
+                  We sent {quantity > 1 ? `${quantity} tickets` : "your ticket"} to {email}.
+                </p>
               </div>
             ) : (
               <div className="mt-6 space-y-4">
+                {nothingOnSale ? (
+                  <div className="rounded-xl border border-zinc-700 bg-zinc-800/50 p-5 text-center">
+                    <p className="text-sm font-semibold text-white">
+                      Nothing on sale right now
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-400">
+                      {ticketTypes.some((t) => t.soldOut)
+                        ? "Every ticket for this event has gone."
+                        : "The organiser hasn't opened sales yet."}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Only worth choosing between when there's a choice. */}
+                    {ticketTypes.length > 1 && (
+                      <div className="space-y-2">
+                        <label className="mb-1 block text-sm font-medium text-zinc-400">
+                          Ticket
+                        </label>
+                        {ticketTypes.map((tier) => {
+                          const selected = tier.id === selectedTierId;
+                          return (
+                            <button
+                              key={tier.id}
+                              type="button"
+                              disabled={!tier.available}
+                              onClick={() => setSelectedTierId(tier.id)}
+                              className={`flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition-colors ${
+                                selected
+                                  ? "border-blue-500 bg-blue-500/10"
+                                  : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                              } ${tier.available ? "" : "cursor-not-allowed opacity-50"}`}
+                            >
+                              <span className="min-w-0">
+                                <span className="block truncate text-sm font-semibold text-white">
+                                  {tier.name}
+                                </span>
+                                {tier.description && (
+                                  <span className="mt-0.5 block truncate text-xs text-zinc-400">
+                                    {tier.description}
+                                  </span>
+                                )}
+                                {tier.soldOut ? (
+                                  <span className="mt-1 block text-xs font-semibold text-red-400">
+                                    Sold out
+                                  </span>
+                                ) : tier.notYetOpen ? (
+                                  <span className="mt-1 block text-xs text-zinc-500">
+                                    Not on sale yet
+                                  </span>
+                                ) : tier.closed ? (
+                                  <span className="mt-1 block text-xs text-zinc-500">
+                                    Sales closed
+                                  </span>
+                                ) : tier.remaining !== null && tier.remaining <= 10 ? (
+                                  <span className="mt-1 block text-xs font-semibold text-amber-400">
+                                    Only {tier.remaining} left
+                                  </span>
+                                ) : null}
+                              </span>
+                              <span className="shrink-0 text-sm font-bold text-white">
+                                {tier.priceKobo === 0 ? "Free" : formatKobo(tier.priceKobo)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {maxQuantity > 1 && (
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-zinc-400">
+                          How many
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            aria-label="One fewer"
+                            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                            disabled={quantity <= 1}
+                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-white transition-colors hover:bg-zinc-700 disabled:opacity-40"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
+                          <span className="min-w-[3ch] text-center text-lg font-bold text-white">
+                            {quantity}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="One more"
+                            onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                            disabled={quantity >= maxQuantity}
+                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-white transition-colors hover:bg-zinc-700 disabled:opacity-40"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                          {quantity >= maxQuantity && (
+                            <span className="text-xs text-zinc-500">
+                              {selectedTier?.remaining === maxQuantity
+                                ? "That's all that's left"
+                                : `Max ${maxQuantity} per order`}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
                 <div>
                   <label htmlFor="name" className="mb-1 block text-sm font-medium text-zinc-400">
                     Your name
@@ -208,24 +350,26 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
 
                 <button
                   onClick={handleCheckout}
-                  disabled={isPending}
+                  disabled={isPending || nothingOnSale}
                   className="flex w-full items-center justify-center rounded-xl bg-blue-600 py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-blue-500 disabled:opacity-70"
                 >
                   {isPending ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
                     </>
+                  ) : nothingOnSale ? (
+                    "Sold out"
                   ) : isFree ? (
-                    "Count me in — it's free"
+                    quantity > 1 ? `Get ${quantity} tickets — free` : "Count me in — it's free"
                   ) : (
-                    `Pay ${formatKobo(priceKobo)}`
+                    `Pay ${formatKobo(totalKobo)}`
                   )}
                 </button>
 
                 <p className="text-center text-xs text-zinc-500">
                   {isFree
-                    ? "No account needed."
-                    : "No account needed. Card or bank transfer."}
+                    ? "No account needed. Your tickets arrive by email."
+                    : "No account needed. Card or bank transfer. Tickets arrive by email."}
                 </p>
               </div>
             )}

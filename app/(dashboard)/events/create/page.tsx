@@ -84,21 +84,37 @@ export default function CreateEventPage() {
 
       // Created as a DRAFT. Publishing is a separate, gated step — a paid
       // event can't go live until a bank account is connected.
-      const { error: insertError } = await supabase.from("events").insert({
-        creator_id: user.id,
-        title: formData.title,
-        description: formData.description,
-        date: formData.date || null,
-        time: formData.time,
-        location: formData.location,
-        map_link: formData.mapLink,
-        price_kobo: priceKobo,
-        cover_image_url: coverImageUrl,
-        status: "Upcoming",
-        publish_status: "draft",
-      });
+      const { data: created, error: insertError } = await supabase
+        .from("events")
+        .insert({
+          creator_id: user.id,
+          title: formData.title,
+          description: formData.description,
+          date: formData.date || null,
+          time: formData.time,
+          location: formData.location,
+          map_link: formData.mapLink,
+          price_kobo: priceKobo,
+          cover_image_url: coverImageUrl,
+          status: "Upcoming",
+          publish_status: "draft",
+        })
+        .select("id")
+        .single();
 
       if (insertError) throw insertError;
+
+      // An event sells ticket TYPES, not a bare price — with none it can't
+      // sell anything at all. The price typed here becomes the first one,
+      // and more can be added from the event's Tickets tab.
+      const { error: tierError } = await supabase.from("ticket_types").insert({
+        event_id: created.id,
+        name: "General Admission",
+        price_kobo: priceKobo,
+        sort_order: 0,
+      });
+
+      if (tierError) throw tierError;
 
       toast.success("Event saved as a draft.");
       router.push("/events");

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { verifyCheckout } from "@/app/actions/checkout";
 import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
@@ -28,6 +29,7 @@ function CheckoutSuccessContent() {
   const [status, setStatus] = useState<Status>("loading");
   const [itemTitle, setItemTitle] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isEvent, setIsEvent] = useState(false);
 
   useEffect(() => {
     if (!reference) {
@@ -45,6 +47,7 @@ function CheckoutSuccessContent() {
       }
 
       setItemTitle(res.order?.item_title ?? null);
+      setIsEvent(res.order?.item_type === "event");
 
       if (res.status === "paid") {
         setStatus("success");
@@ -71,10 +74,26 @@ function CheckoutSuccessContent() {
         {status === "success" && (
           <>
             <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
-            <h1 className="mt-4 text-xl font-bold text-white">Payment confirmed</h1>
+            <h1 className="mt-4 text-xl font-bold text-white">
+              {isEvent ? "You're going" : "Payment confirmed"}
+            </h1>
             <p className="mt-2 text-sm text-subtle">
-              {itemTitle ? `Your payment for "${itemTitle}" was successful.` : "Your payment was successful."} A receipt has been sent to your email.
+              {itemTitle
+                ? `Your payment for "${itemTitle}" was successful.`
+                : "Your payment was successful."}{" "}
+              {isEvent
+                ? "Your tickets are on their way to your email."
+                : "A receipt has been sent to your email."}
             </p>
+
+            {isEvent && reference && (
+              <Link
+                href={`/tickets/${reference}`}
+                className="mt-6 block rounded-xl bg-white py-3 text-sm font-bold text-black transition-opacity hover:opacity-90"
+              >
+                Show my tickets
+              </Link>
+            )}
           </>
         )}
 
