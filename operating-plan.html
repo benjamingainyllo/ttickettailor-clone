@@ -1,0 +1,659 @@
+<title>Before You Build</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --ground:     #EEF1F3;
+    --card:       #FFFFFF;
+    --sunk:       #E3E8EB;
+    --ink:        #14181B;
+    --ink-soft:   #56626B;
+    --ink-faint:  #8B979F;
+    --rule:       rgba(20, 24, 27, 0.12);
+    --rule-firm:  rgba(20, 24, 27, 0.28);
+
+    --gain:       #0A6E4C;
+    --gain-wash:  #DCF0E7;
+    --gain-rule:  rgba(10, 110, 76, 0.3);
+
+    --risk:       #A82018;
+    --risk-wash:  #FBE4E2;
+    --risk-rule:  rgba(168, 32, 24, 0.28);
+
+    --flag:       #8A5300;
+    --flag-wash:  #FCEFD8;
+    --flag-rule:  rgba(138, 83, 0, 0.28);
+
+    --accent:     #1B4D8F;
+    --shadow:     rgba(20, 24, 27, 0.1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1315; --card: #171C1F; --sunk: #1F262A;
+      --ink: #E9EEF1; --ink-soft: #9AA7AF; --ink-faint: #6B7880;
+      --rule: rgba(233,238,241,0.13); --rule-firm: rgba(233,238,241,0.28);
+      --gain: #5FCFA0; --gain-wash: rgba(95,207,160,0.12); --gain-rule: rgba(95,207,160,0.32);
+      --risk: #F2857B; --risk-wash: rgba(242,133,123,0.12); --risk-rule: rgba(242,133,123,0.32);
+      --flag: #E8B45C; --flag-wash: rgba(232,180,92,0.11); --flag-rule: rgba(232,180,92,0.3);
+      --accent: #7FB0EC; --shadow: rgba(0,0,0,0.5);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0F1315; --card: #171C1F; --sunk: #1F262A;
+    --ink: #E9EEF1; --ink-soft: #9AA7AF; --ink-faint: #6B7880;
+    --rule: rgba(233,238,241,0.13); --rule-firm: rgba(233,238,241,0.28);
+    --gain: #5FCFA0; --gain-wash: rgba(95,207,160,0.12); --gain-rule: rgba(95,207,160,0.32);
+    --risk: #F2857B; --risk-wash: rgba(242,133,123,0.12); --risk-rule: rgba(242,133,123,0.32);
+    --flag: #E8B45C; --flag-wash: rgba(232,180,92,0.11); --flag-rule: rgba(232,180,92,0.3);
+    --accent: #7FB0EC; --shadow: rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px 110px; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  header.top { padding: 64px 0 40px; border-bottom: 2px solid var(--ink); }
+
+  .kicker {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 0 0 20px;
+  }
+
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600; font-size: clamp(40px, 7.5vw, 62px);
+    line-height: 1.02; letter-spacing: -0.02em; margin: 0 0 22px;
+    text-wrap: balance;
+  }
+
+  .standfirst { font-size: 19px; color: var(--ink-soft); max-width: 58ch; margin: 0; }
+
+  section { margin-top: 60px; }
+
+  .sec-num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; letter-spacing: 0.14em; color: var(--accent); margin: 0 0 10px;
+  }
+
+  h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600; font-size: clamp(27px, 4.5vw, 36px);
+    line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 16px; text-wrap: balance;
+  }
+
+  h3 { font-weight: 700; font-size: 18px; margin: 30px 0 10px; line-height: 1.3; }
+
+  p { margin: 0 0 16px; }
+  ul, ol { margin: 0 0 16px; padding-left: 22px; }
+  li { margin-bottom: 8px; }
+  strong { font-weight: 600; }
+
+  .box { border-radius: 10px; padding: 18px 20px; margin: 22px 0; font-size: 15.5px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box .lbl {
+    display: block; font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 7px;
+  }
+  .rec { background: var(--gain-wash); border: 1.5px solid var(--gain-rule); }
+  .rec .lbl { color: var(--gain); }
+  .danger { background: var(--risk-wash); border: 1.5px solid var(--risk-rule); }
+  .danger .lbl { color: var(--risk); }
+  .note { background: var(--flag-wash); border: 1.5px solid var(--flag-rule); }
+  .note .lbl { color: var(--flag); }
+
+  .tw { overflow-x: auto; margin: 22px 0; }
+  table {
+    width: 100%; border-collapse: collapse; font-size: 15px;
+    min-width: 480px; font-variant-numeric: tabular-nums;
+  }
+  th {
+    text-align: left; font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    font-weight: 500; color: var(--ink-faint);
+    padding: 0 12px 9px 0; border-bottom: 2px solid var(--rule-firm); white-space: nowrap;
+  }
+  td { padding: 11px 12px 11px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .good { color: var(--gain); font-weight: 600; }
+  .bad { color: var(--risk); font-weight: 600; }
+
+  /* Names */
+  .namegrid { display: grid; gap: 12px; margin: 20px 0 0; }
+  @media (min-width: 640px) { .namegrid { grid-template-columns: 1fr 1fr; } }
+
+  .nm {
+    background: var(--card); border: 1.5px solid var(--rule-firm);
+    border-radius: 10px; padding: 15px 17px;
+  }
+  .nm b {
+    font-family: "Fraunces", Georgia, serif; font-weight: 700;
+    font-size: 22px; display: block; letter-spacing: -0.01em;
+  }
+  .nm .say {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+    color: var(--ink-faint); display: block; margin: 2px 0 8px;
+  }
+  .nm p { font-size: 14px; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+  .tag {
+    display: inline-block; margin-top: 9px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 7px; border-radius: 4px;
+  }
+  .t-top { background: var(--gain-wash); color: var(--gain); }
+  .t-ok { background: var(--sunk); color: var(--ink-soft); }
+  .t-no { background: var(--risk-wash); color: var(--risk); }
+
+  .flavour {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 30px 0 4px;
+  }
+
+  /* Checklist */
+  .steps { list-style: none; padding: 0; counter-reset: st; margin: 20px 0 0; }
+  .steps li {
+    counter-increment: st; position: relative;
+    background: var(--card); border: 1.5px solid var(--rule-firm);
+    border-radius: 10px; padding: 15px 18px 15px 54px; margin-bottom: 10px;
+  }
+  .steps li::before {
+    content: counter(st); position: absolute; left: 18px; top: 15px;
+    font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--accent);
+  }
+  .steps strong { display: block; }
+  .steps span { font-size: 14.5px; color: var(--ink-soft); }
+
+  footer.end {
+    margin-top: 64px; padding-top: 24px; border-top: 2px solid var(--ink);
+    color: var(--ink-faint); font-size: 14px;
+  }
+
+  @media (max-width: 560px) { body { font-size: 16px; } .wrap { padding: 0 16px 80px; } }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <p class="kicker">Operating plan · Nigeria</p>
+    <h1>Before you build</h1>
+    <p class="standfirst">
+      The licence you don't need and the one thing that would force you to get
+      one, which gateway to sit on, what to register, what to charge, and
+      sixteen names. Researched in August 2026 — I am not your lawyer or your
+      accountant, and I say so where it matters.
+    </p>
+  </header>
+
+  <!-- ═══════ 1 ═══════ -->
+  <section>
+    <p class="sec-num">01 — THE BIG ONE</p>
+    <h2>Your architecture is the reason you're legal</h2>
+
+    <p>
+      I went looking for what licence a ticketing platform needs in Nigeria and
+      found something that changes how you should think about the product.
+    </p>
+
+    <p>
+      The CBN licence that covers payment processing and merchant aggregation is
+      the <strong>PSSP</strong>. To apply you need <strong>₦100 million in share
+      capital</strong> deposited with the CBN. A switching licence is ₦2 billion.
+      Both are entirely out of reach, and neither is something you grow into
+      quietly.
+    </p>
+
+    <p>
+      You don't need one — <em>as long as you never touch the money</em>. You
+      operate as a merchant on Paystack's licence, using their split-payment
+      feature. Paystack is the licensed party. You're a customer of theirs with
+      a clever integration.
+    </p>
+
+    <div class="box danger">
+      <span class="lbl">The line you must never cross</span>
+      <p>
+        The moment you hold organisers' money — a wallet, a balance, an escrow,
+        “we'll pay you out after the event” — you are doing something that needs
+        a licence you cannot afford. That's not a technicality. It's the
+        difference between a business and a criminal problem.
+      </p>
+      <p>
+        Every instinct will push you toward holding funds. It solves
+        chargebacks, it solves fraud, it earns interest, and every competitor
+        does it. <strong>Don't.</strong> Not until you have a lawyer and a
+        licence.
+      </p>
+    </div>
+
+    <p>
+      So the no-custody design isn't just a nice line on the landing page. It's
+      the only shape this business can legally take at your size — and it was in
+      the code before either of us understood why it mattered.
+    </p>
+
+    <div class="box note">
+      <span class="lbl">Confirm this with a real lawyer</span>
+      <p>
+        I'm reading public summaries, not advising you. Spend ₦150,000–₦300,000
+        with a Nigerian fintech lawyer for one written opinion on whether your
+        split-payment model needs a licence. That is the single best money
+        you'll spend this year, and it's cheap next to being wrong.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════ 2 ═══════ -->
+  <section>
+    <p class="sec-num">02 — GATEWAY</p>
+    <h2>Which rails to sit on</h2>
+
+    <p>
+      All the serious Nigerian gateways charge about the same on cards — roughly
+      <strong>1.5% + ₦100, capped near ₦2,000</strong>. They differ on split
+      payments, on bank transfers, and on how fast organisers get paid.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>Gateway</th><th>Split across</th><th>Strength</th><th>For you</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Paystack</strong><br><span style="color:var(--ink-soft);font-size:13px">Stripe-owned</span></td>
+            <td>2 accounts</td>
+            <td>Best documentation, cleanest integration, already built</td>
+            <td class="good">Launch on this</td>
+          </tr>
+          <tr>
+            <td><strong>Monnify</strong><br><span style="color:var(--ink-soft);font-size:13px">Moniepoint</span></td>
+            <td>5 accounts</td>
+            <td>Cheapest bank transfers, virtual accounts</td>
+            <td>Add second</td>
+          </tr>
+          <tr>
+            <td><strong>Flutterwave</strong></td>
+            <td>2+ accounts</td>
+            <td>Multi-currency, pan-African</td>
+            <td>Only if you leave Nigeria</td>
+          </tr>
+          <tr>
+            <td><strong>Squad</strong><br><span style="color:var(--ink-soft);font-size:13px">GTBank</span></td>
+            <td>Yes</td>
+            <td>Fast settlement, bank-backed</td>
+            <td>Watch</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Two things about Paystack you should know now</h3>
+
+    <p>
+      <strong>Splits are limited to two accounts.</strong> Fine today — you and
+      the organiser. But the day you want to pay a promoter a cut, or split
+      between two co-hosts, Paystack can't do it and Monnify can. Don't design
+      features that assume more than two parties.
+    </p>
+
+    <p>
+      <strong>Nigeria pays by transfer, not by card.</strong> Card fees are
+      percentage-based; transfers are flat and much cheaper. Monnify's virtual
+      accounts are among the cheapest in the market. If most of your buyers pay
+      by transfer, moving to Monnify could cut your organisers' costs
+      meaningfully — which is a selling point, not just plumbing.
+    </p>
+
+    <div class="box rec">
+      <span class="lbl">Recommendation</span>
+      <p>
+        Launch on Paystack. Watch what share of your buyers pay by transfer for
+        the first few months. If it's most of them, add Monnify.
+      </p>
+      <p>
+        The code already supports this: payments sit behind an interface, so a
+        second gateway is one new file and an environment variable, not a
+        rewrite. That abstraction was built on principle and is about to earn
+        its keep.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════ 3 ═══════ -->
+  <section>
+    <p class="sec-num">03 — REGISTRATION</p>
+    <h2>What you have to set up</h2>
+
+    <p>
+      Paystack will let you test with a personal account, but to take real money
+      as a business you need a <strong>Registered Business</strong>: a CAC
+      certificate and a corporate bank account whose name matches it exactly.
+    </p>
+
+    <h3>Limited company, not Business Name</h3>
+    <p>
+      A Business Name is cheaper and it is the wrong choice here. It gives you
+      no separation between the business and you personally. Given the
+      chargeback exposure — money already paid out, a dispute months later — a
+      Business Name means your own savings are on the line. A limited company is
+      the entire point of a limited company.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>Item</th><th>Cost</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>CAC filing (Ltd)</td><td>₦30,000</td><td>Government fee</td></tr>
+          <tr><td>Stamp duty</td><td>₦8,500</td><td>On ₦1m share capital</td></tr>
+          <tr><td>Accredited agent</td><td>₦30,000–₦65,000</td><td>Optional; a lawyer costs more</td></tr>
+          <tr><td>Corporate bank account</td><td>Free</td><td>Name must match CAC exactly</td></tr>
+          <tr><td><strong>Realistic total</strong></td><td><strong>≈₦100,000</strong></td><td>Plus a week or two</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Tax — you're almost certainly exempt for now</h3>
+    <p>
+      Small companies pay <strong>0% company income tax</strong>. VAT
+      registration doesn't bite until <strong>₦50 million</strong> of turnover.
+    </p>
+
+    <div class="box rec">
+      <span class="lbl">The quiet advantage nobody mentions</span>
+      <p>
+        Your turnover is <em>your fee income</em>, not the value of tickets sold
+        — because the ticket money never passes through you. Sell ₦400 million
+        of tickets at ₦200 each and your turnover is ₦2 million, not ₦400
+        million.
+      </p>
+      <p>
+        A platform that held funds would have to argue about that. You don't.
+        No-custody keeps you a small company on paper for far longer than your
+        volume suggests.
+      </p>
+    </div>
+
+    <div class="box note">
+      <span class="lbl">Two I could not pin down</span>
+      <p>
+        <strong>Data protection.</strong> You collect buyer names and emails, so
+        the Nigeria Data Protection Act applies, and above certain volumes you
+        must register with the NDPC. I couldn't confirm the current thresholds —
+        ask the lawyer at the same time as the licence question.
+      </p>
+      <p>
+        <strong>The CIT threshold.</strong> Sources disagree on whether the
+        small-company line is ₦25m or ₦100m after the 2025 reform. Your
+        accountant will know. Either way you're well under it.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════ 4 ═══════ -->
+  <section>
+    <p class="sec-num">04 — PRICING</p>
+    <h2>Settle the number</h2>
+
+    <p>
+      From the earlier note, restated as one decision. A flat ₦200 is roughly
+      10% of a ₦2,000 ticket and 0.13% of a ₦150,000 one, in a market where
+      ticket prices span about 75×. One number cannot serve both ends.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>Ticket price</th><th>You charge</th><th>Effective</th><th>Tix would take</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Under ₦5,000</td><td>₦150</td><td>3%+</td><td>₦350</td></tr>
+          <tr><td>₦5,000 – ₦20,000</td><td>₦400</td><td>2–8%</td><td>₦1,100</td></tr>
+          <tr><td>₦20,000 – ₦75,000</td><td>₦1,000</td><td>1.3–5%</td><td>₦3,850</td></tr>
+          <tr><td>Over ₦75,000</td><td>₦2,000</td><td>Under 2.7%</td><td>₦7,600</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      You stay 3–4× cheaper than the incumbent everywhere, “a flat fee per
+      ticket, never a percentage” is still literally true, and you roughly
+      double revenue per ticket.
+    </p>
+
+    <h3>And let organisers pass it to the buyer</h3>
+    <p>
+      Tix already offers this, so it's expected rather than clever. A switch:
+      absorb the fee, or add it to the buyer's total. When the buyer pays, the
+      organiser's cost is zero and your cheap-ticket problem disappears
+      completely.
+    </p>
+
+    <div class="box rec">
+      <span class="lbl">My recommendation, in one line</span>
+      <p>
+        Four bands, plus a pass-to-buyer switch that defaults to <em>off</em>.
+        Default off matters: “the price you see is the price you pay” is worth
+        more to your buyers than the fee is to your organisers.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════ 5 ═══════ -->
+  <section>
+    <p class="sec-num">05 — OPERATIONS</p>
+    <h2>What one person can actually run</h2>
+
+    <p>
+      Everything above is arithmetic. This is the part that decides whether you
+      last: there is one of you, and events happen at night, at weekends, all at
+      once.
+    </p>
+
+    <h3>You cannot attend events</h3>
+    <p>
+      Twenty events on one Saturday is twenty doors you aren't at. So the door
+      has to work without you — which is why the manual code entry matters more
+      than it looks. It's not a fallback, it's the thing that stops a bad night
+      becoming a refund.
+    </p>
+
+    <h3>Publish support hours, and make them real</h3>
+    <p>
+      “WhatsApp, 9am–11pm Friday and Saturday” is honest and achievable.
+      Silence at 10pm on a Saturday is how you lose an organiser permanently.
+      Promise less than you can do.
+    </p>
+
+    <h3>Hold new organisers to a limit</h3>
+    <p>
+      Someone can list a fake event, sell 400 tickets, take the money straight
+      to their own bank and vanish — that's what instant settlement means. Cap
+      what a new organiser can sell until they've run one event cleanly, and
+      verify identity above a threshold. This is the fraud control you can
+      afford; holding funds is the one you can't.
+    </p>
+
+    <h3>Write the refund policy before you need it</h3>
+    <p>
+      The organiser has the money, so only they can refund. Buyers won't see it
+      that way — they bought from your site. Say so on the checkout page, in
+      plain words, before anyone pays.
+    </p>
+  </section>
+
+  <!-- ═══════ 6 ═══════ -->
+  <section>
+    <p class="sec-num">06 — NAMING</p>
+    <h2>Sixteen names</h2>
+
+    <p>
+      Grouped by flavour. None are checked for availability — this sandbox can't
+      reach registrars — so treat every one as a candidate, not a decision.
+    </p>
+
+    <p class="flavour">Nigerian</p>
+    <div class="namegrid">
+      <div class="nm">
+        <b>Jaiye</b><span class="say">JAI-yay · Yoruba, “enjoy life”</span>
+        <p>Warm, local, about the night rather than the transaction. No foreign competitor can credibly take it.</p>
+        <span class="tag t-top">Shortlist</span>
+      </div>
+      <div class="nm">
+        <b>Gateman</b><span class="say">GATE-man</span>
+        <p>The man on the door — a real figure everyone here knows, and precisely what your product does. Funny, memorable, unmistakably Nigerian. May read informal to a conference organiser.</p>
+        <span class="tag t-top">Shortlist</span>
+      </div>
+      <div class="nm">
+        <b>Tuale</b><span class="say">too-AH-leh · a salute</span>
+        <p>A greeting of respect. Distinctive and hard to confuse with anything else. Meaning is opaque outside Nigeria.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+      <div class="nm">
+        <b>Bami</b><span class="say">BAH-mee · Yoruba, “come with me”</span>
+        <p>An invitation, which is exactly what a ticket is. Soft, short, easy to say. Possibly too gentle for nightlife.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+      <div class="nm">
+        <b>Gbedu</b><span class="say">g-BEH-doo · the beat</span>
+        <p>Huge local energy, but points hard at music and nightlife — awkward if you're chasing conferences.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+      <div class="nm">
+        <b>Sabi</b><span class="say">SAH-bee · pidgin, “to know”</span>
+        <p>Confident and widely understood across West Africa. Used by a lot of other brands already.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+    </div>
+
+    <p class="flavour">The door</p>
+    <div class="namegrid">
+      <div class="nm">
+        <b>Gate</b><span class="say">gayt · one syllable</span>
+        <p>The whole product in four letters. Works for a rave and a conference equally. A very short common word, so the domain will be expensive or gone.</p>
+        <span class="tag t-top">Shortlist</span>
+      </div>
+      <div class="nm">
+        <b>Guestlist</b><span class="say">GUEST-list</span>
+        <p>What organisers already call the thing they need. Instantly understood, zero explanation. Descriptive, so harder to protect.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+      <div class="nm">
+        <b>Turnstile</b><span class="say">TURN-stile</span>
+        <p>Sounds like infrastructure, which suits selling to venues and conferences. A bit cold for a party.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+      <div class="nm">
+        <b>Doorlist</b><span class="say">DOOR-list</span>
+        <p>Plain and clear. Same protectability problem as Guestlist.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+      <div class="nm">
+        <b>Rope</b><span class="say">rohp · the velvet rope</span>
+        <p>Evocative and short. Meaning only lands if people make the connection, which many won't.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+    </div>
+
+    <p class="flavour">The ticket</p>
+    <div class="namegrid">
+      <div class="nm">
+        <b>Stub</b><span class="say">stub</span>
+        <p>The bit you keep. Short, concrete, sounds like a product rather than a startup. The strongest English option.</p>
+        <span class="tag t-top">Shortlist</span>
+      </div>
+      <div class="nm">
+        <b>Lanyard</b><span class="say">LAN-yard</span>
+        <p>Says “conference” immediately, which is where your pricing actually wins. Distinctive and easy to own.</p>
+        <span class="tag t-top">Shortlist</span>
+      </div>
+      <div class="nm">
+        <b>Wristband</b><span class="say">RIST-band</span>
+        <p>Festivals and club nights. Concrete and physical, but narrows you to one end of the market.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+      <div class="nm">
+        <b>Admit</b><span class="say">ad-MIT</span>
+        <p>From “admit one”. Clean, but it's an everyday verb, which makes you hard to search for.</p>
+        <span class="tag t-ok">Maybe</span>
+      </div>
+      <div class="nm">
+        <b>Kudi</b><span class="say">KOO-dee · Hausa, “money”</span>
+        <p>Here to be ruled out: too close to Kuda the bank, and it points at payments — the exact mistake Paylance made.</p>
+        <span class="tag t-no">Avoid</span>
+      </div>
+    </div>
+
+    <h3>How to choose, in an afternoon</h3>
+    <ol class="steps">
+      <li><strong>Pick three</strong><span>From the shortlisted five. Trust your gut — you'll be saying it for years.</span></li>
+      <li><strong>The noisy room test</strong><span>Say each one down a phone line to a friend, no spelling. If they can't repeat it back, it's out. Your buyers hear this name in clubs.</span></li>
+      <li><strong>Search CAC</strong><span>Check name availability on the CAC public search before anything else. If CAC says no, nothing else matters.</span></li>
+      <li><strong>Check the domain</strong><span>The .com and the .ng. A .ng is entirely respectable here and often available when .com isn't.</span></li>
+      <li><strong>Search the name plus “Nigeria”</strong><span>Ten minutes on Google and Instagram. If an events brand already owns it locally, move on.</span></li>
+      <li><strong>Reserve it at CAC</strong><span>Name reservation is cheap and holds it while you register the company.</span></li>
+    </ol>
+
+    <div class="box rec">
+      <span class="lbl">If you want my answer</span>
+      <p>
+        <strong>Gate</strong> if you can get a usable domain — it's the product
+        in one syllable and it grows with you.
+        <strong>Jaiye</strong> if you want to be unmistakably Nigerian and own
+        something no competitor can copy.
+        <strong>Lanyard</strong> if you're serious about going after conferences,
+        because it does the positioning for you.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════ 7 ═══════ -->
+  <section>
+    <p class="sec-num">07 — ORDER OF OPERATIONS</p>
+    <h2>What to do, in what order</h2>
+
+    <ol class="steps">
+      <li><strong>Email Paystack about chargebacks</strong><span>On a split transaction, who bears a dispute — you or the subaccount? Free, ten minutes, and it changes everything downstream.</span></li>
+      <li><strong>One hour with a fintech lawyer</strong><span>Does this model need a licence? What does NDPA require of you? Get it in writing.</span></li>
+      <li><strong>Pick the name</strong><span>CAC search, then domain, then reserve.</span></li>
+      <li><strong>Register the company</strong><span>Limited, not Business Name. Then the corporate bank account.</span></li>
+      <li><strong>Activate Paystack as a Registered Business</strong><span>Needs the CAC certificate and a matching corporate account.</span></li>
+      <li><strong>Decide the fee</strong><span>Four bands, pass-to-buyer off by default, unless the lawyer's answer changes the picture.</span></li>
+      <li><strong>Then build</strong><span>Bands, the pass-to-buyer switch, the rename. All small once the decisions are made.</span></li>
+    </ol>
+
+    <div class="box note">
+      <span class="lbl">Steps 1 and 2 cost almost nothing</span>
+      <p>
+        An email and one meeting. Everything else waits on them, and doing them
+        out of order is how people build for six months on a foundation that
+        turns out to be illegal.
+      </p>
+    </div>
+  </section>
+
+  <footer class="end">
+    Researched August 2026: CBN licence categories and capital requirements,
+    Paystack and Monnify split-payment documentation, CAC fee schedules, and the
+    Nigeria Tax Act 2025 thresholds. Rules change and sources disagree — the two
+    places they disagreed are flagged above. This is research, not legal or tax
+    advice, and no part of it substitutes for a professional who will put their
+    name to it.
+  </footer>
+</div>
