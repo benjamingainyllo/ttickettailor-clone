@@ -29,8 +29,13 @@ Creators pay nothing to sign up, nothing monthly, and nothing when they don't se
 | | Fee |
 |---|---|
 | Paylance | ₦200 |
-| Tix.Africa (8% + ₦100) | ₦1,700 |
+| Tix.Africa free plan (5% + ₦100) | ₦1,100 |
+| Tix Pro (3.5% + ₦100) | ₦800 |
 | The old Paylance rate (9%) | ₦1,800 |
+
+Checked August 2026. An earlier version of this file said Tix charged 8% + ₦100,
+which was wrong and had reached the public pricing page — the corrected rate is
+above. Verify before printing anything: these change.
 
 The rate lives in `platform_fee_type` / `platform_fee_value` per creator, so it
 can change without a migration, and `lib/money.ts` still supports a percentage
@@ -42,6 +47,24 @@ than the ticket price — but on a very cheap ticket that cap means we take the
 lot). Before launch this needs either a minimum ticket price or a fee capped at
 a percentage of face value. It does not affect the ₦2,000+ tickets that are the
 actual target.
+
+### C. The fee that isn't ours
+
+Paystack charges 1.5% + ₦100 on Nigerian cards, capped at ₦2,000, waived at or
+under ₦2,500, plus 7.5% VAT on that fee. On anything above about ₦7,000 the
+processor takes more per ticket than we do, and the organiser currently absorbs
+it (`PROCESSING_FEE_BEARER` in `lib/payments/paystack.ts`).
+
+That matters for positioning: an organiser judges the total deduction, not our
+line of it. On a ₦20,000 ticket the real cost is roughly ₦630, of which ₦200 is
+ours. Stating both openly would be unusual in this market and costs us nothing,
+because every competitor's sellers pay the same processor.
+
+**Open decision — banded pricing.** A single ₦200 is ~10% of a ₦2,000 ticket and
+0.13% of a ₦150,000 one, across a market where ticket prices span roughly 75x.
+Four bands (₦150 / ₦400 / ₦1,000 / ₦2,000) would keep the "flat fee, never a
+percentage" promise, stay 3-4x below Tix at every price, and roughly double
+revenue per ticket. See the strategy note.
 
 ### B. Explicitly NOT revenue streams
 

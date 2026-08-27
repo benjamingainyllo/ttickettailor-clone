@@ -1,0 +1,791 @@
+<title>The Money Decisions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Light: ledger paper. Cool, numerate, not another cream memo. ── */
+  :root {
+    --ground:     #EEF1F3;
+    --card:       #FFFFFF;
+    --sunk:       #E3E8EB;
+    --ink:        #14181B;
+    --ink-soft:   #56626B;
+    --ink-faint:  #8B979F;
+    --rule:       rgba(20, 24, 27, 0.12);
+    --rule-firm:  rgba(20, 24, 27, 0.28);
+
+    --gain:       #0A6E4C;
+    --gain-wash:  #DCF0E7;
+    --gain-rule:  rgba(10, 110, 76, 0.3);
+
+    --risk:       #A82018;
+    --risk-wash:  #FBE4E2;
+    --risk-rule:  rgba(168, 32, 24, 0.28);
+
+    --flag:       #8A5300;
+    --flag-wash:  #FCEFD8;
+    --flag-rule:  rgba(138, 83, 0, 0.28);
+
+    --accent:     #1B4D8F;
+    --shadow:     rgba(20, 24, 27, 0.1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:     #0F1315;
+      --card:       #171C1F;
+      --sunk:       #1F262A;
+      --ink:        #E9EEF1;
+      --ink-soft:   #9AA7AF;
+      --ink-faint:  #6B7880;
+      --rule:       rgba(233, 238, 241, 0.13);
+      --rule-firm:  rgba(233, 238, 241, 0.28);
+
+      --gain:       #5FCFA0;
+      --gain-wash:  rgba(95, 207, 160, 0.12);
+      --gain-rule:  rgba(95, 207, 160, 0.32);
+
+      --risk:       #F2857B;
+      --risk-wash:  rgba(242, 133, 123, 0.12);
+      --risk-rule:  rgba(242, 133, 123, 0.32);
+
+      --flag:       #E8B45C;
+      --flag-wash:  rgba(232, 180, 92, 0.11);
+      --flag-rule:  rgba(232, 180, 92, 0.3);
+
+      --accent:     #7FB0EC;
+      --shadow:     rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:     #0F1315;
+    --card:       #171C1F;
+    --sunk:       #1F262A;
+    --ink:        #E9EEF1;
+    --ink-soft:   #9AA7AF;
+    --ink-faint:  #6B7880;
+    --rule:       rgba(233, 238, 241, 0.13);
+    --rule-firm:  rgba(233, 238, 241, 0.28);
+
+    --gain:       #5FCFA0;
+    --gain-wash:  rgba(95, 207, 160, 0.12);
+    --gain-rule:  rgba(95, 207, 160, 0.32);
+
+    --risk:       #F2857B;
+    --risk-wash:  rgba(242, 133, 123, 0.12);
+    --risk-rule:  rgba(242, 133, 123, 0.32);
+
+    --flag:       #E8B45C;
+    --flag-wash:  rgba(232, 180, 92, 0.11);
+    --flag-rule:  rgba(232, 180, 92, 0.3);
+
+    --accent:     #7FB0EC;
+    --shadow:     rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px 110px; }
+
+  a { color: var(--accent); text-underline-offset: 2px; }
+
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  /* ── Masthead ─────────────────────────────────────────────── */
+  header.top { padding: 64px 0 40px; border-bottom: 2px solid var(--ink); margin-bottom: 8px; }
+
+  .kicker {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 20px;
+  }
+
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(40px, 7.5vw, 62px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin: 0 0 22px;
+    text-wrap: balance;
+  }
+
+  .standfirst { font-size: 19px; color: var(--ink-soft); max-width: 58ch; margin: 0; }
+
+  /* ── Sections ─────────────────────────────────────────────── */
+  section { margin-top: 60px; }
+
+  .sec-num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+
+  h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(27px, 4.5vw, 36px);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    margin: 0 0 16px;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-family: "IBM Plex Sans", sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    margin: 30px 0 10px;
+    line-height: 1.3;
+  }
+
+  p { margin: 0 0 16px; }
+  ul, ol { margin: 0 0 16px; padding-left: 22px; }
+  li { margin-bottom: 8px; }
+
+  strong { font-weight: 600; }
+
+  /* ── Callouts ─────────────────────────────────────────────── */
+  .box {
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 22px 0;
+    font-size: 15.5px;
+  }
+  .box p:last-child { margin-bottom: 0; }
+
+  .box .lbl {
+    display: block;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+
+  .rec  { background: var(--gain-wash); border: 1.5px solid var(--gain-rule); }
+  .rec .lbl  { color: var(--gain); }
+  .danger { background: var(--risk-wash); border: 1.5px solid var(--risk-rule); }
+  .danger .lbl { color: var(--risk); }
+  .note { background: var(--flag-wash); border: 1.5px solid var(--flag-rule); }
+  .note .lbl { color: var(--flag); }
+
+  /* ── Tables ───────────────────────────────────────────────── */
+  .tw { overflow-x: auto; margin: 22px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    min-width: 460px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  th {
+    text-align: left;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--ink-faint);
+    padding: 0 12px 9px 0;
+    border-bottom: 2px solid var(--rule-firm);
+    white-space: nowrap;
+  }
+  th:last-child, td:last-child { padding-right: 0; text-align: right; }
+
+  td {
+    padding: 11px 12px 11px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  .good { color: var(--gain); font-weight: 600; }
+  .bad  { color: var(--risk); font-weight: 600; }
+  .mono { font-family: "IBM Plex Mono", monospace; font-size: 0.92em; }
+
+  /* ── Name cards ───────────────────────────────────────────── */
+  .names { display: grid; gap: 14px; margin: 24px 0; }
+  @media (min-width: 620px) { .names { grid-template-columns: 1fr 1fr; } }
+
+  .name {
+    background: var(--card);
+    border: 1.5px solid var(--rule-firm);
+    border-radius: 11px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 0 var(--shadow);
+  }
+
+  .name .n {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 700;
+    font-size: 25px;
+    letter-spacing: -0.01em;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .name .say {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    display: block;
+    margin-bottom: 9px;
+  }
+
+  .name p { font-size: 14.5px; color: var(--ink-soft); margin: 0; line-height: 1.55; }
+
+  .name .verdict {
+    display: inline-block;
+    margin-top: 11px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+  .v-top { background: var(--gain-wash); color: var(--gain); }
+  .v-ok  { background: var(--sunk); color: var(--ink-soft); }
+  .v-risk { background: var(--risk-wash); color: var(--risk); }
+
+  /* ── Decision list ────────────────────────────────────────── */
+  .decisions { counter-reset: d; list-style: none; padding: 0; margin: 24px 0 0; }
+  .decisions li {
+    counter-increment: d;
+    background: var(--card);
+    border: 1.5px solid var(--rule-firm);
+    border-radius: 11px;
+    padding: 16px 20px 16px 56px;
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .decisions li::before {
+    content: counter(d);
+    position: absolute;
+    left: 18px;
+    top: 16px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .decisions strong { display: block; margin-bottom: 2px; }
+  .decisions span { font-size: 14.5px; color: var(--ink-soft); }
+
+  footer.end {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 2px solid var(--ink);
+    color: var(--ink-faint);
+    font-size: 14px;
+  }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 16px 80px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <p class="kicker">Strategy note · Solo founder</p>
+    <h1>The money decisions</h1>
+    <p class="standfirst">
+      Six calls to make before launch, the numbers behind each one, and the
+      risks that can actually take you down when there's only one of you.
+      Two figures currently on your website are wrong — that's first.
+    </p>
+  </header>
+
+  <!-- ═══════════ 1 ═══════════ -->
+  <section>
+    <p class="sec-num">01 — CORRECTION</p>
+    <h2>Your site overstates what Tix charges</h2>
+
+    <p>
+      Your pricing page compares you against “a typical 8% platform”, and
+      <span class="mono">BUSINESS_MODEL.md</span> says Tix.Africa charges 8% + ₦100.
+      That number came from your own repo and I put it on the site without
+      checking it. It's wrong.
+    </p>
+
+    <p>Tix.Africa actually charges:</p>
+    <ul>
+      <li><strong>₦100 + 5%</strong> per ticket on their free plan</li>
+      <li><strong>₦100 + 3.5%</strong> on Tix Pro</li>
+    </ul>
+
+    <div class="box danger">
+      <span class="lbl">Fix this before anyone sees it</span>
+      <p>
+        Overstating a competitor's price on your own marketing page is the kind
+        of thing that gets screenshotted. It's also just inaccurate, and your
+        real numbers are good enough without it.
+      </p>
+    </div>
+
+    <p>
+      Here's the honest comparison, using their free-plan rate of 5% + ₦100
+      against your ₦200 flat.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket price</th>
+            <th>Tix takes</th>
+            <th>You take</th>
+            <th>Your edge</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>₦2,000</td><td>₦200</td><td>₦200</td><td class="bad">None</td></tr>
+          <tr><td>₦5,000</td><td>₦350</td><td>₦200</td><td>₦150</td></tr>
+          <tr><td>₦10,000</td><td>₦600</td><td>₦200</td><td class="good">₦400</td></tr>
+          <tr><td>₦20,000</td><td>₦1,100</td><td>₦200</td><td class="good">₦900</td></tr>
+          <tr><td>₦50,000</td><td>₦2,600</td><td>₦200</td><td class="good">₦2,400</td></tr>
+          <tr><td>₦150,000</td><td>₦7,600</td><td>₦200</td><td class="good">₦7,400</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box note">
+      <span class="lbl">Read that bottom row again</span>
+      <p>
+        On a ₦2,000 club ticket you have <strong>no advantage at all</strong>.
+        On a ₦150,000 retreat ticket you're 38× cheaper. Your whole edge lives
+        at the top of the market, and right now your marketing is pointed at
+        club nights.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 2 ═══════════ -->
+  <section>
+    <p class="sec-num">02 — POSITIONING</p>
+    <h2>You're selling to the wrong events</h2>
+
+    <p>
+      A flat fee is a <em>discount for expensive tickets</em> and a
+      <em>premium for cheap ones</em>. That's not a flaw in the model, it's the
+      whole shape of it — and it decides who you should be chasing.
+    </p>
+
+    <p>
+      Nigerian ticket prices span roughly 75× — a ₦2,000 club night to a
+      ₦150,000 weekend retreat. No single flat number sits sensibly across
+      that range.
+    </p>
+
+    <h3>Who you should be selling to</h3>
+    <ul>
+      <li><strong>Conferences</strong> — ₦25,000–₦80,000, hundreds of delegates</li>
+      <li><strong>Retreats and workshops</strong> — ₦100,000+, small rooms, high value</li>
+      <li><strong>Festivals with VIP tiers</strong> — where the ₦120,000 table is the money</li>
+      <li><strong>Corporate and paid networking</strong> — priced high, run by people who count</li>
+    </ul>
+
+    <h3>Who you shouldn't lead with</h3>
+    <p>
+      Club nights and ₦2,000-a-head parties. You'll win them on the door
+      scanner and on getting paid the same night — but never on price, because
+      there's nothing to win.
+    </p>
+
+    <div class="box rec">
+      <span class="lbl">Recommendation</span>
+      <p>
+        Keep the flat-fee pitch, but aim the marketing at higher-value
+        ticketing. “Never a percentage” is a much louder promise to someone
+        selling a ₦60,000 conference seat than to someone selling ₦2,000 entry.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 3 ═══════════ -->
+  <section>
+    <p class="sec-num">03 — PRICING</p>
+    <h2>₦200 flat leaves most of your money on the table</h2>
+
+    <p>
+      At ₦200 a ticket you earn the same from a ₦150,000 retreat seat as from a
+      ₦2,000 rave. On the retreat that's <strong>0.13%</strong> — you're
+      practically working for free on exactly the events where you're most
+      valuable.
+    </p>
+
+    <h3>The fix: bands, not a percentage</h3>
+    <p>
+      Keep “a flat fee per ticket, never a percentage of your revenue” — it's
+      still completely true. Just have more than one flat fee.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket price</th>
+            <th>Your fee</th>
+            <th>Effective</th>
+            <th>Tix would take</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Under ₦5,000</td><td>₦150</td><td>3%+</td><td>₦350</td></tr>
+          <tr><td>₦5,000 – ₦20,000</td><td>₦400</td><td>2–8%</td><td>₦1,100</td></tr>
+          <tr><td>₦20,000 – ₦75,000</td><td>₦1,000</td><td>1.3–5%</td><td>₦3,850</td></tr>
+          <tr><td>Over ₦75,000</td><td>₦2,000</td><td>Under 2.7%</td><td>₦7,600</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      You stay roughly <strong>3–4× cheaper than Tix at every price</strong>,
+      the promise still holds, and on a typical ₦15,000 ticket you earn
+      <strong>₦400 instead of ₦200</strong>. That's double the revenue for
+      identical work.
+    </p>
+
+    <div class="box rec">
+      <span class="lbl">Recommendation</span>
+      <p>
+        Move to four bands. The database already stores the fee per organiser,
+        so this is a small change, not a rebuild. And it retires the ₦100-ticket
+        embarrassment — the bottom band is ₦150, so the fee can never be most
+        of a cheap ticket again.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 4 ═══════════ -->
+  <section>
+    <p class="sec-num">04 — THE FEE YOU FORGOT</p>
+    <h2>Paystack takes more than you do</h2>
+
+    <p>
+      There's a second fee on every sale and it isn't yours. Paystack charges
+      <strong>1.5% + ₦100</strong> on Nigerian cards, capped at ₦2,000 — plus
+      7.5% VAT on that fee. Tickets at or under ₦2,500 are processed free.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>Paystack takes</th>
+            <th>You take</th>
+            <th>Who's bigger</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>₦2,000</td><td>₦0 (waived)</td><td>₦200</td><td class="good">You</td></tr>
+          <tr><td>₦10,000</td><td>≈₦270</td><td>₦200</td><td class="bad">Paystack</td></tr>
+          <tr><td>₦20,000</td><td>≈₦430</td><td>₦200</td><td class="bad">Paystack</td></tr>
+          <tr><td>₦150,000</td><td>≈₦2,150</td><td>₦200</td><td class="bad">Paystack</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Right now your code makes the <strong>organiser</strong> absorb this,
+      which is the normal arrangement — but it means their real cost is your
+      fee plus Paystack's, and they'll judge you on the total. On a ₦20,000
+      ticket that's ₦630, not ₦200.
+    </p>
+
+    <div class="box note">
+      <span class="lbl">Say it out loud on your pricing page</span>
+      <p>
+        Every competitor buries this. Showing the full cost — “₦200 to us, about
+        ₦430 to the bank, ₦19,370 to you” — would be the most trustworthy
+        pricing page in the market, and it costs you nothing because everyone
+        pays the processor.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 5 ═══════════ -->
+  <section>
+    <p class="sec-num">05 — YOUR REAL WEAPON</p>
+    <h2>You pay out instantly. Tix pays weekly.</h2>
+
+    <p>
+      This is the thing I'd build the whole company around, and it's currently
+      buried on your site as a footnote about not holding money.
+    </p>
+
+    <p>
+      Tix settles organisers <strong>weekly</strong>. Your split payments land
+      the organiser's share in their own bank <strong>at the moment of
+      sale</strong>. For someone paying a venue deposit, a sound guy and a
+      caterer before the doors open, that is not a technical detail — it's
+      working capital.
+    </p>
+
+    <div class="box rec">
+      <span class="lbl">Recommendation</span>
+      <p>
+        Lead with this alongside the fee. “Your money the same day, not next
+        week” beats a fee comparison for anyone who has ever had to pay a
+        venue before an event. It's also very hard for a competitor holding
+        funds to copy, because their float is how they operate.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 6 ═══════════ -->
+  <section>
+    <p class="sec-num">06 — RISK</p>
+    <h2>What can actually take you down</h2>
+
+    <p>
+      The no-custody model is your best pitch and your biggest exposure. The
+      money is gone the moment it arrives — which is great until something
+      needs reversing.
+    </p>
+
+    <h3>Chargebacks are the one that ends companies</h3>
+    <p>
+      A buyer disputes a ₦200,000 table two months after the event. The money
+      is long since in the organiser's bank. Paystack takes it back from
+      <em>the merchant account</em> — and the platform is usually the merchant
+      of record. You'd be paying it out of your own pocket, with no float,
+      chasing an organiser who has already spent it.
+    </p>
+
+    <div class="box danger">
+      <span class="lbl">Find out before you launch</span>
+      <p>
+        Ask Paystack directly, in writing, who bears a chargeback on a split
+        transaction — you or the subaccount. The answer changes your entire
+        risk profile, and it's a ten-minute email. Do this one first.
+      </p>
+    </div>
+
+    <h3>Fake events</h3>
+    <p>
+      Someone lists an event that doesn't exist, sells 400 tickets, the money
+      settles instantly to their own account, and they disappear. You cannot
+      claw it back — that's what no-custody means. The buyers will come to you.
+    </p>
+    <p>
+      <strong>Mitigation:</strong> hold new organisers to a lower limit until
+      they've run one event cleanly, and verify identity before allowing paid
+      events above a threshold.
+    </p>
+
+    <h3>You are the on-call engineer, on a Saturday night</h3>
+    <p>
+      Events happen at 10pm on weekends. If the door scanner fails with 300
+      people queuing, you are the support team, and there is no one to escalate
+      to. Set expectations publicly — and make sure the manual-code fallback is
+      something you'd trust with a real queue, because it's your safety net.
+    </p>
+
+    <h3>Refunds</h3>
+    <p>
+      The organiser has the money, so only they can refund. Buyers won't see it
+      that way — they bought from your site. Put refund policy on the checkout
+      page in plain words, before someone pays.
+    </p>
+  </section>
+
+  <!-- ═══════════ 7 ═══════════ -->
+  <section>
+    <p class="sec-num">07 — BREAK-EVEN</p>
+    <h2>What it costs to run, and what you need to sell</h2>
+
+    <p>Running costs, at the size you're at now:</p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>What</th><th>Now</th><th>At scale</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Supabase (database)</td><td>Free</td><td>≈$25/mo</td></tr>
+          <tr><td>Vercel (hosting)</td><td>Free</td><td>≈$20/mo</td></tr>
+          <tr><td>Resend (email)</td><td>Free</td><td>≈$20/mo</td></tr>
+          <tr><td>Domain</td><td>≈$15/yr</td><td>≈$15/yr</td></tr>
+          <tr><td><strong>Total</strong></td><td><strong>≈₦0</strong></td><td><strong>≈₦110k/mo</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Software costs are effectively nothing. <strong>Your real cost is your
+      own time</strong>, and that's the number to plan against.
+    </p>
+
+    <p>On the banded pricing, at an average of about ₦400 a ticket:</p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>To earn</th><th>Tickets / month</th><th>Roughly</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>₦500,000</td><td>1,250</td><td>4 mid-size events</td></tr>
+          <tr><td>₦1,000,000</td><td>2,500</td><td>8 events</td></tr>
+          <tr><td>₦3,000,000</td><td>7,500</td><td>20–25 events</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      At ₦200 flat those numbers double. That alone is the argument for bands.
+    </p>
+  </section>
+
+  <!-- ═══════════ 8 ═══════════ -->
+  <section>
+    <p class="sec-num">08 — NAMING</p>
+    <h2>Name ideas</h2>
+
+    <p>
+      “Paylance” reads as freelancer payments, not tickets — you're right to
+      drop it. What follows is aimed at the door and at Nigeria, not at
+      payments.
+    </p>
+
+    <div class="box note">
+      <span class="lbl">I could not check availability</span>
+      <p>
+        This sandbox can't reach domain registrars or trademark databases, so
+        treat every one of these as unverified. Check the .com, the .ng and
+        Nigerian trademark records before you fall in love with one.
+      </p>
+    </div>
+
+    <div class="names">
+      <div class="name">
+        <span class="n">Stub</span>
+        <span class="say">stub · one syllable</span>
+        <p>A ticket stub — the bit you keep. Short, concrete, works in English anywhere, and sounds like a product rather than a startup.</p>
+        <span class="verdict v-top">Strongest</span>
+      </div>
+
+      <div class="name">
+        <span class="n">Jaiye</span>
+        <span class="say">JAI-yay · Yoruba, “enjoy”</span>
+        <p>Unmistakably Nigerian, warm, and about the night out rather than the transaction. Hard for a foreign competitor to own, easy to say in Lagos.</p>
+        <span class="verdict v-top">Strongest</span>
+      </div>
+
+      <div class="name">
+        <span class="n">Turnstile</span>
+        <span class="say">TURN-stile</span>
+        <p>Literally the door — your best feature. Sounds like infrastructure, which suits selling to conferences and venues.</p>
+        <span class="verdict v-ok">Solid</span>
+      </div>
+
+      <div class="name">
+        <span class="n">Gbedu</span>
+        <span class="say">g-BEH-doo · slang for the beat</span>
+        <p>Enormous local energy. Narrower than Jaiye — it points hard at music and nightlife, which may fight your move upmarket.</p>
+        <span class="verdict v-ok">Solid</span>
+      </div>
+
+      <div class="name">
+        <span class="n">Doorlist</span>
+        <span class="say">DOOR-list</span>
+        <p>Exactly what an organiser calls the thing they need at the entrance. Descriptive and clear, but harder to trademark for the same reason.</p>
+        <span class="verdict v-ok">Solid</span>
+      </div>
+
+      <div class="name">
+        <span class="n">Tally</span>
+        <span class="say">TAL-ee</span>
+        <p>Counting people in. Calm and countable — fits the conference market. Common word, so the domain will be a fight.</p>
+        <span class="verdict v-ok">Solid</span>
+      </div>
+
+      <div class="name">
+        <span class="n">Admit</span>
+        <span class="say">ad-MIT</span>
+        <p>From “admit one”. Clean and ticket-native, but it's a verb people use daily, which makes it slippery to search for.</p>
+        <span class="verdict v-ok">Solid</span>
+      </div>
+
+      <div class="name">
+        <span class="n">Kudi</span>
+        <span class="say">KOO-dee · Hausa, “money”</span>
+        <p>Listed so you can rule it out: too close to Kuda, the Nigerian bank, and it points at payments — the exact mistake Paylance made.</p>
+        <span class="verdict v-risk">Avoid</span>
+      </div>
+    </div>
+
+    <div class="box rec">
+      <span class="lbl">If you want one answer</span>
+      <p>
+        <strong>Jaiye.</strong> It's the only one on this list a competitor
+        can't credibly take, it says “good night out” instead of “payment
+        processing”, and it makes you obviously Nigerian in a market where that
+        is an advantage rather than a limitation.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ Decisions ═══════════ -->
+  <section>
+    <p class="sec-num">09 — WHAT I NEED FROM YOU</p>
+    <h2>Six decisions</h2>
+
+    <ol class="decisions">
+      <li>
+        <strong>Email Paystack about chargebacks</strong>
+        <span>Who pays when a split transaction is disputed — you or the organiser? Everything else waits on this answer.</span>
+      </li>
+      <li>
+        <strong>Flat ₦200, or four bands?</strong>
+        <span>Bands roughly double your revenue and keep the promise intact. My recommendation is bands.</span>
+      </li>
+      <li>
+        <strong>Should organisers be able to pass the fee to buyers?</strong>
+        <span>Tix already offers this, so it's table stakes rather than an edge. Small build.</span>
+      </li>
+      <li>
+        <strong>Aim upmarket, or stay at club nights?</strong>
+        <span>Your pricing only wins above about ₦5,000 a ticket. The marketing should follow the maths.</span>
+      </li>
+      <li>
+        <strong>Pick the name</strong>
+        <span>Then check the domain and the trademark before I change a single file.</span>
+      </li>
+      <li>
+        <strong>Show the processor fee openly?</strong>
+        <span>Costs you nothing, and would be the most honest pricing page in the market.</span>
+      </li>
+    </ol>
+  </section>
+
+  <footer class="end">
+    Fee figures: Paystack Nigeria (1.5% + ₦100, capped ₦2,000, waived at or
+    under ₦2,500, plus 7.5% VAT on the fee) and Tix.Africa (₦100 + 5% free
+    plan, ₦100 + 3.5% Pro), both checked in August 2026. Rates change — verify
+    before you print anything.
+  </footer>
+</div>

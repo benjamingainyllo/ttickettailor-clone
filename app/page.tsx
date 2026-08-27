@@ -24,8 +24,10 @@ const FEATURED_TYPES = EVENT_TYPES.slice(0, 9);
 const TICKET_PRICE = 20000;
 const TICKET_COUNT = 200;
 const PAYLANCE_PER_TICKET = 200;
-// A typical percentage platform in this market: 8% plus a flat ₦100.
-const TYPICAL_PER_TICKET = TICKET_PRICE * 0.08 + 100;
+// Tix.Africa, the incumbent here, charges ₦100 + 5% on its free plan
+// (₦100 + 3.5% on Pro). Checked August 2026 — an overstated competitor
+// rate is the kind of thing that gets screenshotted.
+const TYPICAL_PER_TICKET = TICKET_PRICE * 0.05 + 100;
 
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 
@@ -132,13 +134,13 @@ export default function LandingPage() {
 
             <div className="lp-block lp-tilt-3 rounded-2xl bg-white p-7">
               <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-soft)]">
-                A typical 8% platform
+                A typical 5% platform
               </p>
               <p className="mt-2 text-[42px] font-extrabold leading-none tracking-tight text-[var(--ink)]">
                 {naira(typicalTotal)}
               </p>
               <p className="mt-2 text-[13px] font-semibold text-[var(--ink-soft)]">
-                in fees · 8% + ₦100 a ticket
+                in fees · 5% + ₦100 a ticket
               </p>
               <div className="mt-5 border-t-2 border-[var(--rule)] pt-4">
                 <p className="text-[12px] font-semibold text-[var(--ink-soft)]">You keep</p>

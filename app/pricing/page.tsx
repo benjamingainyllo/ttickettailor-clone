@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 /** The worked example. One place, so every figure on the page agrees. */
 const PAYLANCE_PER_TICKET = 200;
-const TYPICAL_RATE = 0.08;
+const TYPICAL_RATE = 0.05;
 const TYPICAL_FLAT = 100;
 
 const SCENARIOS = [
@@ -102,7 +102,7 @@ export default function PricingPage() {
               <Underline className="h-3 w-52 text-[var(--coral)]" />
             </div>
             <p className="mt-5 text-[16px] leading-relaxed text-[var(--ink-soft)]">
-              Four real-shaped events, against a typical 8% + ₦100 platform.
+              Four real-shaped events, against the 5% + ₦100 the incumbent charges.
             </p>
           </div>
 
@@ -110,7 +110,7 @@ export default function PricingPage() {
             <table className="w-full min-w-[560px] border-collapse text-[15px]">
               <thead>
                 <tr>
-                  {["", "Tickets", "Paylance", "A typical 8% platform", "You keep"].map((h) => (
+                  {["", "Tickets", "Paylance", "A typical 5% platform", "You keep"].map((h) => (
                     <th
                       key={h}
                       className="border-b-2 border-[var(--ink)] pb-3 pr-4 text-left text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)] last:text-right"
