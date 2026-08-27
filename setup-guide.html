@@ -1,0 +1,1126 @@
+<title>Paylance Setup Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@500&display=swap">
+
+<style>
+  /* ── Light: Paylance's own warm paper and ink ───────────────── */
+  :root {
+    --paper:      #FDF8F0;
+    --card:       #FFFFFF;
+    --card-sunk:  #F6EFE4;
+    --ink:        #1B1512;
+    --ink-soft:   #6B5D53;
+    --ink-faint:  #9A8B7E;
+    --rule:       rgba(27, 21, 18, 0.13);
+    --rule-firm:  rgba(27, 21, 18, 0.26);
+
+    --coral:      #E8481B;
+    --coral-ink:  #FFFFFF;
+    --coral-wash: rgba(232, 72, 27, 0.09);
+
+    --good:       #1F7A52;
+    --good-wash:  #DFF3E7;
+    --good-rule:  rgba(31, 122, 82, 0.32);
+
+    --warn:       #8A5A00;
+    --warn-wash:  #FFF3CE;
+    --warn-rule:  rgba(138, 90, 0, 0.32);
+
+    --shadow:     rgba(27, 21, 18, 0.9);
+    --focus:      #E8481B;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #14100E;
+      --card:       #1E1815;
+      --card-sunk:  #272019;
+      --ink:        #F3EBE1;
+      --ink-soft:   #B5A899;
+      --ink-faint:  #857868;
+      --rule:       rgba(243, 235, 225, 0.14);
+      --rule-firm:  rgba(243, 235, 225, 0.3);
+
+      --coral:      #FF7C55;
+      --coral-ink:  #1B1512;
+      --coral-wash: rgba(255, 124, 85, 0.13);
+
+      --good:       #6FD3A2;
+      --good-wash:  rgba(111, 211, 162, 0.13);
+      --good-rule:  rgba(111, 211, 162, 0.36);
+
+      --warn:       #F0C64E;
+      --warn-wash:  rgba(240, 198, 78, 0.12);
+      --warn-rule:  rgba(240, 198, 78, 0.34);
+
+      --shadow:     rgba(0, 0, 0, 0.75);
+      --focus:      #FF7C55;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #14100E;
+    --card:       #1E1815;
+    --card-sunk:  #272019;
+    --ink:        #F3EBE1;
+    --ink-soft:   #B5A899;
+    --ink-faint:  #857868;
+    --rule:       rgba(243, 235, 225, 0.14);
+    --rule-firm:  rgba(243, 235, 225, 0.3);
+
+    --coral:      #FF7C55;
+    --coral-ink:  #1B1512;
+    --coral-wash: rgba(255, 124, 85, 0.13);
+
+    --good:       #6FD3A2;
+    --good-wash:  rgba(111, 211, 162, 0.13);
+    --good-rule:  rgba(111, 211, 162, 0.36);
+
+    --warn:       #F0C64E;
+    --warn-wash:  rgba(240, 198, 78, 0.12);
+    --warn-rule:  rgba(240, 198, 78, 0.34);
+
+    --shadow:     rgba(0, 0, 0, 0.75);
+    --focus:      #FF7C55;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Source Sans 3", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 20px 120px;
+  }
+
+  a { color: var(--coral); text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
+  a:hover { text-decoration-thickness: 2.5px; }
+
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* ── Masthead ───────────────────────────────────────────────── */
+  header.top {
+    padding: 56px 0 32px;
+  }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 18px;
+  }
+
+  h1 {
+    font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(38px, 7vw, 58px);
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    margin: 0 0 20px;
+  }
+
+  .standfirst {
+    font-size: 19px;
+    color: var(--ink-soft);
+    max-width: 60ch;
+    margin: 0 0 28px;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .chip {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.05em;
+    padding: 7px 12px;
+    border: 1.5px solid var(--rule-firm);
+    border-radius: 999px;
+    color: var(--ink-soft);
+    background: var(--card);
+  }
+
+  /* ── Progress ───────────────────────────────────────────────── */
+  .progress-dock {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--paper);
+    border-bottom: 1.5px solid var(--rule);
+    padding: 14px 0 13px;
+    margin-bottom: 8px;
+  }
+
+  .progress-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .track {
+    flex: 1;
+    height: 7px;
+    background: var(--card-sunk);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--rule);
+  }
+
+  .fill {
+    height: 100%;
+    width: 0%;
+    background: var(--coral);
+    border-radius: 999px;
+    transition: width 260ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fill { transition: none; }
+  }
+
+  .count {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .reset {
+    font-family: "Source Sans 3", sans-serif;
+    font-size: 12.5px;
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    padding: 4px 6px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .reset:hover { color: var(--coral); }
+
+  /* ── Part headings ──────────────────────────────────────────── */
+  .part {
+    margin: 64px 0 30px;
+    padding-top: 26px;
+    border-top: 3px solid var(--ink);
+  }
+
+  .part-label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--coral);
+    margin: 0 0 8px;
+  }
+
+  .part h2 {
+    font-family: "Bricolage Grotesque", ui-sans-serif, sans-serif;
+    font-weight: 800;
+    font-size: clamp(26px, 4.4vw, 34px);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+
+  .part p {
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 62ch;
+  }
+
+  /* ── Steps ──────────────────────────────────────────────────── */
+  .step {
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    gap: 18px;
+    margin: 26px 0;
+    align-items: start;
+  }
+
+  .marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding-top: 2px;
+  }
+
+  .num {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 14px;
+    font-weight: 500;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tickbox {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    accent-color: var(--coral);
+    margin: 0;
+  }
+
+  .body {
+    background: var(--card);
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: 4px 4px 0 var(--shadow);
+    padding: 22px 24px;
+    min-width: 0;
+  }
+
+  .step.done .body { opacity: 0.55; }
+  .step.done .num { background: var(--coral); border-color: var(--coral); color: var(--coral-ink); }
+
+  .body h3 {
+    font-family: "Bricolage Grotesque", ui-sans-serif, sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.015em;
+    margin: 0 0 12px;
+    line-height: 1.24;
+    text-wrap: balance;
+  }
+
+  .body p { margin: 0 0 12px; }
+  .body p:last-child, .body ol:last-child, .body ul:last-child { margin-bottom: 0; }
+
+  .body ol, .body ul { margin: 0 0 12px; padding-left: 22px; }
+  .body li { margin-bottom: 7px; }
+  .body li:last-child { margin-bottom: 0; }
+
+  strong { font-weight: 700; }
+
+  /* Something to click, named exactly as it appears on screen */
+  .ui {
+    font-family: "Source Sans 3", sans-serif;
+    font-weight: 700;
+    background: var(--card-sunk);
+    border: 1px solid var(--rule-firm);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: 0.94em;
+    white-space: nowrap;
+  }
+
+  code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.86em;
+    background: var(--card-sunk);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    padding: 2px 6px;
+    word-break: break-all;
+  }
+
+  /* ── Confirmation and warning blocks ────────────────────────── */
+  .check, .warn {
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin: 14px 0 0;
+    font-size: 15.5px;
+    line-height: 1.55;
+  }
+
+  .check {
+    background: var(--good-wash);
+    border: 1.5px solid var(--good-rule);
+    color: var(--ink);
+  }
+
+  .warn {
+    background: var(--warn-wash);
+    border: 1.5px solid var(--warn-rule);
+    color: var(--ink);
+  }
+
+  .check .lbl, .warn .lbl {
+    display: block;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .check .lbl { color: var(--good); }
+  .warn .lbl { color: var(--warn); }
+
+  /* ── Copyable values ────────────────────────────────────────── */
+  .copyrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card-sunk);
+    border: 1.5px solid var(--rule-firm);
+    border-radius: 9px;
+    padding: 9px 10px 9px 13px;
+    margin-bottom: 9px;
+  }
+
+  .copyrow code {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 13px;
+    word-break: break-all;
+  }
+
+  .copybtn {
+    font-family: "Source Sans 3", sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border: 1.5px solid var(--ink);
+    border-radius: 7px;
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .copybtn:hover { background: var(--coral); border-color: var(--coral); color: var(--coral-ink); }
+  .copybtn.copied { background: var(--good-wash); border-color: var(--good-rule); color: var(--good); }
+
+  /* ── Where-to-find table ────────────────────────────────────── */
+  .tablewrap { overflow-x: auto; margin: 0 0 12px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    min-width: 420px;
+  }
+
+  th {
+    text-align: left;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    padding: 0 10px 8px 0;
+    border-bottom: 1.5px solid var(--rule-firm);
+  }
+
+  td {
+    padding: 10px 10px 10px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  /* ── Trouble section ────────────────────────────────────────── */
+  .trouble {
+    margin-top: 22px;
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    background: var(--card);
+    overflow: hidden;
+  }
+
+  details { border-bottom: 1.5px solid var(--rule); }
+  details:last-child { border-bottom: none; }
+
+  summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 15px 20px;
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { background: var(--card-sunk); }
+
+  summary::after {
+    content: "+";
+    font-family: "JetBrains Mono", monospace;
+    color: var(--coral);
+    font-size: 19px;
+    flex-shrink: 0;
+  }
+  details[open] summary::after { content: "−"; }
+
+  .answer {
+    padding: 0 20px 18px;
+    color: var(--ink-soft);
+    font-size: 15.5px;
+  }
+  .answer p { margin: 0 0 10px; }
+  .answer p:last-child { margin-bottom: 0; }
+
+  footer.end {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1.5px solid var(--rule);
+    color: var(--ink-faint);
+    font-size: 14.5px;
+  }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .step { grid-template-columns: 38px 1fr; gap: 12px; }
+    .num { width: 30px; height: 30px; font-size: 12.5px; }
+    .body { padding: 18px 17px; box-shadow: 3px 3px 0 var(--shadow); }
+    .wrap { padding: 0 15px 90px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <p class="eyebrow">Paylance · Setup</p>
+    <h1>Getting Paylance live</h1>
+    <p class="standfirst">
+      Everything below happens in your web browser. There is no code to write and
+      nothing to install. Work top to bottom and tick each step off as you go —
+      the page remembers where you got to, so you can stop and come back.
+    </p>
+    <div class="meta-row">
+      <span class="chip">About 40 minutes</span>
+      <span class="chip">Free — no card needed</span>
+      <span class="chip">14 steps</span>
+    </div>
+  </header>
+
+  <div class="progress-dock">
+    <div class="progress-inner">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <span class="count" id="count">0 of 14</span>
+      <button class="reset" id="reset" type="button">Start over</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ PART ONE ══════════════ -->
+  <section class="part">
+    <p class="part-label">Part one</p>
+    <h2>Set up the database</h2>
+    <p>
+      Supabase is where everything Paylance knows will live — your events, your
+      tickets, who bought what. Right now the app has nowhere to put any of it,
+      which is why nothing works yet.
+    </p>
+  </section>
+
+  <div class="step" data-step="1">
+    <div class="marker">
+      <span class="num">01</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 1 done">
+    </div>
+    <div class="body">
+      <h3>Create a Supabase account</h3>
+      <ol>
+        <li>Go to <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a></li>
+        <li>Click <span class="ui">Start your project</span></li>
+        <li>Choose <span class="ui">Continue with GitHub</span> — it's the fastest,
+          and you already have a GitHub account since your code lives there</li>
+        <li>Approve the permission screen GitHub shows you</li>
+      </ol>
+      <div class="check">
+        <span class="lbl">You'll know it worked</span>
+        You land on a mostly empty dashboard asking you to create your first project.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-step="2">
+    <div class="marker">
+      <span class="num">02</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 2 done">
+    </div>
+    <div class="body">
+      <h3>Create the project</h3>
+      <ol>
+        <li>Click <span class="ui">New project</span></li>
+        <li><strong>Name:</strong> type <code>paylance</code></li>
+        <li><strong>Database password:</strong> click <span class="ui">Generate a password</span>,
+          then copy it somewhere safe — your notes app, a password manager, anywhere you'll find it again</li>
+        <li><strong>Region:</strong> pick the one closest to your audience. For Nigeria
+          that's usually <span class="ui">West EU (Ireland)</span> or
+          <span class="ui">Central EU (Frankfurt)</span>. If South Africa is offered, that works too</li>
+        <li>Click <span class="ui">Create new project</span> and wait — it takes a minute or two</li>
+      </ol>
+      <div class="warn">
+        <span class="lbl">Save the password</span>
+        You won't need it for this guide, but if you ever lose it there's no way to
+        recover it — only to reset it. Ten seconds now saves a headache later.
+      </div>
+      <div class="check">
+        <span class="lbl">You'll know it worked</span>
+        The spinner finishes and you see your project's home page with charts on it.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-step="3">
+    <div class="marker">
+      <span class="num">03</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 3 done">
+    </div>
+    <div class="body">
+      <h3>Build the tables</h3>
+      <p>
+        Your project is empty. This step creates everywhere your data will go —
+        events, ticket types, tickets, orders. It's one long block of text you
+        copy from GitHub and paste into Supabase.
+      </p>
+      <ol>
+        <li>Open
+          <a href="https://github.com/benjamingainyllo/ttickettailor-clone/blob/claude/repo-platform-analysis-fs394c/setup.sql" target="_blank" rel="noopener">setup.sql on GitHub</a></li>
+        <li>Near the top right of the file, click the <strong>copy icon</strong>
+          (two overlapping squares). That copies the whole file</li>
+        <li>Go back to Supabase. In the left sidebar click <span class="ui">SQL Editor</span></li>
+        <li>Click into the big empty box and paste (<span class="ui">Ctrl+V</span>,
+          or <span class="ui">Cmd+V</span> on a Mac)</li>
+        <li>Click <span class="ui">Run</span> at the bottom right</li>
+      </ol>
+      <div class="check">
+        <span class="lbl">You'll know it worked</span>
+        A green message: <strong>Success. No rows returned.</strong> That's the
+        correct result — it means it built everything and had nothing to report back.
+      </div>
+      <div class="warn">
+        <span class="lbl">Safe to repeat</span>
+        If you're unsure whether it ran, just run it again. It's built to be run
+        any number of times — it creates what's missing and skips what's already
+        there. I tested this on a real database: three runs in a row, no errors.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-step="4">
+    <div class="marker">
+      <span class="num">04</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 4 done">
+    </div>
+    <div class="body">
+      <h3>Copy your three keys</h3>
+      <p>
+        These are how the app proves to Supabase that it's allowed in. You'll paste
+        them into Vercel in Part&nbsp;Two, so keep this tab open — or paste them into
+        a notes file for now.
+      </p>
+      <ol>
+        <li>In the left sidebar, click the <span class="ui">Settings</span> gear at the bottom</li>
+        <li>Click <span class="ui">API</span> (in newer projects it may say <span class="ui">API Keys</span>)</li>
+      </ol>
+      <p>You need three values from that page:</p>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>On the Supabase page</th><th>Save it as</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="ui">Project URL</span></td>
+              <td><code>NEXT_PUBLIC_SUPABASE_URL</code></td>
+            </tr>
+            <tr>
+              <td><span class="ui">anon</span> <span class="ui">public</span><br>
+                <small>newer projects call this <span class="ui">Publishable key</span></small></td>
+              <td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td>
+            </tr>
+            <tr>
+              <td><span class="ui">service_role</span> <span class="ui">secret</span><br>
+                <small>newer projects call this <span class="ui">Secret key</span></small></td>
+              <td><code>SUPABASE_SERVICE_ROLE_KEY</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="warn">
+        <span class="lbl">The third one is different</span>
+        The <span class="ui">service_role</span> key can do absolutely anything to
+        your database — it ignores every security rule. It's safe in Vercel, where
+        only your server can read it. Never paste it into a chat, a screenshot, a
+        support ticket, or anywhere public.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-step="5">
+    <div class="marker">
+      <span class="num">05</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 5 done">
+    </div>
+    <div class="body">
+      <h3>Turn off email confirmation, for now</h3>
+      <p>
+        By default, anyone signing up has to click a link in their email before they
+        can get in. That's right for launch, but it'll slow you down while you're
+        testing your own product.
+      </p>
+      <ol>
+        <li>In the left sidebar click <span class="ui">Authentication</span></li>
+        <li>Click <span class="ui">Sign In / Providers</span> (older projects: <span class="ui">Providers</span>)</li>
+        <li>Click <span class="ui">Email</span></li>
+        <li>Switch <span class="ui">Confirm email</span> <strong>off</strong> and save</li>
+      </ol>
+      <div class="warn">
+        <span class="lbl">Turn this back on before you launch</span>
+        Without it, anyone can sign up with an email address they don't own.
+        Fine while it's just you; not fine with real customers.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ PART TWO ══════════════ -->
+  <section class="part">
+    <p class="part-label">Part two</p>
+    <h2>Put it on the internet</h2>
+    <p>
+      Your code is sitting on GitHub doing nothing. Vercel takes it and turns it
+      into a real website with a real address you can send to people. It's free,
+      and it connects to GitHub with a few clicks.
+    </p>
+  </section>
+
+  <div class="step" data-step="6">
+    <div class="marker">
+      <span class="num">06</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 6 done">
+    </div>
+    <div class="body">
+      <h3>Merge the new work into your main code</h3>
+      <p>
+        Everything we've built — ticketing, the door scanner, the new landing page —
+        is sitting on a side branch, not in your main code yet. Think of it as work
+        finished but not yet filed. This puts it where Vercel will find it.
+      </p>
+      <ol>
+        <li>Open
+          <a href="https://github.com/benjamingainyllo/ttickettailor-clone/compare/main...claude/repo-platform-analysis-fs394c" target="_blank" rel="noopener">this comparison page</a></li>
+        <li>Click <span class="ui">Create pull request</span></li>
+        <li>Click <span class="ui">Create pull request</span> again on the next screen</li>
+        <li>Scroll down and click <span class="ui">Merge pull request</span>, then <span class="ui">Confirm merge</span></li>
+      </ol>
+      <div class="check">
+        <span class="lbl">You'll know it worked</span>
+        A purple <strong>Merged</strong> badge appears at the top of the page.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-step="7">
+    <div class="marker">
+      <span class="num">07</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 7 done">
+    </div>
+    <div class="body">
+      <h3>Create a Vercel account</h3>
+      <ol>
+        <li>Go to <a href="https://vercel.com/signup" target="_blank" rel="noopener">vercel.com/signup</a></li>
+        <li>Choose <span class="ui">Hobby</span> — this is the free plan, and it's plenty to start</li>
+        <li>Click <span class="ui">Continue with GitHub</span> and approve the permissions</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="step" data-step="8">
+    <div class="marker">
+      <span class="num">08</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 8 done">
+    </div>
+    <div class="body">
+      <h3>Point Vercel at your code</h3>
+      <ol>
+        <li>Click <span class="ui">Add New…</span> then <span class="ui">Project</span></li>
+        <li>Find <strong>ttickettailor-clone</strong> in the list and click <span class="ui">Import</span></li>
+        <li>If you don't see it, click <span class="ui">Adjust GitHub App Permissions</span>
+          and give Vercel access to that repository</li>
+      </ol>
+      <p>
+        Don't deploy yet — there's a settings section to fill in first, on the very
+        same screen. That's the next step.
+      </p>
+    </div>
+  </div>
+
+  <div class="step" data-step="9">
+    <div class="marker">
+      <span class="num">09</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 9 done">
+    </div>
+    <div class="body">
+      <h3>Paste in your keys</h3>
+      <p>
+        On that import screen, expand <span class="ui">Environment Variables</span>.
+        You'll add four. For each one, type the name in the left box and paste the
+        value in the right box, then click <span class="ui">Add</span>.
+      </p>
+      <p>Tap to copy each name so you don't mistype it:</p>
+
+      <div class="copyrow">
+        <code>NEXT_PUBLIC_SUPABASE_URL</code>
+        <button class="copybtn" type="button" data-copy="NEXT_PUBLIC_SUPABASE_URL">Copy</button>
+      </div>
+      <div class="copyrow">
+        <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>
+        <button class="copybtn" type="button" data-copy="NEXT_PUBLIC_SUPABASE_ANON_KEY">Copy</button>
+      </div>
+      <div class="copyrow">
+        <code>SUPABASE_SERVICE_ROLE_KEY</code>
+        <button class="copybtn" type="button" data-copy="SUPABASE_SERVICE_ROLE_KEY">Copy</button>
+      </div>
+      <div class="copyrow">
+        <code>NEXT_PUBLIC_SITE_URL</code>
+        <button class="copybtn" type="button" data-copy="NEXT_PUBLIC_SITE_URL">Copy</button>
+      </div>
+
+      <p>
+        The first three take the values you copied in step&nbsp;4. For the fourth,
+        put <code>https://placeholder.com</code> for now — you'll come back and fix
+        it in step&nbsp;11, once you know your real address.
+      </p>
+      <div class="warn">
+        <span class="lbl">Watch for stray spaces</span>
+        Pasting sometimes picks up a space at the end of a key. If something doesn't
+        work later, this is the first thing to check.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-step="10">
+    <div class="marker">
+      <span class="num">10</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 10 done">
+    </div>
+    <div class="body">
+      <h3>Deploy</h3>
+      <ol>
+        <li>Click <span class="ui">Deploy</span></li>
+        <li>Wait two or three minutes while it builds</li>
+      </ol>
+      <div class="check">
+        <span class="lbl">You'll know it worked</span>
+        Confetti, and a screenshot of your landing page — the orange and purple one
+        that says <strong>Sell tickets. Keep what you earn.</strong> Click it and
+        you're looking at your live site.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-step="11">
+    <div class="marker">
+      <span class="num">11</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 11 done">
+    </div>
+    <div class="body">
+      <h3>Fix the site address</h3>
+      <p>
+        Vercel has now given you a real address, something like
+        <code>paylance-abc123.vercel.app</code>. The app needs to know it, or the
+        links inside ticket emails will point nowhere.
+      </p>
+      <ol>
+        <li>Copy your site's address from the top of the Vercel page</li>
+        <li>Go to <span class="ui">Settings</span> → <span class="ui">Environment Variables</span></li>
+        <li>Find <code>NEXT_PUBLIC_SITE_URL</code>, click <span class="ui">Edit</span>,
+          and replace the placeholder with your real address</li>
+        <li>Save, then go to <span class="ui">Deployments</span>, click the
+          <span class="ui">···</span> menu on the top one, and choose <span class="ui">Redeploy</span></li>
+      </ol>
+      <div class="warn">
+        <span class="lbl">Why the redeploy</span>
+        Changing a setting doesn't change the live site on its own — the site has to
+        be rebuilt to pick it up. This catches almost everyone once.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ PART THREE ══════════════ -->
+  <section class="part">
+    <p class="part-label">Part three</p>
+    <h2>Sell yourself a ticket</h2>
+    <p>
+      Worth doing once, start to finish, so you've seen the whole thing work before
+      anyone else does. No real money moves — payments are in practice mode until
+      you connect Paystack.
+    </p>
+  </section>
+
+  <div class="step" data-step="12">
+    <div class="marker">
+      <span class="num">12</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 12 done">
+    </div>
+    <div class="body">
+      <h3>Make an account and connect a bank</h3>
+      <ol>
+        <li>On your live site, click <span class="ui">Get started</span> and sign up</li>
+        <li>Fill in onboarding</li>
+        <li>Go to <span class="ui">Payouts</span> and connect a bank account. In
+          practice mode any sensible-looking account number works — nothing is sent
+          to a real bank</li>
+      </ol>
+      <div class="warn">
+        <span class="lbl">You can't skip the bank step</span>
+        Paylance refuses to publish a paid event until a bank account is connected —
+        deliberately, so nobody can sell tickets with no way to be paid. Free events
+        publish without one.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-step="13">
+    <div class="marker">
+      <span class="num">13</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 13 done">
+    </div>
+    <div class="body">
+      <h3>Create an event and buy a ticket</h3>
+      <ol>
+        <li><span class="ui">Events</span> → <span class="ui">New event</span>. Fill it in and save — it saves as a draft</li>
+        <li>Open the event, click the <span class="ui">Tickets</span> tab. The price
+          you typed is already there as <strong>General Admission</strong></li>
+        <li>Click <span class="ui">Add type</span> and make a second one — an Early
+          Bird, cheaper, limit it to 5 — so you can see tiers working</li>
+        <li>Click <span class="ui">Publish</span>, then <span class="ui">Copy link</span></li>
+        <li>Open that link in a private browsing window. This is what a buyer sees</li>
+        <li>Pick a ticket, choose how many, enter a name and email, and pay</li>
+        <li>On the practice payment screen, click <span class="ui">Simulate successful payment</span></li>
+      </ol>
+      <div class="check">
+        <span class="lbl">You'll know it worked</span>
+        You land on a confirmation page with a <span class="ui">Show my tickets</span>
+        button. Click it — there's your ticket, with a QR code.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-step="14">
+    <div class="marker">
+      <span class="num">14</span>
+      <input class="tickbox" type="checkbox" aria-label="Mark step 14 done">
+    </div>
+    <div class="body">
+      <h3>Scan it at the door</h3>
+      <ol>
+        <li>Leave the ticket open on your computer screen</li>
+        <li>On your <strong>phone</strong>, open your site, sign in, go to the event</li>
+        <li>Tap <span class="ui">Door</span></li>
+        <li>Allow camera access, and point your phone at the QR code on your screen</li>
+      </ol>
+      <div class="check">
+        <span class="lbl">You'll know it worked</span>
+        A green panel: <strong>Let them in</strong>. Scan the same code again and it
+        turns amber — <strong>Already used</strong>. That's the whole product working.
+      </div>
+      <div class="warn">
+        <span class="lbl">If the camera won't open</span>
+        Browsers only allow the camera on secure addresses. Your Vercel address is
+        secure, so this should work — but if it doesn't, tap <span class="ui">Type it</span>
+        and enter the code printed under the QR instead. That always works.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ Trouble ══════════════ -->
+  <section class="part">
+    <p class="part-label">If something breaks</p>
+    <h2>The usual suspects</h2>
+    <p>Almost everything that goes wrong here is one of these five things.</p>
+  </section>
+
+  <div class="trouble">
+    <details>
+      <summary>The site loads but nothing has any data in it</summary>
+      <div class="answer">
+        <p>
+          One of the two Supabase keys is wrong, or has a stray space on the end.
+          Go to Vercel → <span class="ui">Settings</span> →
+          <span class="ui">Environment Variables</span>, delete
+          <code>NEXT_PUBLIC_SUPABASE_URL</code> and
+          <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, and add them again fresh from Supabase.
+        </p>
+        <p>Then redeploy — settings changes don't take effect until you do.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Payment says it worked, but no order appears</summary>
+      <div class="answer">
+        <p>
+          That's <code>SUPABASE_SERVICE_ROLE_KEY</code> — missing, wrong, or you
+          accidentally pasted the <span class="ui">anon</span> key into it. They look
+          similar. Go back to Supabase and copy the <span class="ui">service_role</span>
+          one specifically.
+        </p>
+        <p>
+          Your live site has a page that tells you this directly: add
+          <code>/integrations</code> to the end of your address. It says exactly which
+          keys it can and can't see.
+        </p>
+      </div>
+    </details>
+
+    <details>
+      <summary>"Connect a bank account before publishing a paid item"</summary>
+      <div class="answer">
+        <p>
+          Working as intended. Go to <span class="ui">Payouts</span> and connect one.
+          It's blocked in three separate places on purpose, so there's no way to
+          accidentally sell tickets with nowhere for the money to go.
+        </p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Signing up seems to do nothing</summary>
+      <div class="answer">
+        <p>
+          Email confirmation is still switched on, and the confirmation email is
+          sitting in your inbox or spam folder. Go back to step 5 and turn it off.
+        </p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Nobody receives a ticket email</summary>
+      <div class="answer">
+        <p>
+          Expected for now — email is in practice mode until you add a Resend account,
+          so messages are written to the server log instead of being sent. The tickets
+          themselves are real: the buyer sees them on the confirmation page, and you
+          can see every one in the event's <span class="ui">Attendees</span> tab.
+        </p>
+        <p>Ask me when you want real emails switched on — it's one key and one setting.</p>
+      </div>
+    </details>
+  </div>
+
+  <section class="part">
+    <p class="part-label">When you're ready for real money</p>
+    <h2>What's left</h2>
+    <p>
+      Everything above works with no payment account and no email account. Three
+      things turn it into a real business, and none of them need doing today:
+      a Paystack key so real cards work, a Resend key so tickets actually arrive
+      by email, and your own domain name instead of the Vercel address.
+    </p>
+  </section>
+
+  <footer class="end">
+    One decision still open: the fee is ₦200 a ticket, but on a ₦100 ticket that's
+    the entire ticket price. Before you launch you'll want either a minimum ticket
+    price or a cap. It doesn't affect the ₦2,000-and-up tickets you're aiming at.
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var KEY = "paylance-setup-progress";
+    var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+    var fill = document.getElementById("fill");
+    var count = document.getElementById("count");
+
+    function load() {
+      try {
+        var raw = localStorage.getItem(KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function save(state) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(state));
+      } catch (e) {
+        /* Private windows and blocked site data: progress just won't persist. */
+      }
+    }
+
+    var state = load();
+
+    function render() {
+      var done = 0;
+      steps.forEach(function (step) {
+        var id = step.getAttribute("data-step");
+        var box = step.querySelector(".tickbox");
+        var isDone = !!state[id];
+        box.checked = isDone;
+        step.classList.toggle("done", isDone);
+        if (isDone) done++;
+      });
+      var pct = steps.length ? (done / steps.length) * 100 : 0;
+      fill.style.width = pct + "%";
+      count.textContent = done + " of " + steps.length;
+    }
+
+    steps.forEach(function (step) {
+      var id = step.getAttribute("data-step");
+      step.querySelector(".tickbox").addEventListener("change", function (e) {
+        if (e.target.checked) state[id] = true;
+        else delete state[id];
+        save(state);
+        render();
+      });
+    });
+
+    document.getElementById("reset").addEventListener("click", function () {
+      state = {};
+      save(state);
+      render();
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll(".copybtn"), function (btn) {
+      btn.addEventListener("click", function () {
+        var text = btn.getAttribute("data-copy");
+        var done = function () {
+          var was = btn.textContent;
+          btn.textContent = "Copied";
+          btn.classList.add("copied");
+          setTimeout(function () {
+            btn.textContent = was;
+            btn.classList.remove("copied");
+          }, 1400);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, function () {});
+        }
+      });
+    });
+
+    render();
+  })();
+</script>

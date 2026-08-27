@@ -1,13 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft, Calendar as CalendarIcon, MapPin, Users, Ticket, DollarSign,
-  Eye, Share2, ExternalLink, Inbox, Loader2, Globe, Lock,
+  Eye, Share2, ExternalLink, Inbox, Loader2, Globe, Lock, ScanLine,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
 import { publishItem, unpublishItem } from "@/app/actions/publish";
+import { TicketTypesEditor } from "@/components/dashboard/ticket-types-editor";
 import { toast } from "sonner";
 
 interface EventDetailViewProps {
@@ -29,7 +31,7 @@ interface OrderRow {
 }
 
 export function EventDetailView({ event, onBack, onChanged }: EventDetailViewProps) {
-  const [tab, setTab] = useState<"overview" | "attendees">("overview");
+  const [tab, setTab] = useState<"overview" | "tickets" | "attendees">("overview");
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -149,6 +151,7 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
           <div className="flex items-center gap-1 py-1">
             {([
               { key: "overview", label: "Overview", icon: Eye },
+              { key: "tickets", label: "Tickets", icon: Ticket },
               { key: "attendees", label: "Attendees", icon: Users },
             ] as const).map((t) => (
               <button
@@ -166,6 +169,14 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
             ))}
 
             <div className="ml-auto flex items-center gap-2">
+              {isPublished && (
+                <Link
+                  href={`/events/${event.id}/door`}
+                  className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-800"
+                >
+                  <ScanLine className="h-3.5 w-3.5" /> Door
+                </Link>
+              )}
               {isPublished && (
                 <button
                   onClick={() => {
@@ -204,7 +215,7 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
               {[
                 { label: "Revenue", value: formatKobo(grossKobo), icon: DollarSign, accent: "text-emerald-500", bg: "bg-emerald-500/10" },
                 { label: "Attendees", value: String(attendees), icon: Users, accent: "text-blue-500", bg: "bg-blue-500/10" },
-                { label: "Ticket price", value: priceKobo === 0 ? "Free" : formatKobo(priceKobo), icon: Ticket, accent: "text-purple-500", bg: "bg-purple-500/10" },
+                { label: "Lowest price", value: priceKobo === 0 ? "Free" : formatKobo(priceKobo), icon: Ticket, accent: "text-purple-500", bg: "bg-purple-500/10" },
                 { label: "Orders", value: String(orders.length), icon: Inbox, accent: "text-orange-500", bg: "bg-orange-500/10" },
               ].map((m) => (
                 <div key={m.label} className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
@@ -245,6 +256,12 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {tab === "tickets" && (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
+            <TicketTypesEditor eventId={event.id} />
           </div>
         )}
 

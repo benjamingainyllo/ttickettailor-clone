@@ -19,32 +19,34 @@ const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif"
 });
 
+const SITE_TITLE = "Paylance — Sell tickets for ₦200 a ticket, never a percentage";
+
 const SITE_DESCRIPTION =
-  "Sell digital products, run paid events and book sessions from one link. Know who your buyers are, track what you earn, and get paid straight to your bank.";
+  "Event ticketing with a flat ₦200 fee per ticket and no cut of your revenue. Set your ticket types, share one link, scan people in at the door — and the money settles straight to your own bank account.";
 
 export const metadata: Metadata = {
   title: {
-    default: "Paylance — Run your whole business from one link",
+    default: SITE_TITLE,
     template: "%s | Paylance"
   },
   description: SITE_DESCRIPTION,
   keywords: [
-    "creator business",
-    "sell digital products",
     "event ticketing",
-    "creator storefront",
-    "link in bio payments",
-    "creator payouts"
+    "sell event tickets",
+    "flat fee ticketing",
+    "ticket check-in app",
+    "QR ticket scanner",
+    "event ticketing Nigeria"
   ],
   openGraph: {
-    title: "Paylance — Run your whole business from one link",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     siteName: "Paylance",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "Paylance — Run your whole business from one link",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION
   }
 };

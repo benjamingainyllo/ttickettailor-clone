@@ -3,7 +3,13 @@
 import { v4 as uuidv4 } from "uuid";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { calculatePlatformFeeKobo, type Kobo, type PlatformFeeType } from "@/lib/money";
+import {
+  calculateOrderPlatformFeeKobo,
+  DEFAULT_PLATFORM_FEE_TYPE,
+  DEFAULT_PLATFORM_FEE_VALUE,
+  type Kobo,
+  type PlatformFeeType,
+} from "@/lib/money";
 import { getPaymentProvider, isDemoPaymentMode } from "@/lib/payments";
 import { markOrderFailed, settleOrder } from "@/lib/orders";
 
@@ -13,6 +19,10 @@ interface CheckoutPayload {
   buyerEmail: string;
   buyerName?: string;
   buyerPhone?: string;
+  /** Which tier, for events. Falls back to the event's only tier. */
+  ticketTypeId?: string;
+  /** How many admissions. Events only; offers are always 1. */
+  quantity?: number;
 }
 
 interface CheckoutResult {
@@ -41,6 +51,8 @@ function siteOrigin() {
  * refused here rather than falling back to a platform-custody charge.
  */
 export async function createCheckoutSession(payload: CheckoutPayload): Promise<CheckoutResult> {
+  let reservation: { ticketTypeId: string; quantity: number } | null = null;
+
   try {
     if (!payload.itemId || !payload.itemType) {
       return { success: false, error: "Nothing to check out." };
@@ -50,63 +62,89 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
     }
 
     const admin = createAdminClient();
-    const item = await loadSellableItem(payload.itemType, payload.itemId);
+    const item = await loadSellableItem(payload);
 
-    if (!item) {
-      return { success: false, error: "This item is no longer available." };
-    }
-    if (item.publishStatus !== "published") {
-      return { success: false, error: "This item isn't on sale yet." };
-    }
-    if (item.soldOut) {
-      return { success: false, error: "This event is sold out." };
-    }
+    if (!item.ok) return { success: false, error: item.error };
 
+    const { creatorId, id: itemId, title, unitPriceKobo, ticketTypeId, quantity } = item;
     const reference = uuidv4();
-    const grossKobo: Kobo = item.priceKobo;
+    const grossKobo: Kobo = unitPriceKobo * quantity;
 
-    // ---- Free item: record the order, no money moves. ----
+    // Take the allocation before the order exists. Doing it the other way
+    // round would leave an order nobody can honour when the last tickets
+    // go while we're still writing.
+    if (ticketTypeId) {
+      const { data: reserved, error: reserveError } = await admin.rpc(
+        "reserve_ticket_inventory",
+        { p_ticket_type_id: ticketTypeId, p_quantity: quantity }
+      );
+
+      if (reserveError) {
+        console.error("Inventory reservation failed:", reserveError);
+        return { success: false, error: "Could not hold those tickets. Please try again." };
+      }
+      if (!reserved) {
+        return {
+          success: false,
+          error:
+            quantity === 1
+              ? "That ticket just sold out."
+              : `There aren't ${quantity} tickets left at that price.`,
+        };
+      }
+
+      reservation = { ticketTypeId, quantity };
+    }
+
+    const orderRow = {
+      reference,
+      creator_id: creatorId,
+      item_type: payload.itemType,
+      offer_id: payload.itemType === "offer" ? itemId : null,
+      event_id: payload.itemType === "event" ? itemId : null,
+      ticket_type_id: ticketTypeId,
+      item_title: title,
+      quantity,
+      buyer_email: payload.buyerEmail,
+      buyer_name: payload.buyerName ?? null,
+      buyer_phone: payload.buyerPhone ?? null,
+    };
+
+    // ---- Free: record the order, no money moves, tickets issue on settle. ----
     if (grossKobo === 0) {
-      const { data: order, error: insertError } = await admin
-        .from("orders")
-        .insert({
-          reference,
-          creator_id: item.creatorId,
-          item_type: payload.itemType,
-          offer_id: payload.itemType === "offer" ? item.id : null,
-          event_id: payload.itemType === "event" ? item.id : null,
-          item_title: item.title,
-          quantity: 1,
-          gross_kobo: 0,
-          platform_fee_kobo: 0,
-          provider_fee_kobo: 0,
-          net_kobo: 0,
-          status: "pending",
-          buyer_email: payload.buyerEmail,
-          buyer_name: payload.buyerName ?? null,
-          buyer_phone: payload.buyerPhone ?? null,
-        })
-        .select()
-        .single();
+      const { error: insertError } = await admin.from("orders").insert({
+        ...orderRow,
+        gross_kobo: 0,
+        platform_fee_kobo: 0,
+        provider_fee_kobo: 0,
+        net_kobo: 0,
+        status: "pending",
+      });
 
-      if (insertError || !order) {
+      if (insertError) {
         console.error("Free registration failed:", insertError);
+        await releaseReservation(reservation);
         return { success: false, error: "Could not complete your registration." };
       }
 
       const settled = await settleOrder({ reference, channel: "unknown" });
       if (!settled.ok) {
+        // settleOrder failing leaves the order pending; markOrderFailed
+        // both fails it and hands the seats back.
+        await markOrderFailed(reference, "failed");
+        reservation = null;
         return { success: false, error: "Could not complete your registration." };
       }
 
+      reservation = null;
       return { success: true, reference, completedWithoutPayment: true, authorizationUrl: null };
     }
 
-    // ---- Paid item: requires a connected bank account. ----
+    // ---- Paid: requires a connected bank account. ----
     const { data: payoutAccount } = await admin
       .from("payout_accounts")
       .select("provider_subaccount_id, status, platform_fee_type, platform_fee_value")
-      .eq("creator_id", item.creatorId)
+      .eq("creator_id", creatorId)
       .maybeSingle();
 
     if (
@@ -116,38 +154,33 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
     ) {
       // Deliberately not falling back to a non-split charge: that would put
       // the money in Paylance's account, which we must never do.
+      await releaseReservation(reservation);
       return {
         success: false,
-        error: "This creator hasn't finished setting up payments yet.",
+        error: "This organiser hasn't finished setting up payments yet.",
       };
     }
 
-    const platformFeeKobo = calculatePlatformFeeKobo(
-      grossKobo,
-      (payoutAccount.platform_fee_type ?? "percentage") as PlatformFeeType,
-      payoutAccount.platform_fee_value ?? 900
+    // Priced per ticket, not per order — a flat fee has to see the quantity.
+    const platformFeeKobo = calculateOrderPlatformFeeKobo(
+      unitPriceKobo,
+      quantity,
+      (payoutAccount.platform_fee_type ?? DEFAULT_PLATFORM_FEE_TYPE) as PlatformFeeType,
+      payoutAccount.platform_fee_value ?? DEFAULT_PLATFORM_FEE_VALUE
     );
 
     const { error: insertError } = await admin.from("orders").insert({
-      reference,
-      creator_id: item.creatorId,
-      item_type: payload.itemType,
-      offer_id: payload.itemType === "offer" ? item.id : null,
-      event_id: payload.itemType === "event" ? item.id : null,
-      item_title: item.title,
-      quantity: 1,
+      ...orderRow,
       gross_kobo: grossKobo,
       platform_fee_kobo: platformFeeKobo,
       provider_fee_kobo: 0,
       net_kobo: grossKobo - platformFeeKobo,
       status: "pending",
-      buyer_email: payload.buyerEmail,
-      buyer_name: payload.buyerName ?? null,
-      buyer_phone: payload.buyerPhone ?? null,
     });
 
     if (insertError) {
       console.error("Order creation failed:", insertError);
+      await releaseReservation(reservation);
       return { success: false, error: "Could not start checkout." };
     }
 
@@ -163,20 +196,42 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
         callbackUrl: `${siteOrigin()}/checkout/success?reference=${reference}`,
         metadata: {
           item_type: payload.itemType,
-          item_id: item.id,
-          creator_id: item.creatorId,
+          item_id: itemId,
+          creator_id: creatorId,
+          ticket_type_id: ticketTypeId,
+          quantity,
         },
       });
 
+      // The order now owns the allocation — it is released by
+      // markOrderFailed if the payment never lands.
+      reservation = null;
       return { success: true, authorizationUrl, reference };
     } catch (providerError) {
       await markOrderFailed(reference, "failed");
+      reservation = null;
       console.error("Provider init failed:", providerError);
       return { success: false, error: "Could not start payment. Please try again." };
     }
   } catch (error) {
     console.error("Checkout error:", error);
+    await releaseReservation(reservation);
     return { success: false, error: "Something went wrong starting checkout." };
+  }
+}
+
+/** Hand back an allocation no order ended up owning. */
+async function releaseReservation(
+  reservation: { ticketTypeId: string; quantity: number } | null
+) {
+  if (!reservation) return;
+  try {
+    await createAdminClient().rpc("release_ticket_inventory", {
+      p_ticket_type_id: reservation.ticketTypeId,
+      p_quantity: reservation.quantity,
+    });
+  } catch (error) {
+    console.error("Could not release ticket inventory:", error);
   }
 }
 
@@ -190,7 +245,7 @@ export async function verifyCheckout(reference: string) {
 
     const { data: order } = await admin
       .from("orders")
-      .select("reference, status, item_title, gross_kobo")
+      .select("reference, status, item_title, gross_kobo, item_type")
       .eq("reference", reference)
       .maybeSingle();
 
@@ -289,57 +344,115 @@ export async function completeDemoCheckout(reference: string, outcome: "paid" | 
   }
 }
 
-interface SellableItem {
-  id: string;
-  creatorId: string;
-  title: string;
-  priceKobo: Kobo;
-  publishStatus: string;
-  soldOut: boolean;
-}
+type LoadedItem =
+  | {
+      ok: true;
+      id: string;
+      creatorId: string;
+      title: string;
+      /** Price of ONE admission. The order total is this times quantity. */
+      unitPriceKobo: Kobo;
+      ticketTypeId: string | null;
+      quantity: number;
+    }
+  | { ok: false; error: string };
 
-async function loadSellableItem(
-  itemType: "offer" | "event",
-  itemId: string
-): Promise<SellableItem | null> {
+/**
+ * Resolve what is actually being bought, and refuse anything that isn't
+ * on sale right now.
+ *
+ * Price comes from the ticket TIER, never from the client — the browser
+ * sends an id and a quantity and nothing else that touches money.
+ */
+async function loadSellableItem(payload: CheckoutPayload): Promise<LoadedItem> {
   const admin = createAdminClient();
 
-  if (itemType === "event") {
+  if (payload.itemType === "offer") {
     const { data } = await admin
-      .from("events")
-      .select("id, creator_id, title, price_kobo, publish_status, capacity, attendees_count")
-      .eq("id", itemId)
+      .from("offers")
+      .select("id, user_id, title, price_kobo, publish_status")
+      .eq("id", payload.itemId)
       .maybeSingle();
 
-    if (!data) return null;
+    if (!data) return { ok: false, error: "This item is no longer available." };
+    if (data.publish_status !== "published") {
+      return { ok: false, error: "This item isn't on sale yet." };
+    }
 
     return {
+      ok: true,
       id: data.id,
-      creatorId: data.creator_id,
+      creatorId: data.user_id,
       title: data.title,
-      priceKobo: Number(data.price_kobo ?? 0),
-      publishStatus: data.publish_status,
-      soldOut:
-        data.capacity !== null &&
-        data.capacity !== undefined &&
-        Number(data.attendees_count ?? 0) >= Number(data.capacity),
+      unitPriceKobo: Number(data.price_kobo ?? 0),
+      ticketTypeId: null,
+      quantity: 1,
     };
   }
 
-  const { data } = await admin
-    .from("offers")
-    .select("id, user_id, title, price_kobo, publish_status")
-    .eq("id", itemId)
+  const { data: event } = await admin
+    .from("events")
+    .select("id, creator_id, title, publish_status, capacity, attendees_count")
+    .eq("id", payload.itemId)
     .maybeSingle();
 
-  if (!data) return null;
+  if (!event) return { ok: false, error: "This event is no longer available." };
+  if (event.publish_status !== "published") {
+    return { ok: false, error: "This event isn't on sale yet." };
+  }
+
+  // A named tier if the buyer picked one, otherwise the event's cheapest
+  // — which is the only one when an event has a single tier.
+  const tierQuery = admin
+    .from("ticket_types")
+    .select("id, name, price_kobo, quantity, sold_count, max_per_order, status, sales_start, sales_end")
+    .eq("event_id", event.id)
+    .eq("status", "active");
+
+  const { data: tier } = payload.ticketTypeId
+    ? await tierQuery.eq("id", payload.ticketTypeId).maybeSingle()
+    : await tierQuery.order("price_kobo").limit(1).maybeSingle();
+
+  if (!tier) return { ok: false, error: "That ticket type isn't available." };
+
+  const now = Date.now();
+  if (tier.sales_start && new Date(tier.sales_start).getTime() > now) {
+    return { ok: false, error: `${tier.name} isn't on sale yet.` };
+  }
+  if (tier.sales_end && new Date(tier.sales_end).getTime() < now) {
+    return { ok: false, error: `Sales for ${tier.name} have closed.` };
+  }
+
+  const requested = Math.floor(Number(payload.quantity ?? 1));
+  if (!Number.isSafeInteger(requested) || requested < 1) {
+    return { ok: false, error: "Choose at least one ticket." };
+  }
+
+  const maxPerOrder = Number(tier.max_per_order ?? 10);
+  if (requested > maxPerOrder) {
+    return {
+      ok: false,
+      error: `You can buy at most ${maxPerOrder} ${maxPerOrder === 1 ? "ticket" : "tickets"} at a time.`,
+    };
+  }
+
+  // The tier's own allocation is enforced atomically at reservation time.
+  // This is the event-wide ceiling, which is a separate limit.
+  if (event.capacity !== null && event.capacity !== undefined) {
+    const remaining = Number(event.capacity) - Number(event.attendees_count ?? 0);
+    if (remaining <= 0) return { ok: false, error: "This event is sold out." };
+    if (requested > remaining) {
+      return { ok: false, error: `Only ${remaining} ${remaining === 1 ? "ticket" : "tickets"} left.` };
+    }
+  }
 
   return {
-    id: data.id,
-    creatorId: data.user_id,
-    title: data.title,
-    priceKobo: Number(data.price_kobo ?? 0),
-    publishStatus: data.publish_status,
-    soldOut: false,
+    ok: true,
+    id: event.id,
+    creatorId: event.creator_id,
+    title: event.title,
+    unitPriceKobo: Number(tier.price_kobo ?? 0),
+    ticketTypeId: tier.id,
+    quantity: requested,
   };
 }

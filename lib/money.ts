@@ -56,23 +56,42 @@ export function formatKobo(kobo: Kobo): string {
   })}`;
 }
 
+/** Fee model, configured per creator so it can change without a migration. */
+export type PlatformFeeType = "percentage" | "flat";
+
 /**
- * The platform's cut, in kobo.
+ * Paylance charges a FLAT FEE PER TICKET, and no percentage of revenue.
  *
- * Fee model is configured per creator so it can change without a migration:
+ * That is the whole pricing position: a creator selling a ₦50,000 ticket
+ * pays the same as one selling a ₦2,000 ticket, and a creator who sells
+ * nothing pays nothing. A percentage model is still supported below
+ * because the fee is configured per creator, but it is no longer what a
+ * new account gets.
+ *
+ * ₦200 per paid ticket. For reference, Tix.Africa charges 8% + ₦100 —
+ * on a ₦20,000 ticket that is ₦1,700 against our ₦200.
+ */
+export const DEFAULT_PLATFORM_FEE_TYPE: PlatformFeeType = "flat";
+export const DEFAULT_PLATFORM_FEE_VALUE = 20_000;
+
+/**
+ * The platform's cut of a single unit, in kobo.
+ *
  *  - "percentage": `value` is BASIS POINTS (900 = 9.00%)
- *  - "flat":       `value` is kobo
+ *  - "flat":       `value` is kobo per unit
  *
  * Always rounds down so we never take more than the configured rate.
  */
-export type PlatformFeeType = "percentage" | "flat";
-
 export function calculatePlatformFeeKobo(
   grossKobo: Kobo,
   feeType: PlatformFeeType,
   feeValue: number
 ): Kobo {
   assertKobo(grossKobo);
+
+  // Free is free. We never take a fee on a ticket nobody paid for —
+  // a flat fee would otherwise turn a ₦0 RSVP into a charge.
+  if (grossKobo === 0) return 0;
 
   const fee =
     feeType === "flat"
@@ -81,6 +100,32 @@ export function calculatePlatformFeeKobo(
 
   // Never take more than the buyer paid.
   return Math.max(0, Math.min(fee, grossKobo));
+}
+
+/**
+ * The platform's cut of a whole order.
+ *
+ * This is the one to call at checkout. A flat fee is charged PER TICKET,
+ * so it has to see the quantity — computing it from the order total
+ * instead would quietly charge one fee for a four-ticket purchase.
+ */
+export function calculateOrderPlatformFeeKobo(
+  unitPriceKobo: Kobo,
+  quantity: number,
+  feeType: PlatformFeeType,
+  feeValue: number
+): Kobo {
+  assertKobo(unitPriceKobo);
+
+  if (!Number.isSafeInteger(quantity) || quantity < 1) {
+    throw new Error(`Expected a positive integer quantity, received: ${String(quantity)}`);
+  }
+
+  if (feeType === "flat") {
+    return calculatePlatformFeeKobo(unitPriceKobo, "flat", feeValue) * quantity;
+  }
+
+  return calculatePlatformFeeKobo(unitPriceKobo * quantity, "percentage", feeValue);
 }
 
 function assertKobo(kobo: unknown): asserts kobo is Kobo {
