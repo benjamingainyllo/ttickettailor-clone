@@ -1,6 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Kobo } from "@/lib/money";
 import type { PaymentChannel } from "@/lib/payments";
+import { issueTicketsForOrder, type IssuedTicket } from "@/lib/tickets";
+import { getEmailProvider } from "@/lib/email";
+import { ticketConfirmationEmail } from "@/lib/email/templates";
 
 /**
  * Settling an order — the one place a pending order becomes paid.
@@ -29,6 +32,9 @@ export async function settleOrder(input: SettleOrderInput) {
   if (error) return { ok: false as const, error: error.message };
   if (!order) return { ok: false as const, error: "Order not found" };
   if (order.status === "paid") {
+    // Settled, but issuance may have died before it finished last time.
+    // Both steps are idempotent, so it is safe to finish the job here.
+    await fulfillOrder(order);
     return { ok: true as const, order, alreadySettled: true };
   }
 
@@ -70,17 +76,104 @@ export async function settleOrder(input: SettleOrderInput) {
   }
 
   await upsertAudienceMember(updated);
+  await fulfillOrder(updated);
 
   return { ok: true as const, order: updated };
 }
 
+/**
+ * Everything the buyer actually receives: their tickets, and the email
+ * carrying them.
+ *
+ * Kept separate from settlement, and safe to call more than once, because
+ * the two can fail independently — a settled order with no tickets is a
+ * bug the next call should be able to repair. Never throws: a buyer whose
+ * payment succeeded must not see an error because our mail provider is
+ * down, and the tickets exist in the database either way.
+ */
+async function fulfillOrder(order: any) {
+  if (!order?.event_id) return;
+
+  try {
+    const issued = await issueTicketsForOrder(order);
+
+    if (!issued.ok) {
+      console.error("Could not issue tickets for order", order.reference, issued.error);
+      return;
+    }
+
+    // Only the caller that claimed the first issue sends mail, so a
+    // replayed webhook cannot email the buyer their tickets twice.
+    if (!issued.firstIssue || issued.tickets.length === 0) return;
+
+    await sendTicketEmail(order, issued.tickets);
+  } catch (error) {
+    console.error("Fulfilment failed for order", order?.reference, error);
+  }
+}
+
+async function sendTicketEmail(order: any, tickets: IssuedTicket[]) {
+  const admin = createAdminClient();
+
+  const { data: event } = await admin
+    .from("events")
+    .select("title, date, time, location, creator_id")
+    .eq("id", order.event_id)
+    .maybeSingle();
+
+  let organiserName: string | null = null;
+  if (event?.creator_id) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("first_name, last_name")
+      .eq("id", event.creator_id)
+      .maybeSingle();
+    organiserName =
+      [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || null;
+  }
+
+  const message = ticketConfirmationEmail({
+    buyerName: order.buyer_name ?? null,
+    buyerEmail: order.buyer_email,
+    eventTitle: event?.title ?? order.item_title ?? "your event",
+    eventDate: event?.date ?? null,
+    eventTime: event?.time ?? null,
+    eventLocation: event?.location ?? null,
+    organiserName,
+    orderReference: order.reference,
+    totalKobo: Number(order.gross_kobo ?? 0),
+    tickets,
+  });
+
+  const result = await getEmailProvider().send(message);
+  if (!result.ok) {
+    console.error("Ticket email failed for order", order.reference, result.error);
+  }
+}
+
 export async function markOrderFailed(reference: string, status: "failed" | "abandoned") {
   const admin = createAdminClient();
-  await admin
+
+  // Guarded on 'pending' so only one caller can fail an order — which is
+  // also what makes releasing the allocation below safe to do here. A
+  // second call finds nothing to update and releases nothing.
+  const { data: failed } = await admin
     .from("orders")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("reference", reference)
-    .eq("status", "pending");
+    .eq("status", "pending")
+    .select("ticket_type_id, quantity")
+    .maybeSingle();
+
+  if (!failed?.ticket_type_id) return;
+
+  // Put the seats back on the shelf. Without this an abandoned checkout
+  // would hold an allocation forever and the event would sell out at the
+  // wrong number.
+  await admin.rpc("release_ticket_inventory", {
+    p_ticket_type_id: failed.ticket_type_id,
+    p_quantity: failed.quantity ?? 1,
+  });
 }
 
 /** A buyer becomes an audience contact the moment they actually pay. */

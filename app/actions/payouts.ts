@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPaymentProvider, isDemoPaymentMode } from "@/lib/payments";
+import {
+  DEFAULT_PLATFORM_FEE_TYPE,
+  DEFAULT_PLATFORM_FEE_VALUE,
+  type PlatformFeeType,
+} from "@/lib/money";
 
 /**
  * Payouts here means ONE thing: connecting the creator's own bank account so
@@ -90,11 +95,18 @@ export async function connectBankAccount(input: {
   // created with the right split from the start.
   const { data: existing } = await admin
     .from("payout_accounts")
-    .select("platform_fee_value")
+    .select("platform_fee_type, platform_fee_value")
     .eq("creator_id", user.id)
     .maybeSingle();
 
-  const platformFeeBps = existing?.platform_fee_value ?? 900;
+  const feeType = (existing?.platform_fee_type ?? DEFAULT_PLATFORM_FEE_TYPE) as PlatformFeeType;
+  const feeValue = existing?.platform_fee_value ?? DEFAULT_PLATFORM_FEE_VALUE;
+
+  // The subaccount's standing percentage is only a fallback: every checkout
+  // sends an explicit per-transaction charge. On the flat-fee model that
+  // fallback must be 0, or a transaction that somehow arrived without one
+  // would quietly take a percentage of the creator's revenue.
+  const platformFeeBps = feeType === "percentage" ? feeValue : 0;
 
   try {
     const resolved = await provider.resolveAccountNumber(input.accountNumber, input.bankCode);
@@ -122,7 +134,8 @@ export async function connectBankAccount(input: {
         // the payment provider.
         account_number_last4: input.accountNumber.slice(-4),
         status: "active",
-        platform_fee_value: platformFeeBps,
+        platform_fee_type: feeType,
+        platform_fee_value: feeValue,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "creator_id" }

@@ -239,14 +239,29 @@ CREATE TABLE IF NOT EXISTS public.payout_accounts (
 
   -- Fee model per creator, so it can change without a migration.
   --   percentage -> basis points (900 = 9.00%)
-  --   flat       -> kobo
-  platform_fee_type TEXT NOT NULL DEFAULT 'percentage'
+  --   flat       -> kobo PER TICKET
+  --
+  -- Paylance charges a flat fee per paid ticket and no percentage of
+  -- revenue. See lib/money.ts.
+  platform_fee_type TEXT NOT NULL DEFAULT 'flat'
     CHECK (platform_fee_type IN ('percentage', 'flat')),
-  platform_fee_value INTEGER NOT NULL DEFAULT 900,
+  platform_fee_value INTEGER NOT NULL DEFAULT 20000,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Existing installs: move the column defaults, then move any account
+-- still sitting on the old 9% default. A rate that still reads exactly
+-- ('percentage', 900) has never been set by hand, so nothing custom is
+-- overwritten here.
+ALTER TABLE public.payout_accounts ALTER COLUMN platform_fee_type SET DEFAULT 'flat';
+ALTER TABLE public.payout_accounts ALTER COLUMN platform_fee_value SET DEFAULT 20000;
+
+UPDATE public.payout_accounts
+SET platform_fee_type = 'flat', platform_fee_value = 20000
+WHERE platform_fee_type = 'percentage' AND platform_fee_value = 900;
+
 
 ALTER TABLE public.payout_accounts ENABLE ROW LEVEL SECURITY;
 
@@ -361,6 +376,140 @@ ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
 
 
 -- ============================================================
+-- PART 4B — Tickets
+--
+-- An event sells one or more TICKET TYPES ("Early Bird", "GA",
+-- "VIP"), each with its own price and its own allocation. A paid
+-- order then mints one TICKET per admission — a real row with a
+-- unique code that can be scanned at the door.
+--
+-- `events.price_kobo` stays as the event's "from" price and is
+-- maintained automatically from the active tiers, so every screen
+-- that already reads it keeps working.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.ticket_types (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+
+  name TEXT NOT NULL,
+  description TEXT,
+  price_kobo BIGINT NOT NULL DEFAULT 0 CHECK (price_kobo >= 0),
+
+  -- NULL means unlimited. `sold_count` only ever moves through the
+  -- reserve/release functions below, never with a bare UPDATE.
+  quantity INTEGER CHECK (quantity IS NULL OR quantity >= 0),
+  sold_count INTEGER NOT NULL DEFAULT 0 CHECK (sold_count >= 0),
+  max_per_order INTEGER NOT NULL DEFAULT 10 CHECK (max_per_order > 0),
+
+  sales_start TIMESTAMPTZ,
+  sales_end TIMESTAMPTZ,
+
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'hidden')),
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ticket_types_event_idx
+  ON public.ticket_types(event_id, sort_order);
+
+ALTER TABLE public.ticket_types ENABLE ROW LEVEL SECURITY;
+
+-- Tier names and prices are shop-window information: a buyer has to be
+-- able to read them before they have an account.
+DROP POLICY IF EXISTS "Public can view ticket types" ON public.ticket_types;
+CREATE POLICY "Public can view ticket types" ON public.ticket_types
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Creators manage own ticket types" ON public.ticket_types;
+CREATE POLICY "Creators manage own ticket types" ON public.ticket_types
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.events e
+      WHERE e.id = ticket_types.event_id AND e.creator_id = auth.uid()
+    )
+  );
+
+
+-- One row per admission. This is the thing that gets scanned.
+CREATE TABLE IF NOT EXISTS public.tickets (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+
+  -- Short, human-readable and unguessable. Generated in lib/tickets.ts.
+  code TEXT NOT NULL UNIQUE,
+
+  order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  creator_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  ticket_type_id UUID REFERENCES public.ticket_types(id) ON DELETE SET NULL,
+
+  -- Snapshot of the tier name. A tier deleted later must not blank out
+  -- a ticket somebody is holding at the door.
+  ticket_type_name TEXT,
+  price_kobo BIGINT NOT NULL DEFAULT 0 CHECK (price_kobo >= 0),
+
+  holder_name TEXT,
+  holder_email TEXT,
+
+  -- Position within its order: 1, 2, 3... Shown as "2 of 4".
+  seat_index INTEGER NOT NULL DEFAULT 1 CHECK (seat_index > 0),
+
+  status TEXT NOT NULL DEFAULT 'valid'
+    CHECK (status IN ('valid', 'checked_in', 'void', 'refunded')),
+
+  checked_in_at TIMESTAMPTZ,
+  checked_in_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  -- The whole idempotency story for issuance: a replayed webhook
+  -- re-inserts the same (order, seat) and is silently ignored.
+  UNIQUE (order_id, seat_index)
+);
+
+CREATE INDEX IF NOT EXISTS tickets_event_idx ON public.tickets(event_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS tickets_order_idx ON public.tickets(order_id);
+CREATE INDEX IF NOT EXISTS tickets_creator_idx ON public.tickets(creator_id);
+CREATE INDEX IF NOT EXISTS tickets_status_idx ON public.tickets(event_id, status);
+
+ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
+
+-- Creators see their own. Buyers reach a ticket by its code through a
+-- server route using the service role — a ticket is deliberately NOT
+-- publicly listable, or anyone could enumerate an event's admissions.
+DROP POLICY IF EXISTS "Creators read own tickets" ON public.tickets;
+CREATE POLICY "Creators read own tickets" ON public.tickets
+  FOR SELECT USING (auth.uid() = creator_id);
+
+DROP POLICY IF EXISTS "Creators update own tickets" ON public.tickets;
+CREATE POLICY "Creators update own tickets" ON public.tickets
+  FOR UPDATE USING (auth.uid() = creator_id);
+
+
+-- Which tier an order was for. Orders predating tickets keep NULL.
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS ticket_type_id UUID REFERENCES public.ticket_types(id) ON DELETE SET NULL;
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS tickets_issued_at TIMESTAMPTZ;
+
+
+-- Every event that predates ticket types gets one tier built from the
+-- price and capacity it already had, so nothing in the product is left
+-- with an event that cannot sell anything.
+INSERT INTO public.ticket_types (event_id, name, price_kobo, quantity, sort_order)
+SELECT e.id, 'General Admission', COALESCE(e.price_kobo, 0), e.capacity, 0
+FROM public.events e
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.ticket_types t WHERE t.event_id = e.id
+);
+
+
+
+-- ============================================================
 -- PART 5 — Rules the database enforces itself
 -- ============================================================
 
@@ -462,6 +611,138 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP FUNCTION IF EXISTS public.increment_event_stats(UUID, INTEGER, NUMERIC);
+
+
+
+-- ---- Ticket inventory -------------------------------------------------
+-- Allocation is decided in ONE atomic statement. Two people buying the
+-- last ticket at the same moment cannot both win: the UPDATE either
+-- matches the availability condition or it doesn't.
+
+CREATE OR REPLACE FUNCTION public.reserve_ticket_inventory(
+  p_ticket_type_id UUID,
+  p_quantity INTEGER
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  reserved INTEGER;
+BEGIN
+  IF p_quantity IS NULL OR p_quantity < 1 THEN
+    RETURN FALSE;
+  END IF;
+
+  UPDATE public.ticket_types
+  SET sold_count = sold_count + p_quantity,
+      updated_at = now()
+  WHERE id = p_ticket_type_id
+    AND status = 'active'
+    AND (sales_start IS NULL OR sales_start <= now())
+    AND (sales_end IS NULL OR sales_end >= now())
+    AND (quantity IS NULL OR sold_count + p_quantity <= quantity);
+
+  GET DIAGNOSTICS reserved = ROW_COUNT;
+  RETURN reserved > 0;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Give the allocation back when a payment fails or is abandoned.
+CREATE OR REPLACE FUNCTION public.release_ticket_inventory(
+  p_ticket_type_id UUID,
+  p_quantity INTEGER
+)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.ticket_types
+  SET sold_count = GREATEST(0, sold_count - COALESCE(p_quantity, 0)),
+      updated_at = now()
+  WHERE id = p_ticket_type_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ---- "From" price -----------------------------------------------------
+-- events.price_kobo is derived, never typed in. It mirrors the cheapest
+-- active tier so existing list and storefront screens keep working
+-- without knowing tiers exist.
+
+CREATE OR REPLACE FUNCTION public.sync_event_price_from_tiers()
+RETURNS TRIGGER AS $$
+DECLARE
+  target_event UUID;
+  lowest BIGINT;
+BEGIN
+  target_event := COALESCE(NEW.event_id, OLD.event_id);
+
+  SELECT COALESCE(MIN(price_kobo), 0) INTO lowest
+  FROM public.ticket_types
+  WHERE event_id = target_event AND status = 'active';
+
+  UPDATE public.events
+  SET price_kobo = lowest
+  WHERE id = target_event AND price_kobo IS DISTINCT FROM lowest;
+
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS ticket_types_sync_event_price ON public.ticket_types;
+CREATE TRIGGER ticket_types_sync_event_price
+  AFTER INSERT OR UPDATE OF price_kobo, status OR DELETE ON public.ticket_types
+  FOR EACH ROW EXECUTE FUNCTION public.sync_event_price_from_tiers();
+
+
+-- The publish gate reaches tiers too: you cannot bolt a paid tier onto
+-- an already-published event to get around the bank-account rule.
+CREATE OR REPLACE FUNCTION public.enforce_ticket_type_publish_gate()
+RETURNS TRIGGER AS $$
+DECLARE
+  owner_id UUID;
+  event_published BOOLEAN;
+  has_active_account BOOLEAN;
+BEGIN
+  IF COALESCE(NEW.price_kobo, 0) = 0 THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT e.creator_id, e.publish_status = 'published'
+  INTO owner_id, event_published
+  FROM public.events e WHERE e.id = NEW.event_id;
+
+  IF NOT COALESCE(event_published, FALSE) THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.payout_accounts
+    WHERE creator_id = owner_id
+      AND status = 'active'
+      AND provider_subaccount_id IS NOT NULL
+  ) INTO has_active_account;
+
+  IF NOT has_active_account THEN
+    RAISE EXCEPTION 'Connect a bank account before selling a paid ticket type'
+      USING ERRCODE = 'check_violation';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS ticket_types_publish_gate ON public.ticket_types;
+CREATE TRIGGER ticket_types_publish_gate
+  BEFORE INSERT OR UPDATE OF price_kobo ON public.ticket_types
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_ticket_type_publish_gate();
+
+
+DROP TRIGGER IF EXISTS update_ticket_types_updated_at ON public.ticket_types;
+CREATE TRIGGER update_ticket_types_updated_at BEFORE UPDATE ON public.ticket_types
+  FOR EACH ROW EXECUTE PROCEDURE public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_tickets_updated_at ON public.tickets;
+CREATE TRIGGER update_tickets_updated_at BEFORE UPDATE ON public.tickets
+  FOR EACH ROW EXECUTE PROCEDURE public.update_updated_at_column();
+
+
 
 
 -- ============================================================
