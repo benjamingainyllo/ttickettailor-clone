@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { SiteNav, StartCta } from "@/components/marketing/site-nav";
@@ -41,53 +42,70 @@ export default function LandingPage() {
       <SiteNav />
 
       {/* ══════════════ Hero ══════════════ */}
-      <section className="relative overflow-hidden border-b-2 border-[var(--ink)] bg-gradient-to-br from-[#FF6A45] via-[#F5568E] to-[#8B5CF6] px-6 sm:px-10 lg:px-16 py-20 sm:py-28">
-        <Sparkle className="absolute left-[8%] top-[14%] hidden h-7 w-7 text-white/70 sm:block" />
-        <Sparkle className="absolute right-[12%] top-[22%] hidden h-4 w-4 text-white/50 sm:block" />
-        <Star className="absolute bottom-[18%] left-[16%] hidden h-6 w-6 text-white/40 sm:block" />
+      <section className="relative overflow-hidden border-b-2 border-[var(--ink)]">
+        {/* The room you're selling tickets to, not an illustration of it. */}
+        <Image
+          src="/hero-crowd.jpg"
+          alt="A crowded dance floor under pink and orange lights"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
 
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
-          <div>
-            <span className="lp-block-soft inline-block rotate-[-1.5deg] rounded-full bg-[var(--paper)] px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider">
-              ₦200 a ticket · never a percentage
-            </span>
+        {/* Two scrims: one across everything so the whole frame sits back,
+            one heavier on the left so the headline has real contrast to
+            live on rather than fighting the brightest part of the photo. */}
+        <div className="absolute inset-0 bg-[#120A14]/30" aria-hidden="true" />
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-[#120A14]/88 via-[#120A14]/45 to-transparent"
+          aria-hidden="true"
+        />
 
-            <h1 className="mt-6 text-[46px] font-extrabold leading-[0.95] tracking-[-0.03em] text-white sm:text-[68px]">
-              Sell tickets.
-              <br />
-              Keep
-              <br />
-              <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
-                what you earn.
+        <div className="relative px-6 py-20 sm:px-10 sm:py-28 lg:px-16">
+          <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+            <div>
+              <span className="lp-block-soft inline-block rotate-[-1.5deg] rounded-full bg-[var(--paper)] px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--ink)]">
+                ₦200 a ticket · never a percentage
               </span>
-            </h1>
 
-            <p className="mt-6 max-w-md text-[17px] leading-relaxed text-white/90">
-              Two hundred naira per ticket sold. Not eight percent, not a monthly plan.
-              A ₦50,000 ticket costs you the same as a ₦2,000 one — and the money
-              lands in your bank, not ours.
-            </p>
+              <h1 className="mt-6 text-[46px] font-extrabold leading-[0.95] tracking-[-0.03em] text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.4)] sm:text-[72px]">
+                Sell tickets.
+                <br />
+                Keep
+                <br />
+                <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
+                  what you earn.
+                </span>
+              </h1>
 
-            <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <StartCta />
-              <div className="flex items-center gap-2 text-[13px] font-semibold text-white/85">
-                <Check className="h-4 w-4" /> Free events cost nothing
+              <p className="mt-6 max-w-md text-[17px] leading-relaxed text-white/90">
+                Two hundred naira per ticket sold. Not a percentage, not a monthly
+                plan. A ₦50,000 ticket costs you the same as a ₦2,000 one — and
+                the money lands in your bank the moment it&apos;s paid.
+              </p>
+
+              <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                <StartCta />
+                <div className="flex items-center gap-2 text-[13px] font-semibold text-white/85">
+                  <Check className="h-4 w-4" /> Free events cost nothing
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* The product, not a description of it. */}
-          <div className="flex justify-center">
-            <div className="relative">
-              <div className="lp-tilt-2">
-                <TicketMock />
-              </div>
-              <div className="lp-tilt-1 absolute -bottom-9 -left-16 hidden sm:block">
-                <div className="lp-block rounded-2xl bg-[#FFDE59] px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink)]">
-                    Your fee
-                  </p>
-                  <p className="text-[20px] font-extrabold text-[var(--ink)]">₦200</p>
+            {/* The product, floating over the room it works in. */}
+            <div className="flex justify-center">
+              <div className="relative">
+                <div className="lp-tilt-2">
+                  <TicketMock />
+                </div>
+                <div className="lp-tilt-1 absolute -bottom-9 -left-16 hidden sm:block">
+                  <div className="lp-block rounded-2xl bg-[#FFDE59] px-4 py-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink)]">
+                      Your fee
+                    </p>
+                    <p className="text-[20px] font-extrabold text-[var(--ink)]">₦200</p>
+                  </div>
                 </div>
               </div>
             </div>
