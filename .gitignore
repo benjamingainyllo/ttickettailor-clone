@@ -16,3 +16,6 @@ pnpm-debug.log*
 
 # system
 .DS_Store
+
+# Assembled design canvas — ~2.5MB of editor payload, regenerated from design/
+paylance-landing-directions.html

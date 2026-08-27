@@ -1,0 +1,17 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",       "x": 0,    "y": 0, "w": 1000, "h": 1900, "title": "Direction C — The bridge (recommended)" },
+    { "file": "DirectionA.dc.html", "x": 1120, "y": 0, "w": 1000, "h": 1900, "title": "Direction A — Commit to the night" },
+    { "file": "DirectionB.dc.html", "x": 2240, "y": 0, "w": 1000, "h": 1900, "title": "Direction B — Commit to paper" }
+  ],
+  "annotations": [
+    {
+      "id": "the-question",
+      "x": 0,
+      "y": -190,
+      "w": 900,
+      "text": "The problem: your page is two worlds with a hard cut between them — a dark photographic hero, then bright cream cards. Pick which world the site lives in.\n\nC (left) is my recommendation: keep both, but design the joins. A commits to nightlife. B drops photography entirely."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}
