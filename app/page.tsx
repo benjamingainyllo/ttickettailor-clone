@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Menu, X, Check } from "lucide-react";
-import { useAuth } from "@/components/auth/auth-provider";
+import { ArrowRight, Check } from "lucide-react";
+import { SiteNav, StartCta } from "@/components/marketing/site-nav";
+import { SiteFooter } from "@/components/marketing/site-footer";
+import { EVENT_TYPES } from "@/components/marketing/event-types";
 import { ArrowCurve, Circled, Sparkle, Squiggle, Star, Underline } from "@/components/marketing/doodles";
 import { DoorMock, LinkMock, PayoutMock, TicketMock, TiersMock } from "@/components/marketing/mockups";
 
@@ -16,14 +17,8 @@ function Mark({ children, color }: { children: React.ReactNode; color?: string }
   );
 }
 
-const WHO_ITS_FOR = [
-  { tone: "#FFB3C7", title: "Party people", body: "Rooftops, warehouses, listening parties. Sell tiers, cap the numbers, and know exactly who's through the door." },
-  { tone: "#FFDE59", title: "Workshop hosts", body: "Classes, masterclasses, cohorts. Limit the seats so you never oversell a room you have to fit people into." },
-  { tone: "#9BE3C0", title: "Live music", body: "Early Bird, General, VIP table — different prices, different allocations, one link that handles all of it." },
-  { tone: "#B7C4FF", title: "Conferences & meetups", body: "Hundreds of attendees, a door that has to move fast, and a list you can actually check people off." },
-  { tone: "#DDBBF5", title: "Free events", body: "Community nights, open days, church programmes. Collect RSVPs, still get a scannable ticket, pay nothing." },
-  { tone: "#FFC9A8", title: "Anyone tired of the door", body: "No more crossing names off a printed list or squinting at transfer screenshots while a queue builds." },
-];
+/** The home page shows a taste; /event-types has the full list. */
+const FEATURED_TYPES = EVENT_TYPES.slice(0, 9);
 
 /** The comparison the whole product rests on. One ticket, then two hundred. */
 const TICKET_PRICE = 20000;
@@ -35,84 +30,13 @@ const TYPICAL_PER_TICKET = TICKET_PRICE * 0.08 + 100;
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 
 export default function LandingPage() {
-  const { user } = useAuth();
-  const [mounted, setMounted] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const signedIn = mounted && !!user;
-  const href = signedIn ? "/overview" : "/login";
-  const cta = signedIn ? "Go to dashboard" : "Start selling — it's free";
-
-  const NAV = [
-    ["#pricing", "Pricing"],
-    ["#how", "How it works"],
-    ["#door", "At the door"],
-    ["#faq", "Questions"],
-  ] as const;
-
   const paylanceTotal = PAYLANCE_PER_TICKET * TICKET_COUNT;
   const typicalTotal = TYPICAL_PER_TICKET * TICKET_COUNT;
   const difference = typicalTotal - paylanceTotal;
 
   return (
     <main className="lp min-h-screen overflow-x-hidden font-[family-name:var(--font-bricolage-grotesque)]">
-      {/* ══════════════ Nav ══════════════ */}
-      <header className="sticky top-0 z-50 border-b-2 border-[var(--ink)] bg-[var(--paper)]">
-        <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-10 lg:px-16">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[13px] font-black text-white">
-              P
-            </span>
-            <span className="text-[17px] font-extrabold tracking-tight">Paylance</span>
-          </Link>
-
-          <div className="hidden items-center gap-7 md:flex">
-            {NAV.map(([h, label]) => (
-              <a key={h} href={h} className="text-[13px] font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]">
-                {label}
-              </a>
-            ))}
-          </div>
-
-          <div className="hidden items-center gap-4 md:flex">
-            {!signedIn && (
-              <Link href="/login" className="text-[13px] font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)]">
-                Sign in
-              </Link>
-            )}
-            <Link
-              href={href}
-              className="lp-block-soft rounded-xl bg-[var(--ink)] px-4 py-2 text-[12px] font-bold text-[var(--paper)] transition-transform hover:-translate-y-0.5"
-            >
-              {signedIn ? "Dashboard" : "Get started"}
-            </Link>
-          </div>
-
-          <button
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Toggle menu"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--ink)] md:hidden"
-          >
-            {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </button>
-        </nav>
-
-        {menuOpen && (
-          <div className="border-t-2 border-[var(--ink)] px-6 sm:px-10 lg:px-16 py-4 md:hidden">
-            <div className="flex flex-col gap-4">
-              {NAV.map(([h, label]) => (
-                <a key={h} href={h} onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-[var(--ink-soft)]">
-                  {label}
-                </a>
-              ))}
-              <Link href={href} className="lp-block-soft rounded-xl bg-[var(--ink)] px-4 py-3 text-center text-xs font-bold text-[var(--paper)]">
-                {signedIn ? "Dashboard" : "Get started"}
-              </Link>
-            </div>
-          </div>
-        )}
-      </header>
+      <SiteNav />
 
       {/* ══════════════ Hero ══════════════ */}
       <section className="relative overflow-hidden border-b-2 border-[var(--ink)] bg-gradient-to-br from-[#FF6A45] via-[#F5568E] to-[#8B5CF6] px-6 sm:px-10 lg:px-16 py-20 sm:py-28">
@@ -143,12 +67,7 @@ export default function LandingPage() {
             </p>
 
             <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <Link
-                href={href}
-                className="lp-block inline-flex items-center gap-2 rounded-2xl bg-[var(--paper)] px-7 py-4 text-[15px] font-extrabold text-[var(--ink)] transition-transform hover:-translate-y-1"
-              >
-                {cta} <ArrowRight className="h-4 w-4" />
-              </Link>
+              <StartCta />
               <div className="flex items-center gap-2 text-[13px] font-semibold text-white/85">
                 <Check className="h-4 w-4" /> Free events cost nothing
               </div>
@@ -238,6 +157,15 @@ export default function LandingPage() {
               No signup fee. No monthly plan. Nothing at all if you don&apos;t sell —
               and nothing ever on a free event.
             </p>
+            <div className="mt-8">
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 text-[15px] font-bold text-[var(--ink)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
+              >
+                See the full pricing
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
             <div className="mt-8 flex justify-center">
               <Squiggle className="h-4 w-28 text-[var(--coral)]" />
             </div>
@@ -245,8 +173,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════════ Who it's for ══════════════ */}
-      <section id="who" className="border-b-2 border-[var(--ink)] bg-[var(--paper-deep)] px-6 sm:px-10 lg:px-16 py-20">
+      {/* ══════════════ Event types ══════════════ */}
+      <section id="who" className="border-b-2 border-[var(--ink)] bg-[var(--paper-deep)] px-6 py-20 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
             <h2 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[44px]">
@@ -255,26 +183,36 @@ export default function LandingPage() {
               you&apos;re <Mark>letting in</Mark>
             </h2>
             <p className="mt-5 max-w-md text-[16px] leading-relaxed text-[var(--ink-soft)]">
-              Thirty people in a room or three thousand in a field — same tickets,
-              same scanner, same flat fee.
+              Thirty people in a room or three thousand in a field — same
+              tickets, same scanner, same flat fee.
             </p>
           </div>
 
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {WHO_ITS_FOR.map((c, i) => (
+            {FEATURED_TYPES.map((type, i) => (
               <div
-                key={c.title}
+                key={type.name}
                 className={`lp-block rounded-2xl p-6 lp-tilt-${(i % 4) + 1}`}
-                style={{ background: c.tone }}
+                style={{ background: type.tone }}
               >
-                <h3 className="text-[19px] font-extrabold tracking-tight text-[var(--ink)]">
-                  {c.title}
+                <h3 className="text-[18px] font-extrabold leading-tight tracking-tight text-[var(--ink)]">
+                  {type.name}
                 </h3>
                 <p className="mt-2.5 text-[13.5px] leading-relaxed text-[var(--ink-muted)]">
-                  {c.body}
+                  {type.blurb}
                 </p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-10">
+            <Link
+              href="/event-types"
+              className="inline-flex items-center gap-2 text-[15px] font-bold text-[var(--ink)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
+            >
+              See all {EVENT_TYPES.length} kinds of event
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -495,41 +433,13 @@ export default function LandingPage() {
           </p>
 
           <div className="relative mt-10 inline-block">
-            <Link
-              href={href}
-              className="lp-block inline-flex items-center gap-2 rounded-2xl bg-[var(--paper)] px-8 py-4 text-[15px] font-extrabold text-[var(--ink)] transition-transform hover:-translate-y-1"
-            >
-              {cta} <ArrowRight className="h-4 w-4" />
-            </Link>
+            <StartCta />
             <ArrowCurve className="absolute -right-20 -top-8 hidden h-16 w-20 text-white/60 sm:block" />
           </div>
         </div>
       </section>
 
-      {/* ══════════════ Footer ══════════════ */}
-      <footer className="px-6 sm:px-10 lg:px-16 py-12">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[11px] font-black text-white">
-              P
-            </span>
-            <span className="text-[15px] font-extrabold tracking-tight">Paylance</span>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {NAV.map(([h, label]) => (
-              <a key={h} href={h} className="text-[12px] font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)]">
-                {label}
-              </a>
-            ))}
-            <Link href="/login" className="text-[12px] font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)]">
-              Sign in
-            </Link>
-          </div>
-
-          <p className="text-[12px] text-[var(--ink-soft)]">© {new Date().getFullYear()} Paylance</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }
