@@ -32,6 +32,26 @@ Two things he does want in plain terms, because they are his decisions:
 open questions that need a business call, and anything that could cost money
 or lose data.
 
+## How this gets to the live site
+
+**Vercel deploys `main`. Only `main`.** Work can happen on a branch, but a
+push to a branch changes nothing Benjamin can see — it has to reach `main`
+or it isn't shipped.
+
+This has already gone wrong once: five commits sat on a side branch across
+several sessions while Benjamin was told each time that the change was
+"live in two minutes". It wasn't. He found out by looking at his own site.
+
+So: push to `main`, and only say something is live once it is on `main`.
+If a change genuinely needs review first, say plainly that it is waiting to
+be merged rather than describing it as deployed. Never report a deploy that
+hasn't happened.
+
+The live site is https://ttickettailor-clone.vercel.app and the Supabase
+project ref is `fpximoqxdutedhxiqvlo` — its dashboard URLs are
+`https://supabase.com/dashboard/project/fpximoqxdutedhxiqvlo/...`, which
+saves sending him hunting through menus.
+
 ## What this product is
 
 Paylance is an **event ticketing platform**, Nigeria-first.
