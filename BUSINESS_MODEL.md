@@ -60,11 +60,42 @@ line of it. On a ₦20,000 ticket the real cost is roughly ₦630, of which ₦2
 ours. Stating both openly would be unusual in this market and costs us nothing,
 because every competitor's sellers pay the same processor.
 
-**Open decision — banded pricing.** A single ₦200 is ~10% of a ₦2,000 ticket and
-0.13% of a ₦150,000 one, across a market where ticket prices span roughly 75x.
-Four bands (₦150 / ₦400 / ₦1,000 / ₦2,000) would keep the "flat fee, never a
-percentage" promise, stay 3-4x below Tix at every price, and roughly double
-revenue per ticket. See the strategy note.
+**DECIDED — four bands.** A single ₦200 was ~10% of a ₦2,000 ticket and 0.13%
+of a ₦150,000 one, across a market where prices span roughly 75x. The fee is
+now banded by the ticket's own price:
+
+| Ticket price | Fee | vs Tix free plan (5% + ₦100) |
+|---|---|---|
+| Under ₦7,500 | ₦200 | ₦200 – ₦475 |
+| ₦7,500 – ₦30,000 | ₦450 | ₦475 – ₦1,600 |
+| ₦30,000 – ₦75,000 | ₦1,500 | ₦1,600 – ₦3,850 |
+| ₦75,000 and up | ₦2,500 | ₦3,850+ |
+
+This is still "a flat fee per ticket, never a percentage" — there are simply
+four of them. Sell twice as many tickets and you pay twice the fee; charge
+twice as much and you do not.
+
+**The boundaries are load-bearing, and they are not round numbers by accident.**
+Each band's fee has to be lower than what a 5% + ₦100 competitor takes at the
+CHEAPEST ticket in that band, or the band opens with us as the expensive
+option. The break-evens are ₦2,000 for ₦200, ₦7,000 for ₦450, ₦28,000 for
+₦1,500 and ₦48,000 for ₦2,500; every boundary is rounded up from one of those.
+
+An earlier draft used the same fees against ₦5,000 / ₦20,000 / ₦75,000
+boundaries. That version was more expensive than Tix across three separate
+stretches — ₦5,000-₦7,000, ₦20,000-₦28,000, and everything under ₦2,000 —
+including ₦5,000, one of the most common ticket prices in this market. Moving
+a boundary down re-opens that hole. Check the arithmetic before touching them.
+
+The band table lives in `PLATFORM_FEE_BANDS` in `lib/money.ts` and the pricing
+page renders from it directly, so the published prices cannot drift from what
+the engine charges.
+
+**Open decision — the floor, again.** Below ₦2,000 no flat fee of ₦200 can beat
+5% + ₦100, because their base fee is only ₦100. At ₦1,000 we take ₦200 and they
+take ₦150. The site now says "from ₦2,000 up" rather than claiming we always
+win, but the real fix is a minimum paid-ticket price of ₦2,000, or a ₦0 fee
+below it. Still needs a call.
 
 ### B. Explicitly NOT revenue streams
 

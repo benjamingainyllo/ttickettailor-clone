@@ -240,27 +240,40 @@ CREATE TABLE IF NOT EXISTS public.payout_accounts (
   -- Fee model per creator, so it can change without a migration.
   --   percentage -> basis points (900 = 9.00%)
   --   flat       -> kobo PER TICKET
+  --   banded     -> kobo PER TICKET, chosen by the ticket's own price
   --
   -- Paylance charges a flat fee per paid ticket and no percentage of
-  -- revenue. See lib/money.ts.
-  platform_fee_type TEXT NOT NULL DEFAULT 'flat'
-    CHECK (platform_fee_type IN ('percentage', 'flat')),
+  -- revenue. 'banded' is still a flat fee per ticket; there are simply
+  -- four of them. platform_fee_value is unused for 'banded' -- the band
+  -- table lives in lib/money.ts, so the boundaries stay in one place.
+  platform_fee_type TEXT NOT NULL DEFAULT 'banded'
+    CHECK (platform_fee_type IN ('percentage', 'flat', 'banded')),
   platform_fee_value INTEGER NOT NULL DEFAULT 20000,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Existing installs: move the column defaults, then move any account
--- still sitting on the old 9% default. A rate that still reads exactly
--- ('percentage', 900) has never been set by hand, so nothing custom is
--- overwritten here.
-ALTER TABLE public.payout_accounts ALTER COLUMN platform_fee_type SET DEFAULT 'flat';
+-- Existing installs: widen the CHECK before anything can be written that
+-- would violate it. Dropping by name first keeps this re-runnable -- the
+-- constraint is recreated every time, so running setup.sql twice is safe.
+ALTER TABLE public.payout_accounts
+  DROP CONSTRAINT IF EXISTS payout_accounts_platform_fee_type_check;
+ALTER TABLE public.payout_accounts
+  ADD CONSTRAINT payout_accounts_platform_fee_type_check
+  CHECK (platform_fee_type IN ('percentage', 'flat', 'banded'));
+
+-- Then move the column defaults, then move any account still sitting on a
+-- superseded default. A rate that still reads exactly ('percentage', 900)
+-- or ('flat', 20000) has never been set by hand, so nothing an operator
+-- chose deliberately is overwritten here.
+ALTER TABLE public.payout_accounts ALTER COLUMN platform_fee_type SET DEFAULT 'banded';
 ALTER TABLE public.payout_accounts ALTER COLUMN platform_fee_value SET DEFAULT 20000;
 
 UPDATE public.payout_accounts
-SET platform_fee_type = 'flat', platform_fee_value = 20000
-WHERE platform_fee_type = 'percentage' AND platform_fee_value = 900;
+SET platform_fee_type = 'banded'
+WHERE (platform_fee_type = 'percentage' AND platform_fee_value = 900)
+   OR (platform_fee_type = 'flat' AND platform_fee_value = 20000);
 
 
 ALTER TABLE public.payout_accounts ENABLE ROW LEVEL SECURITY;

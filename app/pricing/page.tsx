@@ -3,26 +3,55 @@ import { SiteNav, StartCta } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { Sparkle, Squiggle, Star, Underline } from "@/components/marketing/doodles";
 import { Check, X } from "lucide-react";
+import { PLATFORM_FEE_BANDS, bandFeeKobo, koboToNaira, nairaToKobo } from "@/lib/money";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "₦200 per paid ticket. No percentage of your revenue, no monthly plan, no signup fee, and nothing at all on a free event.",
+    "A flat fee per paid ticket, from ₦200. No percentage of your revenue, no monthly plan, no signup fee, and nothing at all on a free event.",
 };
 
-/** The worked example. One place, so every figure on the page agrees. */
-const PAYLANCE_PER_TICKET = 200;
+/**
+ * Every fee on this page is read from the live band table in lib/money.ts
+ * rather than typed in here. A published price that disagrees with what
+ * the engine actually charges is the worst bug this page can have, and
+ * hardcoding the numbers twice is how that happens.
+ */
 const TYPICAL_RATE = 0.05;
 const TYPICAL_FLAT = 100;
 
+const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
+
+/** What one ticket at this naira price costs the organiser. */
+const feeFor = (priceNaira: number) => koboToNaira(bandFeeKobo(nairaToKobo(priceNaira)));
+
+/** The band table, rendered straight from the engine's own boundaries. */
+const BAND_ROWS = PLATFORM_FEE_BANDS.map((band, i) => {
+  const fromNaira = i === 0 ? 0 : koboToNaira(PLATFORM_FEE_BANDS[i - 1].belowKobo);
+  const toNaira = Number.isFinite(band.belowKobo) ? koboToNaira(band.belowKobo) : null;
+  return {
+    range:
+      toNaira === null
+        ? `${naira(fromNaira)} and up`
+        : fromNaira === 0
+          ? `Under ${naira(toNaira)}`
+          : `${naira(fromNaira)} – ${naira(toNaira)}`,
+    fee: koboToNaira(band.feeKobo),
+  };
+});
+
+/**
+ * Worked examples, weighted to the events we actually want: club nights,
+ * and the higher-priced end where a flat fee is dramatically cheaper than
+ * a percentage. A ₦2,000 raffle is not the customer this is built for.
+ */
 const SCENARIOS = [
-  { label: "A small workshop", price: 5000, count: 30 },
   { label: "A club night", price: 10000, count: 300 },
+  { label: "A comedy show", price: 12000, count: 200 },
   { label: "A concert", price: 20000, count: 1000 },
+  { label: "A conference", price: 45000, count: 250 },
   { label: "A weekend retreat", price: 150000, count: 40 },
 ];
-
-const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
 const INCLUDED = [
   "Unlimited events",
@@ -58,36 +87,117 @@ export default function PricingPage() {
             Pricing
           </p>
           <h1 className="mt-5 text-[38px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-[56px]">
-            One number.
+            A flat fee per ticket.
             <br />
             <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
-              That&apos;s the whole page.
+              Four of them.
             </span>
           </h1>
 
-          <div className="mx-auto mt-12 max-w-sm">
-            <div className="lp-block lp-tilt-2 rounded-3xl bg-[#9BE3C0] p-10">
-              <p className="text-[64px] font-extrabold leading-none tracking-tight text-[var(--ink)] sm:text-[76px]">
-                ₦200
-              </p>
-              <p className="mt-3 text-[15px] font-bold text-[var(--ink)]">
-                per paid ticket sold
-              </p>
-              <p className="mt-1 text-[13.5px] text-[#1B1512]/70">
-                Free tickets cost nothing at all
-              </p>
+          <p className="mx-auto mt-6 max-w-lg text-[17px] leading-relaxed text-[var(--on-ground-soft)]">
+            Never a percentage of your revenue. The ticket&apos;s price picks
+            the fee, and then the fee stops — sell ten times as many and you
+            pay ten times ₦450, not ten times more of your takings.
+          </p>
+
+          <div className="mx-auto mt-12 max-w-lg">
+            <div className="lp-block lp-tilt-2 overflow-hidden rounded-3xl bg-[#9BE3C0] p-2">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr>
+                    <th className="px-5 pb-2 pt-4 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#1B1512]/70">
+                      Ticket price
+                    </th>
+                    <th className="px-5 pb-2 pt-4 text-right text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#1B1512]/70">
+                      You pay
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="[font-variant-numeric:tabular-nums]">
+                  {BAND_ROWS.map((b, i) => (
+                    <tr key={b.range}>
+                      <td
+                        className={`px-5 py-3 text-[15px] font-semibold text-[var(--ink)] ${
+                          i > 0 ? "border-t border-[#1B1512]/15" : ""
+                        }`}
+                      >
+                        {b.range}
+                      </td>
+                      <td
+                        className={`px-5 py-3 text-right text-[22px] font-extrabold tracking-tight text-[var(--ink)] ${
+                          i > 0 ? "border-t border-[#1B1512]/15" : ""
+                        }`}
+                      >
+                        {naira(b.fee)}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="border-t border-[#1B1512]/15 px-5 py-3 text-[15px] font-semibold text-[var(--ink)]">
+                      A free ticket
+                    </td>
+                    <td className="border-t border-[#1B1512]/15 px-5 py-3 text-right text-[22px] font-extrabold tracking-tight text-[var(--ink)]">
+                      Nothing
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <p className="mx-auto mt-10 max-w-lg text-[17px] leading-relaxed text-[var(--on-ground-soft)]">
-            Not a percentage. Not a monthly plan. A ₦150,000 retreat ticket costs
-            you the same ₦200 as a ₦2,000 comedy night — and if you sell nothing,
-            you pay nothing.
+          <p className="mx-auto mt-8 max-w-lg text-[15px] leading-relaxed text-[var(--on-ground-faint)]">
+            On any ticket from ₦2,000 up, that is less than a 5% platform
+            would take — and on a ₦150,000 retreat ticket, three times less.
           </p>
 
           <div className="mt-9 flex justify-center">
             <StartCta />
           </div>
+        </div>
+      </section>
+
+      {/* ══════════════ The other half of the pitch ══════════════ */}
+      <section className="border-b border-[var(--hairline)] px-6 py-20 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--on-ground-soft)]">
+            And the part that isn&apos;t about price
+          </p>
+          <h2 className="mt-5 text-[30px] font-extrabold leading-[1.08] tracking-tight sm:text-[40px]">
+            It goes to your bank,
+            <br />
+            <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
+              not to our wallet.
+            </span>
+          </h2>
+          <div className="mt-3 flex justify-center">
+            <Underline className="h-3 w-56 text-[var(--coral)]" />
+          </div>
+
+          <p className="mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-[var(--on-ground-soft)]">
+            Your share splits off at the moment someone pays and settles to
+            your own account. There is no balance on this site, no payout
+            button and nothing to withdraw — because your money never arrives
+            here in the first place.
+          </p>
+
+          <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
+            {[
+              { t: "No payout request", b: "Nothing to claim, approve or chase. You are not in a queue behind anyone." },
+              { t: "No holding until after", b: "A platform sitting on your money can decide to keep it until the event ends. We are not in that position." },
+              { t: "No wallet to empty", b: "Nowhere for your money to sit, so nowhere for it to be frozen, capped or lost if we disappear." },
+            ].map((f, i) => (
+              <div key={f.t} className={`lp-block-dark rounded-2xl bg-[var(--ground-raised)] p-6 lp-tilt-${(i % 3) + 1}`}>
+                <h3 className="text-[16px] font-extrabold leading-tight tracking-tight">{f.t}</h3>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--on-ground-soft)]">{f.b}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mx-auto mt-8 max-w-xl text-[13.5px] leading-relaxed text-[var(--on-ground-faint)]">
+            How quickly it lands is your bank&apos;s settlement time, not ours.
+            We are not in the middle of it, so we can neither slow it down nor
+            speed it up.
+          </p>
         </div>
       </section>
 
@@ -102,7 +212,7 @@ export default function PricingPage() {
               <Underline className="h-3 w-52 text-[var(--coral)]" />
             </div>
             <p className="mt-5 text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
-              Four real-shaped events, against the 5% + ₦100 the incumbent charges.
+              Five real-shaped events, against the 5% + ₦100 the incumbent charges.
             </p>
           </div>
 
@@ -122,7 +232,7 @@ export default function PricingPage() {
               </thead>
               <tbody className="[font-variant-numeric:tabular-nums]">
                 {SCENARIOS.map((s) => {
-                  const ours = PAYLANCE_PER_TICKET * s.count;
+                  const ours = feeFor(s.price) * s.count;
                   const theirs = (s.price * TYPICAL_RATE + TYPICAL_FLAT) * s.count;
                   return (
                     <tr key={s.label}>
@@ -204,11 +314,11 @@ export default function PricingPage() {
 
           <div className="mt-12 space-y-3">
             {[
-              { q: "When exactly do I pay the ₦200?", a: "You don't pay it — it comes out of the ticket at the moment it's sold, along with your own share. There's no bill, no invoice and nothing to remember. If a ticket doesn't sell, there's no fee." },
+              { q: "When exactly do I pay the fee?", a: "You don't pay it — it comes out of the ticket at the moment it's sold, along with your own share. There's no bill, no invoice and nothing to remember. If a ticket doesn't sell, there's no fee." },
               { q: "How do I get my money?", a: "Straight to your own bank account. The payment splits the instant someone buys, so your share settles directly to you. We never hold it, which is also why there's nothing here to withdraw." },
               { q: "How long until it reaches my bank?", a: "That's your bank's settlement time, not ours — usually the next working day. We're not in the middle of it, so we can't slow it down or speed it up." },
               { q: "Are free events really free?", a: "Yes. We charge nothing on a ₦0 ticket, so community nights, church programmes and open days cost you nothing — and everybody still gets a real scannable ticket." },
-              { q: "What about card processing fees?", a: "Your payment provider charges those, and they'd charge them on any platform. They're separate from our ₦200 and go to the bank, not to us." },
+              { q: "What about card processing fees?", a: "Your payment provider charges those, and they'd charge them on any platform. They're separate from our fee and go to the bank, not to us." },
               { q: "Can I change the price after I publish?", a: "Yes. You can edit a ticket type at any time, and add new ones. What you can't do is set a limit lower than the number you've already sold — that would make your own numbers lie to you." },
               { q: "Is there a contract?", a: "No. No plan, no minimum, no notice period. Sell one ticket a year or ten thousand." },
             ].map((f, i) => (

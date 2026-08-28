@@ -19,10 +19,10 @@ const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif"
 });
 
-const SITE_TITLE = "Paylance — Sell tickets for ₦200 a ticket, never a percentage";
+const SITE_TITLE = "Paylance — Sell tickets from ₦200 a ticket, never a percentage";
 
 const SITE_DESCRIPTION =
-  "Event ticketing with a flat ₦200 fee per ticket and no cut of your revenue. Set your ticket types, share one link, scan people in at the door — and the money settles straight to your own bank account.";
+  "Event ticketing with a flat fee per ticket — from ₦200 — and no cut of your revenue. Set your ticket types, share one link, scan people in at the door — and the money settles straight to your own bank account.";
 
 export const metadata: Metadata = {
   title: {

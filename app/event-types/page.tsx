@@ -7,7 +7,7 @@ import { EVENT_TYPES } from "@/components/marketing/event-types";
 export const metadata: Metadata = {
   title: "Every kind of event",
   description:
-    "Concerts, club nights, festivals, conferences, workshops, church programmes, weddings. If people come through a door, Paylance sells the ticket — ₦200 flat, never a percentage.",
+    "Concerts, club nights, festivals, conferences, workshops, church programmes, weddings. If people come through a door, Paylance sells the ticket — a flat fee from ₦200, never a percentage.",
 };
 
 export default function EventTypesPage() {
@@ -34,8 +34,9 @@ export default function EventTypesPage() {
           </h1>
           <p className="mx-auto mt-6 max-w-lg text-[17px] leading-relaxed text-[var(--on-ground-soft)]">
             Thirty people in a room or three thousand in a field. Free entry or
-            ₦120,000 a table. Same tickets, same scanner, same flat ₦200 —
-            and nothing at all when it&apos;s free.
+            ₦120,000 a table. Same tickets, same scanner, and a flat fee per
+            ticket that never turns into a percentage — with nothing at all to
+            pay when it&apos;s free.
           </p>
           <div className="mt-9 flex justify-center">
             <StartCta />

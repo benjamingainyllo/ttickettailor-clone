@@ -57,7 +57,7 @@ export function formatKobo(kobo: Kobo): string {
 }
 
 /** Fee model, configured per creator so it can change without a migration. */
-export type PlatformFeeType = "percentage" | "flat";
+export type PlatformFeeType = "percentage" | "flat" | "banded";
 
 /**
  * Paylance charges a FLAT FEE PER TICKET, and no percentage of revenue.
@@ -73,8 +73,51 @@ export type PlatformFeeType = "percentage" | "flat";
  * (An earlier version of this comment said 8% + ₦100, which was wrong.
  * Rechecked August 2026; see BUSINESS_MODEL.md before quoting it.)
  */
-export const DEFAULT_PLATFORM_FEE_TYPE: PlatformFeeType = "flat";
+export const DEFAULT_PLATFORM_FEE_TYPE: PlatformFeeType = "banded";
 export const DEFAULT_PLATFORM_FEE_VALUE = 20_000;
+
+/**
+ * The four bands. A flat fee per ticket — there are simply four of them,
+ * chosen by the ticket's own price. "A flat fee, never a percentage of
+ * your revenue" stays literally true: sell twice as many tickets and you
+ * pay twice the fee; charge twice as much and you do not.
+ *
+ * WHY THE BOUNDARIES SIT WHERE THEY DO. Each band's fee has to be lower
+ * than what Tix's free plan (5% + ₦100) would take at the CHEAPEST ticket
+ * in that band, or the band opens with us as the expensive option. That
+ * puts a hard floor under each boundary:
+ *
+ *     ₦450   beats 5% + ₦100 above ₦7,000
+ *     ₦1,500 beats it above ₦28,000
+ *     ₦2,500 beats it above ₦48,000
+ *
+ * The boundaries below are rounded up from those break-even points, not
+ * picked for looking tidy. Move a boundary DOWN and the band starts in a
+ * stretch where a percentage competitor is cheaper than we are, which is
+ * the one claim the whole product is built on. Check the arithmetic
+ * before touching these numbers.
+ */
+export const PLATFORM_FEE_BANDS: ReadonlyArray<{
+  /** Applies while the unit price is BELOW this, in kobo. */
+  readonly belowKobo: number;
+  readonly feeKobo: Kobo;
+}> = [
+  { belowKobo: 750_000, feeKobo: 20_000 },      // under ₦7,500  -> ₦200
+  { belowKobo: 3_000_000, feeKobo: 45_000 },    // ₦7,500-₦30,000 -> ₦450
+  { belowKobo: 7_500_000, feeKobo: 150_000 },   // ₦30,000-₦75,000 -> ₦1,500
+  { belowKobo: Infinity, feeKobo: 250_000 },    // ₦75,000+      -> ₦2,500
+];
+
+/** The band fee for one ticket at this price, in kobo. */
+export function bandFeeKobo(unitPriceKobo: Kobo): Kobo {
+  assertKobo(unitPriceKobo);
+  for (const band of PLATFORM_FEE_BANDS) {
+    if (unitPriceKobo < band.belowKobo) return band.feeKobo;
+  }
+  // Unreachable while the last band is Infinity, but a table edited badly
+  // should charge the top rate rather than nothing at all.
+  return PLATFORM_FEE_BANDS[PLATFORM_FEE_BANDS.length - 1].feeKobo;
+}
 
 /**
  * The platform's cut of a single unit, in kobo.
@@ -96,9 +139,11 @@ export function calculatePlatformFeeKobo(
   if (grossKobo === 0) return 0;
 
   const fee =
-    feeType === "flat"
-      ? Math.round(feeValue)
-      : Math.floor((grossKobo * Math.round(feeValue)) / 10_000);
+    feeType === "banded"
+      ? bandFeeKobo(grossKobo)
+      : feeType === "flat"
+        ? Math.round(feeValue)
+        : Math.floor((grossKobo * Math.round(feeValue)) / 10_000);
 
   // Never take more than the buyer paid.
   return Math.max(0, Math.min(fee, grossKobo));
@@ -123,8 +168,8 @@ export function calculateOrderPlatformFeeKobo(
     throw new Error(`Expected a positive integer quantity, received: ${String(quantity)}`);
   }
 
-  if (feeType === "flat") {
-    return calculatePlatformFeeKobo(unitPriceKobo, "flat", feeValue) * quantity;
+  if (feeType === "flat" || feeType === "banded") {
+    return calculatePlatformFeeKobo(unitPriceKobo, feeType, feeValue) * quantity;
   }
 
   return calculatePlatformFeeKobo(unitPriceKobo * quantity, "percentage", feeValue);

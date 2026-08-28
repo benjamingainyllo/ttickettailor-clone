@@ -45,13 +45,13 @@ export function PayoutMock() {
       <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-soft)]">
         Settled to your bank
       </p>
-      <p className="mt-1 text-3xl font-bold tracking-tight text-[var(--ink)]">₦191,680</p>
+      <p className="mt-1 text-3xl font-bold tracking-tight text-[var(--ink)]">₦568,025</p>
 
       <div className="mt-4 space-y-2 border-t-2 border-dashed border-[var(--rule)] pt-4 text-[11px]">
         {[
-          ["Gross · 40 tickets", "₦202,000"],
-          ["Paylance · ₦200 each", "−₦8,000"],
-          ["Processing", "−₦2,320"],
+          ["Gross · 40 tickets", "₦600,000"],
+          ["Paylance · ₦450 each", "−₦18,000"],
+          ["Processing", "−₦13,975"],
         ].map(([k, v]) => (
           <div key={k} className="flex justify-between">
             <span className="text-[var(--ink-soft)]">{k}</span>

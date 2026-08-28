@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { EVENT_TYPES } from "@/components/marketing/event-types";
 import { ArrowCurve, Circled, Sparkle, Squiggle, Star, Underline } from "@/components/marketing/doodles";
 import { DoorMock, LinkMock, PayoutMock, TicketMock, TiersMock } from "@/components/marketing/mockups";
+import { bandFeeKobo, koboToNaira, nairaToKobo } from "@/lib/money";
 
 /** Highlighter stroke behind a word. */
 function Mark({ children, color }: { children: React.ReactNode; color?: string }) {
@@ -24,7 +25,9 @@ const FEATURED_TYPES = EVENT_TYPES.slice(0, 9);
 /** The comparison the whole product rests on. One ticket, then two hundred. */
 const TICKET_PRICE = 20000;
 const TICKET_COUNT = 200;
-const PAYLANCE_PER_TICKET = 200;
+// Read from the live band table rather than typed in, so this figure can
+// never quietly disagree with what a seller is actually charged.
+const PAYLANCE_PER_TICKET = koboToNaira(bandFeeKobo(nairaToKobo(TICKET_PRICE)));
 // Tix.Africa, the incumbent here, charges ₦100 + 5% on its free plan
 // (₦100 + 3.5% on Pro). Checked August 2026 — an overstated competitor
 // rate is the kind of thing that gets screenshotted.
@@ -66,7 +69,7 @@ export default function LandingPage() {
           <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
             <div>
               <span className="lp-block-soft inline-block rotate-[-1.5deg] rounded-full bg-[var(--paper)] px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--ink)]">
-                ₦200 a ticket · never a percentage
+                From ₦200 a ticket · never a percentage
               </span>
 
               <h1 className="mt-6 text-[46px] font-extrabold leading-[0.95] tracking-[-0.03em] text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.4)] sm:text-[72px]">
@@ -80,9 +83,10 @@ export default function LandingPage() {
               </h1>
 
               <p className="mt-6 max-w-md text-[17px] leading-relaxed text-white/90">
-                Two hundred naira per ticket sold. Not a percentage, not a monthly
-                plan. A ₦50,000 ticket costs you the same as a ₦2,000 one — and
-                the money lands in your bank the moment it&apos;s paid.
+                A flat fee for every ticket you sell — from ₦200, and never a
+                percentage of your revenue. Your share splits off the moment
+                someone pays and settles to your own bank. No wallet here,
+                nothing to withdraw, nobody holding it until after the night.
               </p>
 
               <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -368,7 +372,7 @@ export default function LandingPage() {
             <div className="mt-8 inline-flex items-center gap-2.5 rounded-full border-2 border-[#FFDE59] px-5 py-2.5">
               <span className="h-2 w-2 rounded-full bg-[#FFDE59]" />
               <span className="text-[13px] font-bold text-[#FFDE59]">
-                ₦200 a ticket. Nothing else, ever.
+                From ₦200 a ticket. Never a percentage.
               </span>
             </div>
           </div>
@@ -418,7 +422,7 @@ export default function LandingPage() {
 
           <div className="mt-12 space-y-3">
             {[
-              { q: "What does it actually cost?", a: "₦200 for every paid ticket you sell. There's no signup fee, no monthly plan, and no percentage of your revenue. If you sell nothing, you pay nothing." },
+              { q: "What does it actually cost?", a: "A flat fee for every paid ticket you sell, set by the ticket\u2019s price: ₦200 under ₦7,500, ₦450 up to ₦30,000, ₦1,500 up to ₦75,000 and ₦2,500 above that. There's no signup fee, no monthly plan, and no percentage of your revenue. If you sell nothing, you pay nothing." },
               { q: "What about free events?", a: "Completely free. We don't charge a fee on a ₦0 ticket, so community nights, open days and RSVPs cost you nothing at all — and everyone still gets a real scannable ticket." },
               { q: "How do I get my money?", a: "Straight to your own bank account. The payment splits at the moment someone buys, so your share settles directly to you. We never hold it, which is also why there's nothing to withdraw." },
               { q: "Do my buyers need an account?", a: "No. They tap your link, pick their tickets, enter a name and email, and pay. Their tickets arrive by email seconds later." },
