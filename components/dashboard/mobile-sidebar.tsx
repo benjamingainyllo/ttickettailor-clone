@@ -61,7 +61,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   // Derive display values from auth context
   const userName = profile?.first_name || user?.user_metadata?.first_name || "Creator";
-  const userEmail = user?.email || "creator@paylance.me";
+  const userEmail = user?.email || "";
   const userHandle = profile?.handle || "";
   const userPhoto = profile?.avatar_url || null;
 

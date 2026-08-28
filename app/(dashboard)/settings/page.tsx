@@ -15,6 +15,11 @@ const CATEGORIES = [
 ];
 
 export default function SettingsPage() {
+  // The real host this deployment is served from. paylance.me was hardcoded
+  // here and does not exist — an organiser copying that link got nowhere.
+  const publicHost =
+    typeof window !== "undefined" ? window.location.host : "";
+
   const { user, profile, refreshProfile, signOut } = useAuth();
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -209,7 +214,7 @@ export default function SettingsPage() {
                   <label className="mb-1 block text-xs font-medium text-subtle">Handle</label>
                   <div className="flex items-center overflow-hidden rounded-lg border border-border bg-muted focus-within:border-blue-500">
                     <span className="shrink-0 border-r border-border px-3 py-2.5 text-xs text-subtle">
-                      paylance.me/
+                      {publicHost}/
                     </span>
                     <input
                       value={handle}

@@ -17,7 +17,7 @@ export function TopFilters() {
           <Bell className="h-3.5 w-3.5" />
         </button>
         <button className="flex items-center gap-2 rounded-full border border-blue-900/20 bg-blue-600/10 px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-600/20">
-          <span className="hidden sm:inline">paylance.me/benjitech</span>
+          <span className="hidden sm:inline">Share your page</span>
           <span className="sm:hidden">Share</span>
           <Share2 className="h-3 w-3" />
         </button>
