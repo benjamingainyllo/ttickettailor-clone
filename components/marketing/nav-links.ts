@@ -11,3 +11,10 @@ export const MARKETING_NAV = [
   ["/pricing", "Pricing"],
   ["/event-types", "Event types"],
 ] as const;
+
+/** Footer-only. Kept out of MARKETING_NAV so it never reaches the top bar. */
+export const LEGAL_NAV = [
+  ["/terms", "Terms of service"],
+  ["/privacy", "Privacy policy"],
+  ["/cookies", "Cookies"],
+] as const;

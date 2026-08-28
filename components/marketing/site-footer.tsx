@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MARKETING_NAV } from "./nav-links";
+import { LEGAL_NAV, MARKETING_NAV } from "./nav-links";
 
 export function SiteFooter() {
   return (
@@ -24,6 +24,19 @@ export function SiteFooter() {
         </div>
 
         <p className="text-[12px] text-[var(--on-ground-faint)]">© {new Date().getFullYear()} Paylance</p>
+      </div>
+
+      {/* Legal sits on its own line: findable when looked for, quiet otherwise. */}
+      <div className="mx-auto mt-8 flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-[var(--hairline)] pt-6">
+        {LEGAL_NAV.map(([to, label]) => (
+          <Link
+            key={to}
+            href={to}
+            className="text-[12px] text-[var(--on-ground-faint)] hover:text-[var(--on-ground-soft)]"
+          >
+            {label}
+          </Link>
+        ))}
       </div>
     </footer>
   );

@@ -312,8 +312,15 @@ export function AuthScreen() {
 
         {!isLogin && (
           <p className="mt-6 text-center text-[12px] leading-relaxed text-[var(--on-ground-faint)]">
-            By creating an account you agree to our terms of service and
-            privacy policy.
+            By creating an account you agree to our{" "}
+            <Link href="/terms" className="underline hover:text-[var(--on-ground-soft)]">
+              terms of service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline hover:text-[var(--on-ground-soft)]">
+              privacy policy
+            </Link>
+            .
           </p>
         )}
 
