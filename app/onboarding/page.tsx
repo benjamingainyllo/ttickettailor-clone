@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { checkHandle, normalizeHandle } from "@/lib/handle";
+import { SetPasswordGate } from "@/components/auth/set-password-gate";
 import { 
   Sparkles, 
   Rocket, 
@@ -41,6 +42,18 @@ export default function OnboardingPage() {
   const { user, profile, refreshProfile } = useAuth();
   const supabase = createClient();
   const [step, setStep] = useState(1);
+
+  // Signing up takes an email address and nothing else, so an account can
+  // arrive here with no password on it. Until one is set the organiser has
+  // no way back in, which makes this the first thing shown — before the
+  // handle, before anything. Google accounts already have a provider to
+  // sign in with, so they skip it.
+  const [passwordDone, setPasswordDone] = useState(false);
+  const needsPassword =
+    !passwordDone &&
+    !!user &&
+    !user.user_metadata?.password_set &&
+    user.app_metadata?.provider === "email";
   const [handle, setHandle] = useState("");
   const [category, setCategory] = useState("");
   const [bio, setBio] = useState("");
@@ -156,6 +169,15 @@ export default function OnboardingPage() {
   const enterDashboard = () => {
     router.push(`/${normalizeHandle(handle)}`);
   };
+
+  if (needsPassword) {
+    return (
+      <SetPasswordGate
+        email={user?.email ?? ""}
+        onDone={() => setPasswordDone(true)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">

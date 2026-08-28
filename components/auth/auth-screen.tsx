@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -10,50 +10,80 @@ import { ArrowRight, Check, Loader2 } from "lucide-react";
 /**
  * Sign in and sign up.
  *
- * Deliberately one narrow column rather than a form beside a marketing
- * panel. Somebody on this page has already decided; a second sales pitch
- * next to the password box only gives them something else to read.
+ * The two halves work differently on purpose.
  *
- * The three lines under the form are the only claims made here, and each
- * one is a fact about the product rather than about how well it is doing.
- * A previous version of this screen carried invented traction — a creator
- * count, a naira total and a named testimonial, none of which had ever
- * been true. Nothing on an auth screen is worth that. If a number appears
+ * SIGNING UP asks for an email address and nothing else. Everything a new
+ * organiser would otherwise type into a form — their name, a password — is
+ * asked for after they click the link in their email, by which point the
+ * address is already proven and they have committed. Asking for five fields
+ * from somebody who has not yet decided is how you lose them at the door.
+ *
+ * SIGNING IN stays email and password, because somebody coming back wants
+ * to be in immediately, not waiting on an inbox.
+ *
+ * The consequence of that split: a magic-link signup creates an account
+ * with NO PASSWORD, so the first thing onboarding does is take one. Skip
+ * that and a new organiser can never sign in again. See SetPasswordGate.
+ *
+ * Nothing on this screen claims anything about how the business is doing.
+ * A previous version carried an invented creator count, naira total and a
+ * named testimonial, none of which had ever been true. If a number appears
  * here again it has to be one we can point at in the database.
  */
+
+const RESEND_COOLDOWN_SECONDS = 45;
+
 export function AuthScreen() {
   const router = useRouter();
   const supabase = createClient();
 
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
 
-  const passwordChecks = {
-    length: password.length >= 8,
-    letter: /[a-zA-Z]/.test(password),
-    number: /[0-9]/.test(password),
-  };
-  const passwordOk =
-    passwordChecks.length && passwordChecks.letter && passwordChecks.number;
+  /** Set once the signup link is away; also the address we sent it to. */
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
 
-  const canSubmit = isLogin
-    ? email.length > 0 && password.length > 0
-    : firstName.trim().length > 0 && email.length > 0 && passwordOk;
+  // The provider rate-limits how often it will send. Counting down is
+  // honest about the wait instead of letting them press a button that
+  // silently fails.
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((n) => Math.max(0, n - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  const sendSignupLink = useCallback(
+    async (address: string) => {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: address,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: `${window.location.origin}/onboarding`,
+        },
+      });
+      return error;
+    },
+    [supabase]
+  );
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
     setIsLoading(true);
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
         if (error) {
           toast.error(error.message);
           setIsLoading(false);
@@ -64,35 +94,34 @@ export function AuthScreen() {
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { first_name: firstName, last_name: lastName },
-          emailRedirectTo: `${window.location.origin}/onboarding`,
-        },
-      });
-
+      const address = email.trim();
+      const error = await sendSignupLink(address);
       if (error) {
         toast.error(error.message);
         setIsLoading(false);
         return;
       }
 
-      if (data.session) {
-        // Email confirmation is off, so they are already signed in.
-        router.push("/onboarding");
-        router.refresh();
-      } else {
-        // Confirmation is on. Say so on the page rather than in a toast that
-        // disappears before it has been read.
-        setEmailSent(true);
-        setIsLoading(false);
-      }
+      setSentTo(address);
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      setIsLoading(false);
     } catch {
       toast.error("Something went wrong. Please try again.");
       setIsLoading(false);
     }
+  };
+
+  const handleResend = async () => {
+    if (!sentTo || cooldown > 0 || resending) return;
+    setResending(true);
+    const error = await sendSignupLink(sentTo);
+    setResending(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setCooldown(RESEND_COOLDOWN_SECONDS);
+    toast.success("Sent again. Give it a minute.");
   };
 
   const handleGoogle = async () => {
@@ -105,36 +134,53 @@ export function AuthScreen() {
 
   const swap = (toLogin: boolean) => {
     setIsLogin(toLogin);
-    setEmailSent(false);
+    setSentTo(null);
     setPassword("");
   };
 
   const field =
-    "w-full rounded-xl border border-[var(--hairline-firm)] bg-[var(--ground-deep)] px-4 py-3 text-[15px] text-[var(--on-ground)] placeholder-[var(--on-ground-faint)] outline-none transition-colors focus:border-[var(--coral)]";
-  const label =
+    "w-full rounded-xl border border-[var(--hairline-firm)] bg-[var(--ground-deep)] px-4 py-3.5 text-[15px] text-[var(--on-ground)] placeholder-[var(--on-ground-faint)] outline-none transition-colors focus:border-[var(--coral)]";
+  const labelCls =
     "mb-1.5 block text-[12.5px] font-bold text-[var(--on-ground-soft)]";
 
-  /* ── Confirmation sent ─────────────────────────────────────────── */
-  if (emailSent) {
+  /* ── Link sent ─────────────────────────────────────────────────── */
+  if (sentTo) {
     return (
       <main className="lp flex min-h-screen flex-col items-center justify-center px-6 py-16 font-[family-name:var(--font-bricolage-grotesque)]">
-        <div className="w-full max-w-[420px] text-center">
-          <span className="mx-auto mb-7 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--mint)]">
-            <Check className="h-6 w-6 text-[var(--ink)]" strokeWidth={3} />
+        <div className="w-full max-w-[480px] text-center">
+          <span className="mx-auto mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--mint)]">
+            <Check className="h-7 w-7 text-[var(--ink)]" strokeWidth={3} />
           </span>
-          <h1 className="text-[30px] font-extrabold leading-tight tracking-tight">
-            Check your email
+
+          <h1 className="text-[34px] font-extrabold leading-[1.04] tracking-[-0.02em] sm:text-[40px]">
+            Thanks for signing up to sell tickets!
           </h1>
-          <p className="mx-auto mt-4 max-w-sm text-[15.5px] leading-relaxed text-[var(--on-ground-soft)]">
-            We sent a confirmation link to{" "}
-            <span className="font-bold text-[var(--on-ground)]">{email}</span>.
-            Click it and you&apos;ll be taken straight to setting up your first
-            event.
+
+          <p className="mx-auto mt-5 max-w-sm text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
+            We&apos;ve sent an email to{" "}
+            <span className="font-bold text-[var(--on-ground)]">{sentTo}</span>{" "}
+            to continue setting up your account.
           </p>
-          <p className="mx-auto mt-4 max-w-sm text-[13.5px] leading-relaxed text-[var(--on-ground-faint)]">
-            Nothing after a couple of minutes? Check your spam folder — it can
-            land there the first time.
+
+          <button
+            onClick={handleResend}
+            disabled={cooldown > 0 || resending}
+            className="mt-9 flex h-14 w-full items-center justify-center rounded-full bg-[var(--paper)] text-[15px] font-extrabold text-[var(--ink)] transition-opacity hover:opacity-90 disabled:opacity-45"
+          >
+            {resending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : cooldown > 0 ? (
+              `Didn't receive the email? (${cooldown}s)`
+            ) : (
+              "Didn't receive the email?"
+            )}
+          </button>
+
+          <p className="mx-auto mt-5 max-w-sm text-[13.5px] leading-relaxed text-[var(--on-ground-faint)]">
+            Check your spam folder first — the first one from us often lands
+            there. The link works once and expires after an hour.
           </p>
+
           <button
             onClick={() => swap(true)}
             className="mt-8 text-[13.5px] font-bold text-[var(--coral)] hover:underline"
@@ -173,7 +219,7 @@ export function AuthScreen() {
         <p className="mt-3 text-center text-[15px] leading-relaxed text-[var(--on-ground-soft)]">
           {isLogin
             ? "Sign in to your events and your door."
-            : "Free to open. You only pay when a ticket sells."}
+            : "Your email is all we need to start. Free to open."}
         </p>
 
         <button
@@ -198,37 +244,9 @@ export function AuthScreen() {
           <span className="h-px flex-1 bg-[var(--hairline)]" />
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-4">
-          {!isLogin && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="firstName" className={label}>First name</label>
-                <input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Amara"
-                  autoComplete="given-name"
-                  required
-                  className={field}
-                />
-              </div>
-              <div>
-                <label htmlFor="lastName" className={label}>Last name</label>
-                <input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Okafor"
-                  autoComplete="family-name"
-                  className={field}
-                />
-              </div>
-            </div>
-          )}
-
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className={label}>Email</label>
+            <label htmlFor="email" className={labelCls}>Email</label>
             <input
               id="email"
               type="email"
@@ -236,69 +254,63 @@ export function AuthScreen() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               autoComplete="email"
+              autoFocus={!isLogin}
               required
               className={field}
             />
           </div>
 
-          <div>
-            <div className="flex items-baseline justify-between">
-              <label htmlFor="password" className={label}>Password</label>
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="mb-1.5 text-[12.5px] font-bold text-[var(--on-ground-faint)] hover:text-[var(--on-ground)]"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
+          {isLogin && (
+            <div>
+              <div className="flex items-baseline justify-between">
+                <label htmlFor="password" className={labelCls}>Password</label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="mb-1.5 text-[12.5px] font-bold text-[var(--on-ground-faint)] hover:text-[var(--on-ground)]"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Your password"
+                autoComplete="current-password"
+                required
+                className={field}
+              />
             </div>
-            <input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={isLogin ? "Your password" : "At least 8 characters"}
-              autoComplete={isLogin ? "current-password" : "new-password"}
-              required
-              className={field}
-            />
-
-            {!isLogin && password.length > 0 && (
-              <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
-                {[
-                  ["8 characters or more", passwordChecks.length],
-                  ["A letter", passwordChecks.letter],
-                  ["A number", passwordChecks.number],
-                ].map(([text, ok]) => (
-                  <li
-                    key={String(text)}
-                    className={`flex items-center gap-1.5 text-[12.5px] ${
-                      ok ? "text-[var(--mint)]" : "text-[var(--on-ground-faint)]"
-                    }`}
-                  >
-                    <Check className="h-3 w-3" strokeWidth={3} />
-                    {text}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          )}
 
           <button
             type="submit"
-            disabled={isLoading || !canSubmit}
+            disabled={
+              isLoading ||
+              !emailLooksValid ||
+              (isLogin && password.length === 0)
+            }
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--paper)] text-[15px] font-extrabold text-[var(--ink)] transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <>
-                {isLogin ? "Sign in" : "Create account"}
+                {isLogin ? "Sign in" : "Continue"}
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
           </button>
         </form>
+
+        {!isLogin && (
+          <p className="mt-4 text-center text-[13px] leading-relaxed text-[var(--on-ground-faint)]">
+            No password to think up yet — we&apos;ll email you a link to
+            continue.
+          </p>
+        )}
 
         <p className="mt-6 text-center text-[14px] text-[var(--on-ground-soft)]">
           {isLogin ? "New here? " : "Already have an account? "}
@@ -326,11 +338,7 @@ export function AuthScreen() {
 
         {/* Three facts about the product, all of them checkable. */}
         <ul className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-[var(--hairline)] pt-6">
-          {[
-            "Free to open",
-            "From ₦200 a ticket",
-            "Money to your own bank",
-          ].map((f) => (
+          {["Free to open", "From ₦200 a ticket", "Money to your own bank"].map((f) => (
             <li
               key={f}
               className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--on-ground-faint)]"
