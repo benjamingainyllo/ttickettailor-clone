@@ -50,11 +50,11 @@ export default function PricingPage() {
       <SiteNav />
 
       {/* ══════════════ The number ══════════════ */}
-      <section className="relative overflow-hidden border-b-2 border-[var(--ink)] bg-[var(--paper-deep)] px-6 py-20 sm:px-10 lg:px-16">
+      <section className="relative overflow-hidden border-b border-[var(--hairline)] bg-[var(--ground-deep)] px-6 py-20 sm:px-10 lg:px-16">
         <Sparkle className="absolute left-[10%] top-[18%] hidden h-6 w-6 text-[var(--coral)]/40 sm:block" />
 
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-soft)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--on-ground-soft)]">
             Pricing
           </p>
           <h1 className="mt-5 text-[38px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-[56px]">
@@ -73,13 +73,13 @@ export default function PricingPage() {
               <p className="mt-3 text-[15px] font-bold text-[var(--ink)]">
                 per paid ticket sold
               </p>
-              <p className="mt-1 text-[13.5px] text-[var(--ink)]/70">
+              <p className="mt-1 text-[13.5px] text-[#1B1512]/70">
                 Free tickets cost nothing at all
               </p>
             </div>
           </div>
 
-          <p className="mx-auto mt-10 max-w-lg text-[17px] leading-relaxed text-[var(--ink-soft)]">
+          <p className="mx-auto mt-10 max-w-lg text-[17px] leading-relaxed text-[var(--on-ground-soft)]">
             Not a percentage. Not a monthly plan. A ₦150,000 retreat ticket costs
             you the same ₦200 as a ₦2,000 comedy night — and if you sell nothing,
             you pay nothing.
@@ -92,7 +92,7 @@ export default function PricingPage() {
       </section>
 
       {/* ══════════════ Worked examples ══════════════ */}
-      <section className="border-b-2 border-[var(--ink)] px-6 py-20 sm:px-10 lg:px-16">
+      <section className="border-b border-[var(--hairline)] px-6 py-20 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-4xl">
           <div className="relative mx-auto max-w-2xl text-center">
             <h2 className="text-[30px] font-extrabold leading-[1.08] tracking-tight sm:text-[40px]">
@@ -101,7 +101,7 @@ export default function PricingPage() {
             <div className="mt-3 flex justify-center">
               <Underline className="h-3 w-52 text-[var(--coral)]" />
             </div>
-            <p className="mt-5 text-[16px] leading-relaxed text-[var(--ink-soft)]">
+            <p className="mt-5 text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
               Four real-shaped events, against the 5% + ₦100 the incumbent charges.
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function PricingPage() {
                   {["", "Tickets", "Paylance", "A typical 5% platform", "You keep"].map((h) => (
                     <th
                       key={h}
-                      className="border-b-2 border-[var(--ink)] pb-3 pr-4 text-left text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)] last:text-right"
+                      className="border-b border-[var(--hairline)] pb-3 pr-4 text-left text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--on-ground-soft)] last:text-right"
                     >
                       {h}
                     </th>
@@ -126,22 +126,22 @@ export default function PricingPage() {
                   const theirs = (s.price * TYPICAL_RATE + TYPICAL_FLAT) * s.count;
                   return (
                     <tr key={s.label}>
-                      <td className="border-b border-[var(--rule)] py-4 pr-4">
-                        <span className="block font-bold text-[var(--ink)]">{s.label}</span>
-                        <span className="block text-[13px] text-[var(--ink-soft)]">
+                      <td className="border-b border-[var(--hairline)] py-4 pr-4">
+                        <span className="block font-bold text-[var(--on-ground)]">{s.label}</span>
+                        <span className="block text-[13px] text-[var(--on-ground-soft)]">
                           {naira(s.price)} a ticket
                         </span>
                       </td>
-                      <td className="border-b border-[var(--rule)] py-4 pr-4 text-[var(--ink-soft)]">
+                      <td className="border-b border-[var(--hairline)] py-4 pr-4 text-[var(--on-ground-soft)]">
                         {s.count.toLocaleString("en-NG")}
                       </td>
-                      <td className="border-b border-[var(--rule)] py-4 pr-4 font-bold text-[var(--ink)]">
+                      <td className="border-b border-[var(--hairline)] py-4 pr-4 font-bold text-[var(--on-ground)]">
                         {naira(ours)}
                       </td>
-                      <td className="border-b border-[var(--rule)] py-4 pr-4 text-[var(--ink-soft)] line-through">
+                      <td className="border-b border-[var(--hairline)] py-4 pr-4 text-[var(--on-ground-soft)] line-through">
                         {naira(theirs)}
                       </td>
-                      <td className="border-b border-[var(--rule)] py-4 text-right font-extrabold text-[#1F7A52]">
+                      <td className="border-b border-[var(--hairline)] py-4 text-right font-extrabold text-[var(--mint)]">
                         +{naira(theirs - ours)}
                       </td>
                     </tr>
@@ -151,7 +151,7 @@ export default function PricingPage() {
             </table>
           </div>
 
-          <p className="mt-6 text-center text-[13px] text-[var(--ink-soft)]">
+          <p className="mt-6 text-center text-[13px] text-[var(--on-ground-soft)]">
             The comparison rate is a common one in this market. Card processing
             fees are charged by the bank, not by us, and apply either way.
           </p>
@@ -159,9 +159,9 @@ export default function PricingPage() {
       </section>
 
       {/* ══════════════ In / never ══════════════ */}
-      <section className="border-b-2 border-[var(--ink)] bg-[var(--paper-deep)] px-6 py-20 sm:px-10 lg:px-16">
+      <section className="border-b border-[var(--hairline)] bg-[var(--ground-deep)] px-6 py-20 sm:px-10 lg:px-16">
         <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
-          <div className="lp-block lp-tilt-1 rounded-2xl bg-white p-8">
+          <div className="lp-block-dark lp-tilt-1 rounded-2xl bg-[var(--ground-raised)] p-8">
             <h2 className="text-[22px] font-extrabold tracking-tight">
               Included, always
             </h2>
@@ -177,17 +177,17 @@ export default function PricingPage() {
             </ul>
           </div>
 
-          <div className="lp-block lp-tilt-3 rounded-2xl bg-white p-8">
+          <div className="lp-block-dark lp-tilt-3 rounded-2xl bg-[var(--ground-raised)] p-8">
             <h2 className="text-[22px] font-extrabold tracking-tight">
               What we never charge
             </h2>
             <ul className="mt-5 space-y-3">
               {NEVER.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-[15px] text-[var(--ink-soft)]">
+                <li key={item} className="flex items-start gap-3 text-[15px] text-[var(--on-ground-soft)]">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FFB3C7]">
                     <X className="h-3 w-3 text-[var(--ink)]" strokeWidth={3} />
                   </span>
-                  <span className="line-through decoration-[var(--rule-firm)]">{item}</span>
+                  <span className="line-through decoration-[var(--hairline-firm)]">{item}</span>
                 </li>
               ))}
             </ul>
@@ -196,7 +196,7 @@ export default function PricingPage() {
       </section>
 
       {/* ══════════════ Questions ══════════════ */}
-      <section className="border-b-2 border-[var(--ink)] px-6 py-20 sm:px-10 lg:px-16">
+      <section className="border-b border-[var(--hairline)] px-6 py-20 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-center text-[30px] font-extrabold tracking-tight sm:text-[40px]">
             Fair questions about money
@@ -214,7 +214,7 @@ export default function PricingPage() {
             ].map((f, i) => (
               <details
                 key={f.q}
-                className={`lp-block-soft group rounded-2xl bg-white px-6 py-5 lp-tilt-${(i % 2) + 3}`}
+                className={`lp-block-dark group rounded-2xl bg-[var(--ground-raised)] px-6 py-5 lp-tilt-${(i % 2) + 3}`}
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-bold">
                   {f.q}
@@ -224,7 +224,7 @@ export default function PricingPage() {
                     </svg>
                   </span>
                 </summary>
-                <p className="mt-3 text-[14px] leading-relaxed text-[var(--ink-soft)]">{f.a}</p>
+                <p className="mt-3 text-[14px] leading-relaxed text-[var(--on-ground-soft)]">{f.a}</p>
               </details>
             ))}
           </div>
@@ -232,7 +232,7 @@ export default function PricingPage() {
       </section>
 
       {/* ══════════════ CTA ══════════════ */}
-      <section className="relative overflow-hidden border-b-2 border-[var(--ink)] bg-gradient-to-br from-[#FF6A45] via-[#F5568E] to-[#8B5CF6] px-6 py-24 text-center sm:px-10 lg:px-16">
+      <section className="relative overflow-hidden border-b border-[var(--hairline)] bg-gradient-to-br from-[#FF6A45] via-[#F5568E] to-[#8B5CF6] px-6 py-24 text-center sm:px-10 lg:px-16">
         <Star className="absolute left-[16%] top-[24%] hidden h-5 w-5 text-white/40 sm:block" />
         <div className="relative mx-auto max-w-xl">
           <h2 className="text-[34px] font-extrabold leading-[1.02] tracking-tight text-white sm:text-[48px]">

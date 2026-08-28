@@ -8,7 +8,7 @@
 
 export function EventCardMock() {
   return (
-    <div className="w-full max-w-[300px] overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-white shadow-[6px_6px_0_var(--ink)]">
+    <div className="w-full max-w-[300px] overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-white shadow-[6px_6px_0_var(--block-shadow)]">
       <div className="relative h-28 bg-gradient-to-br from-[#FF6A45] via-[#FF9E7A] to-[#FFDE59]">
         <span className="absolute bottom-3 left-3 rounded-full bg-[var(--ink)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
           ₦5,000 / ticket
@@ -41,7 +41,7 @@ export function EventCardMock() {
 
 export function PayoutMock() {
   return (
-    <div className="w-full max-w-[300px] rounded-2xl border-2 border-[var(--ink)] bg-white p-5 shadow-[6px_6px_0_var(--ink)]">
+    <div className="w-full max-w-[300px] rounded-2xl border-2 border-[var(--ink)] bg-white p-5 shadow-[6px_6px_0_var(--block-shadow)]">
       <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-soft)]">
         Settled to your bank
       </p>
@@ -78,7 +78,7 @@ export function OrdersMock() {
   ];
 
   return (
-    <div className="w-full max-w-[340px] rounded-2xl border-2 border-[var(--ink)] bg-white p-4 shadow-[6px_6px_0_var(--ink)]">
+    <div className="w-full max-w-[340px] rounded-2xl border-2 border-[var(--ink)] bg-white p-4 shadow-[6px_6px_0_var(--block-shadow)]">
       <div className="flex items-center justify-between px-1 pb-3">
         <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-soft)]">
           Orders
@@ -111,7 +111,7 @@ export function OrdersMock() {
 
 export function LinkMock() {
   return (
-    <div className="w-full max-w-[280px] rounded-2xl border-2 border-[var(--ink)] bg-white p-4 shadow-[6px_6px_0_var(--ink)]">
+    <div className="w-full max-w-[280px] rounded-2xl border-2 border-[var(--ink)] bg-white p-4 shadow-[6px_6px_0_var(--block-shadow)]">
       <div className="flex items-center gap-2 rounded-xl bg-[var(--paper-deep)] px-3 py-2.5">
         <span className="h-2 w-2 rounded-full bg-[#FF6A45]" />
         <span className="truncate text-[12px] font-semibold text-[var(--ink)]">
@@ -151,7 +151,7 @@ export function LinkMock() {
  */
 export function TicketMock() {
   return (
-    <div className="w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-white shadow-[6px_6px_0_var(--ink)]">
+    <div className="w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-white shadow-[6px_6px_0_var(--block-shadow)]">
       <div className="border-b-2 border-dashed border-[var(--rule)] p-5 text-center">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-soft)]">
           Early Bird · 1 of 2
@@ -211,7 +211,7 @@ function QrArt() {
 /** The door, mid-scan. The one screen an organiser pictures themselves using. */
 export function DoorMock() {
   return (
-    <div className="w-full max-w-[260px] overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-[#0f0f10] p-3 shadow-[6px_6px_0_var(--ink)]">
+    <div className="w-full max-w-[260px] overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-[#0f0f10] p-3 shadow-[6px_6px_0_var(--block-shadow)]">
       <div className="flex items-center justify-between px-1 pb-3">
         <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/50">Door</span>
         <span className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold text-white">
@@ -221,15 +221,15 @@ export function DoorMock() {
 
       <div className="rounded-xl bg-[#9BE3C0] p-4">
         <p className="text-[19px] font-black leading-none text-[var(--ink)]">Let them in</p>
-        <p className="mt-1.5 text-[11px] font-semibold text-[var(--ink)]/70">
+        <p className="mt-1.5 text-[11px] font-semibold text-[#1B1512]/70">
           Amara Okafor · Early Bird
         </p>
-        <p className="mt-2 font-mono text-[11px] font-bold text-[var(--ink)]/60">PL-7K4M-9XQ2</p>
+        <p className="mt-2 font-mono text-[11px] font-bold text-[#1B1512]/70">PL-7K4M-9XQ2</p>
       </div>
 
       <div className="mt-2 rounded-xl bg-[#FFDE59] p-3">
         <p className="text-[13px] font-black leading-none text-[var(--ink)]">Already used</p>
-        <p className="mt-1 text-[10px] font-semibold text-[var(--ink)]/70">Scanned at 7:14 PM</p>
+        <p className="mt-1 text-[10px] font-semibold text-[#1B1512]/70">Scanned at 7:14 PM</p>
       </div>
     </div>
   );
@@ -244,7 +244,7 @@ export function TiersMock() {
   ] as const;
 
   return (
-    <div className="w-full max-w-[280px] rounded-2xl border-2 border-[var(--ink)] bg-white p-4 shadow-[6px_6px_0_var(--ink)]">
+    <div className="w-full max-w-[280px] rounded-2xl border-2 border-[var(--ink)] bg-white p-4 shadow-[6px_6px_0_var(--block-shadow)]">
       <p className="px-1 pb-2.5 text-[10px] font-bold uppercase tracking-widest text-[var(--ink-soft)]">
         Choose a ticket
       </p>

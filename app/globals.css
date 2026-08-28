@@ -23,42 +23,72 @@ html[data-theme="light"] {
 }
 
 /* ============================================================
-   Landing page visual system
+   Landing page visual system — the night
    ------------------------------------------------------------
-   The marketing site is its own world, not the dashboard in light
-   mode: a warm paper ground, ink rather than grey, saturated
+   The marketing site is its own world, not the dashboard in dark
+   mode: a warm near-black ground the colour of a room after the
+   lights drop, bright paper objects laid on top of it, saturated
    accents, and hand-drawn marks. Scoped to .lp so none of it can
    leak into the app.
+
+   Two vocabularies live here, and keeping them apart is what makes
+   the whole thing work:
+
+     GROUND  — the page itself. Dark. Text on it is --on-ground.
+     INK     — the near-black used ON light objects: the pastel
+               cards, the product mockups, the paper buttons. Those
+               are still light, so ink is still correct on them.
+
+   So --ink did not become "the light colour". It kept its meaning
+   and the page moved out from under it.
    ============================================================ */
 .lp {
-  --paper: #FDF8F0;        /* warm off-white, not a neutral grey */
-  --paper-deep: #F4EADC;   /* the next shade down, for banding */
+  /* The page */
+  --ground: #12080F;       /* warm near-black, not a neutral one */
+  --ground-deep: #1B0D18;  /* the next shade up, for banding */
+  --ground-raised: #241430;/* plum — cards and bands that lift */
+  --on-ground: #FDF8F0;    /* warm off-white, the reading colour */
+
+  /* Light objects sitting on the page keep their own ink */
+  --paper: #FDF8F0;
+  --paper-deep: #F4EADC;
   --ink: #1B1512;          /* warm near-black */
-  --ink-soft: #6B5D53;     /* body copy, still warm */
+  --ink-soft: #6B5D53;     /* body copy on a light object */
+
   --coral: #FF6A45;        /* the one loud accent */
   --marker: #FFDE59;       /* highlighter yellow */
   --marker-pink: #FFB3C7;
   --mint: #9BE3C0;
   --peri: #B7C4FF;
   --lilac: #DDBBF5;
-  --plum: #241430;         /* the dark band */
+  --plum: #241430;
 
   /* Pre-mixed muted variants. Tailwind can't apply an opacity modifier to
-     an arbitrary var() colour — text-[var(--paper)]/75 silently produces
-     the wrong colour — so these exist as real values. */
+     an arbitrary var() colour — text-[var(--on-ground)]/75 silently
+     produces the wrong colour — so these exist as real values. */
+  --on-ground-soft: rgba(253, 248, 240, 0.74);
+  --on-ground-faint: rgba(253, 248, 240, 0.52);
+  --hairline: rgba(253, 248, 240, 0.14);
+  --hairline-firm: rgba(253, 248, 240, 0.28);
+
   --paper-muted: #E4D9CB;
   --ink-muted: rgba(27, 21, 18, 0.72);
   --rule: rgba(27, 21, 18, 0.14);
-  --coral-faint: rgba(255, 106, 69, 0.35);
+  --coral-faint: rgba(255, 106, 69, 0.45);
 
-  background: var(--paper);
-  color: var(--ink);
-  color-scheme: light;
+  /* An ink shadow is invisible against an ink-dark page, so the offset
+     block reads as black here instead. Same gesture, different ground. */
+  --block-shadow: rgba(0, 0, 0, 0.6);
+  --block-shadow-soft: rgba(0, 0, 0, 0.4);
+
+  background: var(--ground);
+  color: var(--on-ground);
+  color-scheme: dark;
 }
 
 html:has(.lp),
 html:has(.lp) body {
-  background: #FDF8F0;
+  background: #12080F;
 }
 
 /* A highlighter stroke behind a word. Irregular on purpose — a flat
@@ -71,6 +101,9 @@ html:has(.lp) body {
 .lp-mark > span {
   position: relative;
   z-index: 1;
+  /* The stroke is a light marker colour whatever the page does, so the
+     word it sits behind has to be ink even on the dark ground. */
+  color: var(--ink);
 }
 .lp-mark::before {
   content: "";
@@ -95,14 +128,23 @@ html:has(.lp) body {
   .lp-tilt-1, .lp-tilt-2, .lp-tilt-3, .lp-tilt-4 { transform: none; }
 }
 
-/* Chunky offset border, like a sticker with a printed shadow. */
+/* Chunky offset border, like a sticker with a printed shadow. Kept for
+   LIGHT objects — a pastel card, a paper button — where the ink border
+   still separates it from the page. */
 .lp-block {
   border: 2px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--block-shadow);
 }
 .lp-block-soft {
   border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0 rgba(27, 21, 18, 0.18);
+  box-shadow: 3px 3px 0 var(--block-shadow-soft);
+}
+
+/* The same gesture for a card that is itself dark: no ink border to be
+   found against the page, so the edge is a hairline instead. */
+.lp-block-dark {
+  border: 1px solid var(--hairline-firm);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.45);
 }
 
 /* Legacy scope kept for any other marketing surface. */

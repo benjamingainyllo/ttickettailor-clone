@@ -83,11 +83,11 @@ export default function FeaturesPage() {
       <SiteNav />
 
       {/* ══════════════ Header ══════════════ */}
-      <section className="relative overflow-hidden border-b-2 border-[var(--ink)] bg-[var(--paper-deep)] px-6 py-20 sm:px-10 lg:px-16">
+      <section className="relative overflow-hidden border-b border-[var(--hairline)] bg-[var(--ground-deep)] px-6 py-20 sm:px-10 lg:px-16">
         <Sparkle className="absolute left-[9%] top-[20%] hidden h-6 w-6 text-[var(--coral)]/40 sm:block" />
 
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-soft)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--on-ground-soft)]">
             Features
           </p>
           <h1 className="mt-5 text-[38px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-[56px]">
@@ -99,7 +99,7 @@ export default function FeaturesPage() {
             <br />
             and the last person in.
           </h1>
-          <p className="mx-auto mt-6 max-w-lg text-[17px] leading-relaxed text-[var(--ink-soft)]">
+          <p className="mx-auto mt-6 max-w-lg text-[17px] leading-relaxed text-[var(--on-ground-soft)]">
             Most platforms are good at taking the money and vague about the
             door. Both halves are here, and the door half is the one we
             spent the longest on.
@@ -111,7 +111,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* ══════════════ The four big ones ══════════════ */}
-      <section className="border-b-2 border-[var(--ink)] px-6 py-20 sm:px-10 lg:px-16">
+      <section className="border-b border-[var(--hairline)] px-6 py-20 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-7xl space-y-20">
           {CAPABILITIES.map((cap, i) => (
             <div
@@ -131,7 +131,7 @@ export default function FeaturesPage() {
                 <h2 className="mt-4 text-[26px] font-extrabold leading-tight tracking-tight sm:text-[32px]">
                   {cap.title}
                 </h2>
-                <p className="mt-3 max-w-md text-[15px] leading-relaxed text-[var(--ink-soft)]">
+                <p className="mt-3 max-w-md text-[15px] leading-relaxed text-[var(--on-ground-soft)]">
                   {cap.body}
                 </p>
 
@@ -154,7 +154,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* ══════════════ The rest ══════════════ */}
-      <section className="border-b-2 border-[var(--ink)] bg-[var(--paper-deep)] px-6 py-20 sm:px-10 lg:px-16">
+      <section className="border-b border-[var(--hairline)] bg-[var(--ground-deep)] px-6 py-20 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-6xl">
           <div className="relative mx-auto max-w-2xl text-center">
             <h2 className="text-[30px] font-extrabold leading-[1.08] tracking-tight sm:text-[40px]">
@@ -167,9 +167,9 @@ export default function FeaturesPage() {
 
           <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {SMALLER.map((f, i) => (
-              <div key={f.t} className={`lp-block rounded-2xl bg-white p-6 lp-tilt-${(i % 4) + 1}`}>
+              <div key={f.t} className={`lp-block-dark rounded-2xl bg-[var(--ground-raised)] p-6 lp-tilt-${(i % 4) + 1}`}>
                 <h3 className="text-[17px] font-extrabold leading-tight tracking-tight">{f.t}</h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--ink-soft)]">{f.b}</p>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--on-ground-soft)]">{f.b}</p>
               </div>
             ))}
           </div>
@@ -177,15 +177,15 @@ export default function FeaturesPage() {
       </section>
 
       {/* ══════════════ Honest about what's next ══════════════ */}
-      <section className="border-b-2 border-[var(--ink)] px-6 py-20 sm:px-10 lg:px-16">
+      <section className="border-b border-[var(--hairline)] px-6 py-20 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-soft)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--on-ground-soft)]">
             Being straight with you
           </p>
           <h2 className="mt-5 text-[28px] font-extrabold leading-[1.1] tracking-tight sm:text-[36px]">
             What isn&apos;t built yet
           </h2>
-          <p className="mt-5 text-[16px] leading-relaxed text-[var(--ink-soft)]">
+          <p className="mt-5 text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
             Discount codes, waitlists, repeating events, seating charts and
             selling from your own website are all on the list and none of them
             exist today. We&apos;d rather you knew that now than found out the
@@ -198,7 +198,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* ══════════════ CTA ══════════════ */}
-      <section className="relative overflow-hidden border-b-2 border-[var(--ink)] bg-gradient-to-br from-[#8B5CF6] via-[#F5568E] to-[#FF6A45] px-6 py-24 text-center sm:px-10 lg:px-16">
+      <section className="relative overflow-hidden border-b border-[var(--hairline)] bg-gradient-to-br from-[#8B5CF6] via-[#F5568E] to-[#FF6A45] px-6 py-24 text-center sm:px-10 lg:px-16">
         <Star className="absolute bottom-[24%] left-[18%] hidden h-5 w-5 text-white/40 sm:block" />
         <div className="relative mx-auto max-w-xl">
           <h2 className="text-[34px] font-extrabold leading-[1.02] tracking-tight text-white sm:text-[48px]">

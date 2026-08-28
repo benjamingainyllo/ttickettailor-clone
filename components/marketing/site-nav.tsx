@@ -26,7 +26,7 @@ export function SiteNav() {
   const href = signedIn ? "/overview" : "/login";
 
   return (
-    <header className="sticky top-0 z-50 border-b-2 border-[var(--ink)] bg-[var(--paper)]">
+    <header className="sticky top-0 z-50 border-b border-[var(--hairline)] bg-[var(--ground)]">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-10 lg:px-16">
         <Link href="/" className="flex items-center gap-2">
           <span className="flex h-8 w-8 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[13px] font-black text-white">
@@ -40,7 +40,7 @@ export function SiteNav() {
             <Link
               key={to}
               href={to}
-              className="text-[13px] font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
+              className="text-[13px] font-semibold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
             >
               {label}
             </Link>
@@ -49,13 +49,13 @@ export function SiteNav() {
 
         <div className="hidden items-center gap-4 md:flex">
           {!signedIn && (
-            <Link href="/login" className="text-[13px] font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)]">
+            <Link href="/login" className="text-[13px] font-semibold text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]">
               Sign in
             </Link>
           )}
           <Link
             href={href}
-            className="lp-block-soft rounded-xl bg-[var(--ink)] px-4 py-2 text-[12px] font-bold text-[var(--paper)] transition-transform hover:-translate-y-0.5"
+            className="rounded-full bg-[var(--paper)] px-5 py-2.5 text-[12px] font-bold text-[var(--ink)] transition-transform hover:-translate-y-0.5"
           >
             {signedIn ? "Dashboard" : "Get started"}
           </Link>
@@ -65,28 +65,28 @@ export function SiteNav() {
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--ink)] md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--hairline-firm)] md:hidden"
         >
           {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </button>
       </nav>
 
       {menuOpen && (
-        <div className="border-t-2 border-[var(--ink)] px-6 py-4 sm:px-10 md:hidden lg:px-16">
+        <div className="border-t border-[var(--hairline)] px-6 py-4 sm:px-10 md:hidden lg:px-16">
           <div className="flex flex-col gap-4">
             {MARKETING_NAV.map(([to, label]) => (
               <Link
                 key={to}
                 href={to}
                 onClick={() => setMenuOpen(false)}
-                className="text-sm font-semibold text-[var(--ink-soft)]"
+                className="text-sm font-semibold text-[var(--on-ground-soft)]"
               >
                 {label}
               </Link>
             ))}
             <Link
               href={href}
-              className="lp-block-soft rounded-xl bg-[var(--ink)] px-4 py-3 text-center text-xs font-bold text-[var(--paper)]"
+              className="rounded-full bg-[var(--paper)] px-4 py-3 text-center text-xs font-bold text-[var(--ink)]"
             >
               {signedIn ? "Dashboard" : "Get started"}
             </Link>

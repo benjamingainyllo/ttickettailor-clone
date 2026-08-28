@@ -42,7 +42,7 @@ export default function LandingPage() {
       <SiteNav />
 
       {/* ══════════════ Hero ══════════════ */}
-      <section className="relative overflow-hidden border-b-2 border-[var(--ink)]">
+      <section className="relative overflow-hidden border-b border-[var(--hairline)]">
         {/* The room you're selling tickets to, not an illustration of it. */}
         <Image
           src="/hero-crowd.jpg"
@@ -114,10 +114,10 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ The fee — the whole argument ══════════════ */}
-      <section id="pricing" className="border-b-2 border-[var(--ink)] px-6 sm:px-10 lg:px-16 py-20">
+      <section id="pricing" className="border-b border-[var(--hairline)] px-6 sm:px-10 lg:px-16 py-20">
         <div className="mx-auto max-w-5xl">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-soft)]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--on-ground-soft)]">
               The maths everyone else hides
             </p>
             <h2 className="mt-5 text-[32px] font-extrabold leading-[1.1] tracking-tight sm:text-[44px]">
@@ -125,7 +125,7 @@ export default function LandingPage() {
               <br />
               for <Mark color="var(--marker-pink)">selling well</Mark>
             </h2>
-            <p className="mt-5 text-[16px] leading-relaxed text-[var(--ink-soft)]">
+            <p className="mt-5 text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
               The better your event does, the more a percentage platform takes. Ours
               doesn&apos;t move. Here&apos;s {TICKET_COUNT} tickets at {naira(TICKET_PRICE)}.
             </p>
@@ -133,36 +133,36 @@ export default function LandingPage() {
 
           <div className="mt-14 grid gap-5 sm:grid-cols-2">
             <div className="lp-block lp-tilt-1 rounded-2xl bg-[#9BE3C0] p-7">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink)]/70">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[#1B1512]/70">
                 Paylance
               </p>
               <p className="mt-2 text-[42px] font-extrabold leading-none tracking-tight text-[var(--ink)]">
                 {naira(paylanceTotal)}
               </p>
-              <p className="mt-2 text-[13px] font-semibold text-[var(--ink)]/70">
+              <p className="mt-2 text-[13px] font-semibold text-[#1B1512]/70">
                 in fees · {naira(PAYLANCE_PER_TICKET)} × {TICKET_COUNT} tickets
               </p>
-              <div className="mt-5 border-t-2 border-[var(--ink)]/15 pt-4">
-                <p className="text-[12px] font-semibold text-[var(--ink)]/70">You keep</p>
+              <div className="mt-5 border-t-2 border-[#1B1512]/15 pt-4">
+                <p className="text-[12px] font-semibold text-[#1B1512]/70">You keep</p>
                 <p className="text-[24px] font-extrabold text-[var(--ink)]">
                   {naira(TICKET_PRICE * TICKET_COUNT - paylanceTotal)}
                 </p>
               </div>
             </div>
 
-            <div className="lp-block lp-tilt-3 rounded-2xl bg-white p-7">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-soft)]">
+            <div className="lp-block-dark lp-tilt-3 rounded-2xl bg-[var(--ground-raised)] p-7">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--on-ground-soft)]">
                 A typical 5% platform
               </p>
-              <p className="mt-2 text-[42px] font-extrabold leading-none tracking-tight text-[var(--ink)]">
+              <p className="mt-2 text-[42px] font-extrabold leading-none tracking-tight text-[var(--on-ground-soft)]">
                 {naira(typicalTotal)}
               </p>
-              <p className="mt-2 text-[13px] font-semibold text-[var(--ink-soft)]">
+              <p className="mt-2 text-[13px] font-semibold text-[var(--on-ground-soft)]">
                 in fees · 5% + ₦100 a ticket
               </p>
-              <div className="mt-5 border-t-2 border-[var(--rule)] pt-4">
-                <p className="text-[12px] font-semibold text-[var(--ink-soft)]">You keep</p>
-                <p className="text-[24px] font-extrabold text-[var(--ink-soft)]">
+              <div className="mt-5 border-t border-[var(--hairline)] pt-4">
+                <p className="text-[12px] font-semibold text-[var(--on-ground-soft)]">You keep</p>
+                <p className="text-[24px] font-extrabold text-[var(--on-ground-soft)]">
                   {naira(TICKET_PRICE * TICKET_COUNT - typicalTotal)}
                 </p>
               </div>
@@ -173,14 +173,14 @@ export default function LandingPage() {
             <p className="text-[18px] font-bold sm:text-[22px]">
               That&apos;s <Mark>{naira(difference)}</Mark> that stays with you.
             </p>
-            <p className="mx-auto mt-4 max-w-md text-[14px] leading-relaxed text-[var(--ink-soft)]">
+            <p className="mx-auto mt-4 max-w-md text-[14px] leading-relaxed text-[var(--on-ground-soft)]">
               No signup fee. No monthly plan. Nothing at all if you don&apos;t sell —
               and nothing ever on a free event.
             </p>
             <div className="mt-8">
               <Link
                 href="/pricing"
-                className="inline-flex items-center gap-2 text-[15px] font-bold text-[var(--ink)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
+                className="inline-flex items-center gap-2 text-[15px] font-bold text-[var(--on-ground)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
               >
                 See the full pricing
                 <ArrowRight className="h-4 w-4" />
@@ -194,7 +194,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ Event types ══════════════ */}
-      <section id="who" className="border-b-2 border-[var(--ink)] bg-[var(--paper-deep)] px-6 py-20 sm:px-10 lg:px-16">
+      <section id="who" className="border-b border-[var(--hairline)] bg-[var(--ground-deep)] px-6 py-20 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
             <h2 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[44px]">
@@ -202,7 +202,7 @@ export default function LandingPage() {
               <br />
               you&apos;re <Mark>letting in</Mark>
             </h2>
-            <p className="mt-5 max-w-md text-[16px] leading-relaxed text-[var(--ink-soft)]">
+            <p className="mt-5 max-w-md text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
               Thirty people in a room or three thousand in a field — same
               tickets, same scanner, same flat fee.
             </p>
@@ -228,7 +228,7 @@ export default function LandingPage() {
           <div className="mt-10">
             <Link
               href="/event-types"
-              className="inline-flex items-center gap-2 text-[15px] font-bold text-[var(--ink)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
+              className="inline-flex items-center gap-2 text-[15px] font-bold text-[var(--on-ground)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
             >
               See all {EVENT_TYPES.length} kinds of event
               <ArrowRight className="h-4 w-4" />
@@ -238,7 +238,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ How it works ══════════════ */}
-      <section id="how" className="border-b-2 border-[var(--ink)] px-6 sm:px-10 lg:px-16 py-20">
+      <section id="how" className="border-b border-[var(--hairline)] px-6 sm:px-10 lg:px-16 py-20">
         <div className="mx-auto max-w-7xl">
           <div className="relative max-w-2xl">
             <h2 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[44px]">
@@ -282,7 +282,7 @@ export default function LandingPage() {
                   <h3 className="mt-4 text-[26px] font-extrabold leading-tight tracking-tight sm:text-[32px]">
                     {s.title}
                   </h3>
-                  <p className="mt-3 max-w-md text-[15px] leading-relaxed text-[var(--ink-soft)]">
+                  <p className="mt-3 max-w-md text-[15px] leading-relaxed text-[var(--on-ground-soft)]">
                     {s.body}
                   </p>
                 </div>
@@ -296,16 +296,16 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ The door ══════════════ */}
-      <section id="door" className="border-b-2 border-[var(--ink)] bg-[var(--paper-deep)] px-6 sm:px-10 lg:px-16 py-20">
+      <section id="door" className="border-b border-[var(--hairline)] bg-[var(--ground-deep)] px-6 sm:px-10 lg:px-16 py-20">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-soft)]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--on-ground-soft)]">
               The bit everyone forgets
             </p>
             <h2 className="mt-5 text-[30px] font-extrabold leading-[1.1] tracking-tight sm:text-[40px]">
               A queue is <Mark color="var(--peri)">no place</Mark> to be reading a spreadsheet
             </h2>
-            <p className="mt-5 text-[16px] leading-relaxed text-[var(--ink-soft)]">
+            <p className="mt-5 text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
               Selling the ticket is the easy half. The door is where events actually
               go wrong — so that&apos;s the half we built properly.
             </p>
@@ -318,9 +318,9 @@ export default function LandingPage() {
               { t: "Camera died? Type it", b: "Every ticket has a short code printed under the QR. Read it out, type it in, carry on. A flat battery doesn't stop the door." },
               { t: "A running count", b: "How many are in, out of how many sold, updating as you scan. You know when the room is full before the room tells you." },
             ].map((f, i) => (
-              <div key={f.t} className={`lp-block rounded-2xl bg-white p-6 lp-tilt-${(i % 4) + 1}`}>
+              <div key={f.t} className={`lp-block-dark rounded-2xl bg-[var(--ground-raised)] p-6 lp-tilt-${(i % 4) + 1}`}>
                 <h3 className="text-[18px] font-extrabold tracking-tight">{f.t}</h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--ink-soft)]">{f.b}</p>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--on-ground-soft)]">{f.b}</p>
               </div>
             ))}
           </div>
@@ -328,10 +328,19 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ The dark band — money honesty ══════════════ */}
-      <section id="money" className="relative overflow-hidden border-b-2 border-[var(--ink)] bg-[var(--plum)] px-6 sm:px-10 lg:px-16 py-24">
+      <section id="money" className="relative overflow-hidden border-b border-[var(--hairline)] px-6 py-24 sm:px-10 lg:px-16">
+        <Image
+          src="/hero-crowd.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover object-[center_35%]"
+          aria-hidden="true"
+        />
+        <div className="absolute inset-0 bg-[#12080F]/82" aria-hidden="true" />
         <Sparkle className="absolute right-[10%] top-[18%] hidden h-5 w-5 text-[#FFDE59]/60 sm:block" />
 
-        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
           <div>
             <h2 className="text-[34px] font-extrabold leading-[1.05] tracking-tight text-[var(--paper)] sm:text-[46px]">
               We never{" "}
@@ -373,13 +382,13 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ Buyer trust ══════════════ */}
-      <section className="border-b-2 border-[var(--ink)] px-6 sm:px-10 lg:px-16 py-20">
+      <section className="border-b border-[var(--hairline)] px-6 sm:px-10 lg:px-16 py-20">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-[30px] font-extrabold leading-[1.1] tracking-tight sm:text-[40px]">
               Nobody taps a payment link <Mark color="var(--lilac)">without thinking twice</Mark>
             </h2>
-            <p className="mt-5 text-[16px] leading-relaxed text-[var(--ink-soft)]">
+            <p className="mt-5 text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
               So every page is built to answer that hesitation before it costs you the sale.
             </p>
           </div>
@@ -391,9 +400,9 @@ export default function LandingPage() {
               { t: "Your face is on it", b: "Your name, photo and profile sit at the top. People are trusting you, not an unfamiliar logo." },
               { t: "It looks right when shared", b: "Cover art, title, date and price all show up in the preview, before the page even loads." },
             ].map((f, i) => (
-              <div key={f.t} className={`lp-block rounded-2xl bg-white p-6 lp-tilt-${(i % 4) + 1}`}>
+              <div key={f.t} className={`lp-block-dark rounded-2xl bg-[var(--ground-raised)] p-6 lp-tilt-${(i % 4) + 1}`}>
                 <h3 className="text-[18px] font-extrabold tracking-tight">{f.t}</h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--ink-soft)]">{f.b}</p>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--on-ground-soft)]">{f.b}</p>
               </div>
             ))}
           </div>
@@ -401,7 +410,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ FAQ ══════════════ */}
-      <section id="faq" className="border-b-2 border-[var(--ink)] bg-[var(--paper-deep)] px-6 sm:px-10 lg:px-16 py-20">
+      <section id="faq" className="border-b border-[var(--hairline)] bg-[var(--ground-deep)] px-6 sm:px-10 lg:px-16 py-20">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-center text-[32px] font-extrabold tracking-tight sm:text-[42px]">
             Fair questions
@@ -417,7 +426,7 @@ export default function LandingPage() {
               { q: "How does check-in work?", a: "Open the door page on any phone and scan the QR on each ticket. It tells you immediately whether to let them in, and won't let the same ticket through twice. If the camera won't play, you can type the code instead." },
               { q: "Do I need a website?", a: "No. Your event page is the website. One shareable link with everything on it." },
             ].map((f, i) => (
-              <details key={f.q} className={`lp-block-soft group rounded-2xl bg-white px-6 py-5 lp-tilt-${(i % 2) + 3}`}>
+              <details key={f.q} className={`lp-block-dark group rounded-2xl bg-[var(--ground-raised)] px-6 py-5 lp-tilt-${(i % 2) + 3}`}>
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-bold">
                   {f.q}
                   <span className="shrink-0 text-[var(--coral)] transition-transform group-open:rotate-45">
@@ -426,7 +435,7 @@ export default function LandingPage() {
                     </svg>
                   </span>
                 </summary>
-                <p className="mt-3 text-[14px] leading-relaxed text-[var(--ink-soft)]">{f.a}</p>
+                <p className="mt-3 text-[14px] leading-relaxed text-[var(--on-ground-soft)]">{f.a}</p>
               </details>
             ))}
           </div>
@@ -434,7 +443,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ Final CTA ══════════════ */}
-      <section className="relative overflow-hidden border-b-2 border-[var(--ink)] bg-gradient-to-br from-[#8B5CF6] via-[#F5568E] to-[#FF6A45] px-6 sm:px-10 lg:px-16 py-24 text-center">
+      <section className="relative overflow-hidden border-b border-[var(--hairline)] bg-gradient-to-br from-[#8B5CF6] via-[#F5568E] to-[#FF6A45] px-6 sm:px-10 lg:px-16 py-24 text-center">
         <Sparkle className="absolute left-[14%] top-[22%] hidden h-6 w-6 text-white/60 sm:block" />
         <Star className="absolute bottom-[22%] right-[16%] hidden h-5 w-5 text-white/40 sm:block" />
 
