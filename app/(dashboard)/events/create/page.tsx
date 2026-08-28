@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarIcon, ImagePlus, Loader2, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/auth-provider";
-import { parseNairaInput } from "@/lib/money";
+import { bandFeeKobo, formatKobo, parseNairaInput } from "@/lib/money";
 import { toast } from "sonner";
 
 export default function CreateEventPage() {
@@ -16,6 +16,8 @@ export default function CreateEventPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isFree, setIsFree] = useState(false);
+  const [passFeeToBuyer, setPassFeeToBuyer] = useState(false);
+
 
   const [formData, setFormData] = useState({
     title: "",
@@ -26,6 +28,17 @@ export default function CreateEventPage() {
     description: "",
     price: "0",
   });
+  // Shows the organiser the actual consequence of the switch, at the price
+  // they have typed. An abstract explanation of a fee never lands; a number does.
+  const previewPriceKobo = isFree ? 0 : (parseNairaInput(formData.price) ?? 0);
+  const previewFeeKobo = previewPriceKobo > 0 ? bandFeeKobo(previewPriceKobo) : 0;
+  const feePreview =
+    previewPriceKobo > 0
+      ? {
+          buyerPays: formatKobo(passFeeToBuyer ? previewPriceKobo + previewFeeKobo : previewPriceKobo),
+          youGet: formatKobo(passFeeToBuyer ? previewPriceKobo : previewPriceKobo - previewFeeKobo),
+        }
+      : null;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -98,6 +111,7 @@ export default function CreateEventPage() {
           cover_image_url: coverImageUrl,
           status: "Upcoming",
           publish_status: "draft",
+          pass_fee_to_buyer: passFeeToBuyer,
         })
         .select("id")
         .single();
@@ -337,6 +351,38 @@ export default function CreateEventPage() {
                     )}
                   </div>
                 </div>
+
+                {!isFree && (
+                  <div className="mt-4 flex flex-col gap-4 rounded-xl border border-zinc-800 bg-zinc-800/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="max-w-md">
+                      <p className="text-sm font-semibold text-white">Who pays our fee?</p>
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Add it to the buyer&apos;s total and you keep the full ticket
+                        price. Absorb it and the buyer sees a round number.
+                      </p>
+                      {feePreview && (
+                        <p className="mt-2 text-xs font-medium text-zinc-300">
+                          Buyer pays{" "}
+                          <span className="text-white">{feePreview.buyerPays}</span>
+                          {" · "}you receive{" "}
+                          <span className="text-emerald-400">{feePreview.youGet}</span>
+                          <span className="text-zinc-500"> (before your bank&apos;s card charges)</span>
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPassFeeToBuyer(!passFeeToBuyer)}
+                      className={`shrink-0 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        passFeeToBuyer
+                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                          : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      {passFeeToBuyer ? "Buyer pays it" : "I'll absorb it"}
+                    </button>
+                  </div>
+                )}
               </div>
 
             </div>

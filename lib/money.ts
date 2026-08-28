@@ -91,6 +91,12 @@ export const DEFAULT_PLATFORM_FEE_VALUE = 20_000;
  *     ₦1,500 beats it above ₦28,000
  *     ₦2,500 beats it above ₦48,000
  *
+ * Below ₦2,000 no flat fee can win, because a percentage competitor's base
+ * charge is only ₦100 and any fee worth collecting is more than that. So we
+ * do not compete there: tickets under ₦2,000 are free to sell. It costs
+ * almost nothing (those events were never going to pay for themselves) and
+ * it turns the one price we lose at into the one price we give away.
+ *
  * The boundaries below are rounded up from those break-even points, not
  * picked for looking tidy. Move a boundary DOWN and the band starts in a
  * stretch where a percentage competitor is cheaper than we are, which is
@@ -102,7 +108,8 @@ export const PLATFORM_FEE_BANDS: ReadonlyArray<{
   readonly belowKobo: number;
   readonly feeKobo: Kobo;
 }> = [
-  { belowKobo: 750_000, feeKobo: 20_000 },      // under ₦7,500  -> ₦200
+  { belowKobo: 200_000, feeKobo: 0 },           // under ₦2,000  -> free
+  { belowKobo: 750_000, feeKobo: 20_000 },      // ₦2,000-₦7,500 -> ₦200
   { belowKobo: 3_000_000, feeKobo: 45_000 },    // ₦7,500-₦30,000 -> ₦450
   { belowKobo: 7_500_000, feeKobo: 150_000 },   // ₦30,000-₦75,000 -> ₦1,500
   { belowKobo: Infinity, feeKobo: 250_000 },    // ₦75,000+      -> ₦2,500

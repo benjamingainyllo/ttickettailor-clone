@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { getEventById, type PublicTicketType } from "@/app/actions/events";
 import { createCheckoutSession } from "@/app/actions/checkout";
-import { formatKobo } from "@/lib/money";
+import { bandFeeKobo, formatKobo } from "@/lib/money";
 import { Loader2, Calendar, MapPin, Users, ExternalLink, CheckCircle2, Minus, Plus } from "lucide-react";
 
 export default function EventCheckoutPage({ params }: { params: { id: string } }) {
@@ -51,7 +51,15 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
   const selectedTier = ticketTypes.find((t) => t.id === selectedTierId) ?? null;
   const priceKobo = selectedTier?.priceKobo ?? Number(event?.price_kobo ?? 0);
   const isFree = priceKobo === 0;
-  const totalKobo = priceKobo * quantity;
+  const subtotalKobo = priceKobo * quantity;
+
+  // Some organisers add our fee to the buyer's total rather than absorbing
+  // it. When they do, it is shown as its own line here — a fee the buyer
+  // only discovers on the payment screen is the reason people abandon
+  // checkouts, and it would be the organiser who paid for that.
+  const passFee = Boolean(event?.pass_fee_to_buyer) && !isFree;
+  const feeKobo = passFee ? bandFeeKobo(priceKobo) * quantity : 0;
+  const totalKobo = subtotalKobo + feeKobo;
 
   // The most this tier will sell in one go: its own per-order cap, and
   // never more than it has left.
@@ -345,6 +353,25 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
                     required
                   />
                 </div>
+
+                {feeKobo > 0 && (
+                  <div className="space-y-1.5 rounded-lg border border-zinc-800 bg-zinc-800/40 px-4 py-3 text-sm">
+                    <div className="flex justify-between text-zinc-400">
+                      <span>
+                        {quantity > 1 ? `${quantity} tickets` : "Ticket"}
+                      </span>
+                      <span className="tabular-nums">{formatKobo(subtotalKobo)}</span>
+                    </div>
+                    <div className="flex justify-between text-zinc-400">
+                      <span>Booking fee</span>
+                      <span className="tabular-nums">{formatKobo(feeKobo)}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-zinc-700 pt-1.5 font-semibold text-white">
+                      <span>Total</span>
+                      <span className="tabular-nums">{formatKobo(totalKobo)}</span>
+                    </div>
+                  </div>
+                )}
 
                 {checkoutError && <p className="text-xs text-red-400">{checkoutError}</p>}
 

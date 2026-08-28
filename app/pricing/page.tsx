@@ -90,14 +90,15 @@ export default function PricingPage() {
             A flat fee per ticket.
             <br />
             <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
-              Four of them.
+              Four of them, and a free one.
             </span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-lg text-[17px] leading-relaxed text-[var(--on-ground-soft)]">
             Never a percentage of your revenue. The ticket&apos;s price picks
             the fee, and then the fee stops — sell ten times as many and you
-            pay ten times ₦450, not ten times more of your takings.
+            pay ten times ₦450, not ten times more of your takings. Cheap
+            tickets and free ones cost you nothing at all.
           </p>
 
           <div className="mx-auto mt-12 max-w-lg">
@@ -128,26 +129,19 @@ export default function PricingPage() {
                           i > 0 ? "border-t border-[#1B1512]/15" : ""
                         }`}
                       >
-                        {naira(b.fee)}
+                        {b.fee === 0 ? "Nothing" : naira(b.fee)}
                       </td>
                     </tr>
                   ))}
-                  <tr>
-                    <td className="border-t border-[#1B1512]/15 px-5 py-3 text-[15px] font-semibold text-[var(--ink)]">
-                      A free ticket
-                    </td>
-                    <td className="border-t border-[#1B1512]/15 px-5 py-3 text-right text-[22px] font-extrabold tracking-tight text-[var(--ink)]">
-                      Nothing
-                    </td>
-                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
           <p className="mx-auto mt-8 max-w-lg text-[15px] leading-relaxed text-[var(--on-ground-faint)]">
-            On any ticket from ₦2,000 up, that is less than a 5% platform
-            would take — and on a ₦150,000 retreat ticket, three times less.
+            At no price do you pay more than a 5% platform would take. Below
+            ₦2,000 you pay nothing at all, and on a ₦150,000 retreat ticket
+            you pay three times less.
           </p>
 
           <div className="mt-9 flex justify-center">

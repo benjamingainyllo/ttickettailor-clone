@@ -113,6 +113,14 @@ ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS cover_image_url TEXT;
 ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS offer_type TEXT DEFAULT 'digital';
 
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS price_kobo BIGINT NOT NULL DEFAULT 0;
+
+-- Who absorbs the platform fee, chosen per event by the organiser.
+--   false (default) -> taken out of the organiser's share; buyer pays face value
+--   true            -> added at checkout; buyer pays it and the organiser
+--                      receives the full face value of the ticket
+-- Off by default deliberately: a surprise fee at the checkout screen costs
+-- conversions, and that trade is the organiser's to make, not ours.
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS pass_fee_to_buyer BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS publish_status TEXT NOT NULL DEFAULT 'draft';
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS capacity INTEGER;

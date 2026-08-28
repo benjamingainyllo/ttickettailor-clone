@@ -66,7 +66,7 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
 
     if (!item.ok) return { success: false, error: item.error };
 
-    const { creatorId, id: itemId, title, unitPriceKobo, ticketTypeId, quantity } = item;
+    const { creatorId, id: itemId, title, unitPriceKobo, ticketTypeId, quantity, passFeeToBuyer } = item;
     const reference = uuidv4();
     const grossKobo: Kobo = unitPriceKobo * quantity;
 
@@ -169,12 +169,19 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
       payoutAccount.platform_fee_value ?? DEFAULT_PLATFORM_FEE_VALUE
     );
 
+    // When the organiser has chosen to pass the fee on, the buyer is charged
+    // the ticket price PLUS the fee, and the organiser receives the full face
+    // value. gross_kobo is always what the card was actually charged, so
+    // net = gross - fee holds either way and the figures reconcile with the
+    // provider's own record of the transaction.
+    const chargeKobo: Kobo = passFeeToBuyer ? grossKobo + platformFeeKobo : grossKobo;
+
     const { error: insertError } = await admin.from("orders").insert({
       ...orderRow,
-      gross_kobo: grossKobo,
+      gross_kobo: chargeKobo,
       platform_fee_kobo: platformFeeKobo,
       provider_fee_kobo: 0,
-      net_kobo: grossKobo - platformFeeKobo,
+      net_kobo: chargeKobo - platformFeeKobo,
       status: "pending",
     });
 
@@ -190,7 +197,7 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
       const { authorizationUrl } = await provider.initializeCheckout({
         reference,
         buyerEmail: payload.buyerEmail,
-        amountKobo: grossKobo,
+        amountKobo: chargeKobo,
         platformFeeKobo,
         providerSubaccountId: payoutAccount.provider_subaccount_id,
         callbackUrl: `${siteOrigin()}/checkout/success?reference=${reference}`,
@@ -353,6 +360,8 @@ type LoadedItem =
       /** Price of ONE admission. The order total is this times quantity. */
       unitPriceKobo: Kobo;
       ticketTypeId: string | null;
+      /** True when the organiser has chosen to add our fee to the buyer's total. */
+      passFeeToBuyer: boolean;
       quantity: number;
     }
   | { ok: false; error: string };
@@ -387,12 +396,14 @@ async function loadSellableItem(payload: CheckoutPayload): Promise<LoadedItem> {
       unitPriceKobo: Number(data.price_kobo ?? 0),
       ticketTypeId: null,
       quantity: 1,
+      // Offers have no organiser-facing switch; the seller always absorbs it.
+      passFeeToBuyer: false,
     };
   }
 
   const { data: event } = await admin
     .from("events")
-    .select("id, creator_id, title, publish_status, capacity, attendees_count")
+    .select("id, creator_id, title, publish_status, capacity, attendees_count, pass_fee_to_buyer")
     .eq("id", payload.itemId)
     .maybeSingle();
 
@@ -454,5 +465,6 @@ async function loadSellableItem(payload: CheckoutPayload): Promise<LoadedItem> {
     unitPriceKobo: Number(tier.price_kobo ?? 0),
     ticketTypeId: tier.id,
     quantity: requested,
+    passFeeToBuyer: Boolean(event.pass_fee_to_buyer),
   };
 }
