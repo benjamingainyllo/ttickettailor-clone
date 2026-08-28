@@ -68,8 +68,10 @@ export type PlatformFeeType = "percentage" | "flat";
  * because the fee is configured per creator, but it is no longer what a
  * new account gets.
  *
- * ₦200 per paid ticket. For reference, Tix.Africa charges 8% + ₦100 —
- * on a ₦20,000 ticket that is ₦1,700 against our ₦200.
+ * ₦200 per paid ticket. For reference, Tix.Africa's free plan charges
+ * 5% + ₦100 — on a ₦20,000 ticket that is ₦1,100 against our ₦200.
+ * (An earlier version of this comment said 8% + ₦100, which was wrong.
+ * Rechecked August 2026; see BUSINESS_MODEL.md before quoting it.)
  */
 export const DEFAULT_PLATFORM_FEE_TYPE: PlatformFeeType = "flat";
 export const DEFAULT_PLATFORM_FEE_VALUE = 20_000;
