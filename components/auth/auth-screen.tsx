@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { ArrowRight, Check, Loader2 } from "lucide-react";
+import { ArrowRight, Check, Loader2, Mail } from "lucide-react";
 
 /**
  * Sign in and sign up.
@@ -25,6 +25,12 @@ import { ArrowRight, Check, Loader2 } from "lucide-react";
  * with NO PASSWORD, so the first thing onboarding does is take one. Skip
  * that and a new organiser can never sign in again. See SetPasswordGate.
  *
+ * Which is exactly what happened, so this screen now carries the two ways
+ * back that it was missing. "Email me a sign-in link" gets somebody into an
+ * account that never got as far as a password — without it that account is
+ * simply lost. "Forgot password" covers the ordinary case. Every link goes
+ * to /auth/callback, which is the only place a session actually gets made.
+ *
  * Nothing on this screen claims anything about how the business is doing.
  * A previous version carried an invented creator count, naira total and a
  * named testimonial, none of which had ever been true. If a number appears
@@ -33,9 +39,28 @@ import { ArrowRight, Check, Loader2 } from "lucide-react";
 
 const RESEND_COOLDOWN_SECONDS = 45;
 
+/** Which of the three emails went out. */
+type SentKind = "signup" | "link" | "reset";
+
+const SENT_COPY: Record<SentKind, { title: string; body: string }> = {
+  signup: {
+    title: "Thanks for signing up to sell tickets!",
+    body: "to continue setting up your account",
+  },
+  link: {
+    title: "Your sign-in link is on its way",
+    body: "with a link that signs you straight in",
+  },
+  reset: {
+    title: "Check your email to reset your password",
+    body: "with a link to choose a new password",
+  },
+};
+
 export function AuthScreen() {
   const router = useRouter();
   const supabase = createClient();
+  const params = useSearchParams();
 
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,10 +68,20 @@ export function AuthScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  /** Set once the signup link is away; also the address we sent it to. */
+  /** Set once a link is away; also the address we sent it to. */
   const [sentTo, setSentTo] = useState<string | null>(null);
+  /** Which link went out, because the three say different things. */
+  const [sentKind, setSentKind] = useState<SentKind>("signup");
   const [cooldown, setCooldown] = useState(0);
   const [resending, setResending] = useState(false);
+
+  // /auth/callback sends failures back here rather than showing a bare
+  // error page — an expired link is the common one, and the fix for it is
+  // on this screen.
+  const failure = params.get("error");
+  useEffect(() => {
+    if (failure) toast.error(failure);
+  }, [failure]);
 
   // The provider rate-limits how often it will send. Counting down is
   // honest about the wait instead of letting them press a button that
@@ -59,19 +94,57 @@ export function AuthScreen() {
 
   const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
-  const sendSignupLink = useCallback(
-    async (address: string) => {
+  /**
+   * One send for all three link emails.
+   *
+   * `shouldCreateUser` is the whole difference between signing up and
+   * signing in. On the sign-in side it stays false on purpose: typing a
+   * typo'd address should say "no account here", not quietly open a second
+   * empty account under the typo.
+   */
+  const sendLink = useCallback(
+    async (address: string, kind: SentKind) => {
+      const origin = window.location.origin;
+
+      if (kind === "reset") {
+        const { error } = await supabase.auth.resetPasswordForEmail(address, {
+          redirectTo: `${origin}/auth/callback?next=/reset-password`,
+        });
+        return error;
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email: address,
         options: {
-          shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}/onboarding`,
+          shouldCreateUser: kind === "signup",
+          emailRedirectTo: `${origin}/auth/callback?next=${
+            kind === "signup" ? "/onboarding" : "/overview"
+          }`,
         },
       });
       return error;
     },
     [supabase]
   );
+
+  /** Send, then show the "check your email" screen. */
+  const startLink = async (kind: SentKind) => {
+    const address = email.trim();
+    if (!emailLooksValid) {
+      toast.error("Enter your email address first.");
+      return;
+    }
+    setIsLoading(true);
+    const error = await sendLink(address, kind);
+    setIsLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setSentTo(address);
+    setSentKind(kind);
+    setCooldown(RESEND_COOLDOWN_SECONDS);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,17 +167,8 @@ export function AuthScreen() {
         return;
       }
 
-      const address = email.trim();
-      const error = await sendSignupLink(address);
-      if (error) {
-        toast.error(error.message);
-        setIsLoading(false);
-        return;
-      }
-
-      setSentTo(address);
-      setCooldown(RESEND_COOLDOWN_SECONDS);
       setIsLoading(false);
+      await startLink("signup");
     } catch {
       toast.error("Something went wrong. Please try again.");
       setIsLoading(false);
@@ -114,7 +178,7 @@ export function AuthScreen() {
   const handleResend = async () => {
     if (!sentTo || cooldown > 0 || resending) return;
     setResending(true);
-    const error = await sendSignupLink(sentTo);
+    const error = await sendLink(sentTo, sentKind);
     setResending(false);
     if (error) {
       toast.error(error.message);
@@ -127,7 +191,7 @@ export function AuthScreen() {
   const handleGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/onboarding` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboarding` },
     });
     if (error) toast.error(error.message);
   };
@@ -153,13 +217,13 @@ export function AuthScreen() {
           </span>
 
           <h1 className="text-[34px] font-extrabold leading-[1.04] tracking-[-0.02em] sm:text-[40px]">
-            Thanks for signing up to sell tickets!
+            {SENT_COPY[sentKind].title}
           </h1>
 
           <p className="mx-auto mt-5 max-w-sm text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
             We&apos;ve sent an email to{" "}
             <span className="font-bold text-[var(--on-ground)]">{sentTo}</span>{" "}
-            to continue setting up your account.
+            {SENT_COPY[sentKind].body}.
           </p>
 
           <button
@@ -264,13 +328,22 @@ export function AuthScreen() {
             <div>
               <div className="flex items-baseline justify-between">
                 <label htmlFor="password" className={labelCls}>Password</label>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="mb-1.5 text-[12.5px] font-bold text-[var(--on-ground-faint)] hover:text-[var(--on-ground)]"
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
+                <div className="mb-1.5 flex items-baseline gap-3.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-[12.5px] font-bold text-[var(--on-ground-faint)] hover:text-[var(--on-ground)]"
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => startLink("reset")}
+                    className="text-[12.5px] font-bold text-[var(--coral)] hover:underline"
+                  >
+                    Forgot?
+                  </button>
+                </div>
               </div>
               <input
                 id="password"
@@ -310,6 +383,24 @@ export function AuthScreen() {
             No password to think up yet — we&apos;ll email you a link to
             continue.
           </p>
+        )}
+
+        {/*
+          The way back in for an account that never got as far as a password.
+          Signing up takes only an email, so an organiser who closed the tab
+          during setup has a real, confirmed account and nothing to type in
+          the box above. Without this they are locked out permanently.
+        */}
+        {isLogin && (
+          <button
+            type="button"
+            onClick={() => startLink("link")}
+            disabled={isLoading}
+            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[var(--hairline-firm)] text-[14px] font-bold text-[var(--on-ground-soft)] transition-colors hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)] disabled:opacity-40"
+          >
+            <Mail className="h-4 w-4" />
+            Email me a sign-in link instead
+          </button>
         )}
 
         <p className="mt-6 text-center text-[14px] text-[var(--on-ground-soft)]">

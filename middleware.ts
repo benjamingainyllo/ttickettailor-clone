@@ -56,6 +56,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // An account made by clicking a link in an email has no password until
+  // the onboarding gate takes one. Somebody who closes the tab at that point
+  // has a real account they can never sign into again, which is precisely
+  // how the first lockout happened. So anyone signed in without a password
+  // goes back to finish, from wherever they land.
+  //
+  // user_metadata rides along in the token, so this costs no extra query.
+  // Google accounts are exempt — they sign in with Google, not a password.
+  if (
+    user &&
+    isProtected &&
+    !request.nextUrl.pathname.startsWith("/onboarding") &&
+    user.app_metadata?.provider === "email" &&
+    !user.user_metadata?.password_set
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/onboarding";
+    return NextResponse.redirect(url);
+  }
+
   // If user is authenticated and on the login page, redirect to dashboard.
   // `/` is the public marketing page and stays reachable when signed in.
   if (request.nextUrl.pathname === "/login" && user) {
