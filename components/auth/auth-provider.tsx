@@ -13,6 +13,14 @@ interface Profile {
   category: string | null;
   location: string | null;
   avatar_url: string | null;
+  /** Set during box office creation. See setup.sql for what each one is for. */
+  box_office_name: string | null;
+  timezone: string | null;
+  country: string | null;
+  referral_source: string | null;
+  marketing_opt_out: boolean | null;
+  ticket_pricing_mix: string | null;
+  accepted_use_policy_at: string | null;
 }
 
 interface AuthContextType {

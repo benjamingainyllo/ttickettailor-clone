@@ -1,50 +1,59 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { checkHandle, normalizeHandle } from "@/lib/handle";
 import { SetPasswordGate } from "@/components/auth/set-password-gate";
-import { ArrowRight, Check, ImagePlus, Loader2, Ticket } from "lucide-react";
+import { Check, ImagePlus, Loader2, Lock, Ticket } from "lucide-react";
 
 /**
- * Setting up a new organiser.
+ * Screen two: creating the box office.
  *
- * One screen, one required answer.
+ * Replaces a five-step profile wizard from the creator-products product,
+ * which asked for a handle, then a category chosen from Designer / Developer
+ * / Photographer, then a location, then a bio. A promoter putting on a club
+ * night has no use for any of it.
  *
- * What replaced this was a five-step profile wizard from the creator-products
- * product: a handle, then a category chosen from Designer / Developer /
- * Photographer, then a location, then a bio. A promoter putting on a club
- * night has no use for any of it, and every screen between signing up and
- * selling a ticket is a screen somebody leaves on.
+ * Billing currency is shown but locked. Every amount in this product is an
+ * integer number of kobo and every fee band is set in naira; a dropdown
+ * offering dollars would be a control that quietly does nothing. Showing it
+ * fixed is the honest version of the same row.
  *
- * So the only thing asked for is the name of the box office, because that
- * becomes the public link and there is no sensible default for it. A logo is
- * offered on the same screen rather than a step of its own. Everything else
- * the old wizard collected is optional, nullable, and editable in Settings.
- *
- * Bank details are deliberately NOT here. They are needed to publish a paid
- * event, not to open an account, and the publish gate already refuses without
- * them. Asking for somebody's account number before they have seen the product
- * work is how you lose them.
+ * Bank details are deliberately absent. They are needed to publish a paid
+ * event, not to open an account, and the publish gate already refuses
+ * without them.
  */
+
+const COUNTRIES = [
+  "Nigeria", "Ghana", "Kenya", "South Africa", "Egypt", "Tanzania", "Uganda",
+  "Rwanda", "Senegal", "Côte d'Ivoire", "Cameroon", "Ethiopia", "Morocco",
+  "United Kingdom", "United States", "Canada", "Ireland", "Germany", "France",
+  "Netherlands", "Spain", "Portugal", "Italy", "United Arab Emirates",
+  "Australia", "New Zealand", "India", "Somewhere else",
+];
+
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, profile, refreshProfile } = useAuth();
   const supabase = createClient();
 
-  const [name, setName] = useState("");
+  const [orgName, setOrgName] = useState("");
   const [handle, setHandle] = useState("");
   const [handleEdited, setHandleEdited] = useState(false);
+  const [country, setCountry] = useState("Nigeria");
+  const [mix, setMix] = useState<"free" | "paid" | "">("");
+  const [agreed, setAgreed] = useState(false);
   const [logo, setLogo] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
-  // A magic-link signup leaves the account with no password on it. Until one
-  // is set the organiser has no way back in, so this comes before anything.
+  // A magic-link signup leaves the account with no password. Until one is set
+  // the organiser has no way back in, so that screen comes before this one.
   const [passwordDone, setPasswordDone] = useState(false);
   const needsPassword =
     !passwordDone &&
@@ -52,27 +61,28 @@ export default function OnboardingPage() {
     !user.user_metadata?.password_set &&
     user.app_metadata?.provider === "email";
 
-  // Coming back to a half-finished setup should not start from nothing.
   useEffect(() => {
     if (!profile) return;
+    if (profile.box_office_name) setOrgName(profile.box_office_name);
     if (profile.handle) {
       setHandle(profile.handle);
       setHandleEdited(true);
     }
+    if (profile.country) setCountry(profile.country);
     if (profile.avatar_url) setLogo(profile.avatar_url);
   }, [profile]);
 
-  // The link writes itself from the name until the organiser edits it,
-  // which is the only moment the handle stops tracking the name.
+  // The link writes itself from the name, and stops the moment it is edited.
   useEffect(() => {
-    if (!handleEdited) setHandle(normalizeHandle(name));
-  }, [name, handleEdited]);
+    if (!handleEdited) setHandle(normalizeHandle(orgName));
+  }, [orgName, handleEdited]);
 
   const origin =
-    typeof window !== "undefined" ? window.location.host : "paylance.app";
+    typeof window !== "undefined" ? window.location.host : "";
 
   const check = useMemo(() => checkHandle(handle), [handle]);
-  const canSave = name.trim().length > 0 && check.ok && !saving;
+  const canSave =
+    orgName.trim().length > 0 && check.ok && mix !== "" && agreed && !saving;
 
   const pickLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -87,7 +97,7 @@ export default function OnboardingPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = async () => {
+  const handleCreate = async () => {
     if (!user || !canSave) return;
     setSaving(true);
 
@@ -102,7 +112,6 @@ export default function OnboardingPage() {
           .upload(path, logoFile, { upsert: true });
 
         if (uploadError) {
-          // A logo is not worth losing the rest of the setup over.
           console.error("Logo upload failed:", uploadError);
           toast.error("Couldn't upload the logo — saved everything else.");
         } else {
@@ -112,8 +121,13 @@ export default function OnboardingPage() {
       }
 
       const row: Record<string, unknown> = {
+        box_office_name: orgName.trim(),
         handle: normalizeHandle(handle),
-        first_name: name.trim(),
+        country,
+        ticket_pricing_mix: mix,
+        // When, not whether. The useful question later is always the date and
+        // which version of the wording was on screen.
+        accepted_use_policy_at: new Date().toISOString(),
       };
       if (avatarUrl) row.avatar_url = avatarUrl;
 
@@ -130,8 +144,8 @@ export default function OnboardingPage() {
           setSaving(false);
           return;
         }
-        console.error("Profile save failed:", error);
-        toast.error("Couldn't save that. Please try again.");
+        console.error("Box office creation failed:", error);
+        toast.error("Couldn't create your box office. Please try again.");
         setSaving(false);
         return;
       }
@@ -157,6 +171,9 @@ export default function OnboardingPage() {
 
   const field =
     "w-full rounded-xl border border-[var(--hairline-firm)] bg-[var(--ground-deep)] px-4 py-3.5 text-[15px] text-[var(--on-ground)] placeholder-[var(--on-ground-faint)] outline-none transition-colors focus:border-[var(--coral)]";
+  const labelCls =
+    "mb-1.5 block text-[12.5px] font-bold text-[var(--on-ground-soft)]";
+  const req = <span className="text-[var(--coral)]">*</span>;
 
   /* ── Done ──────────────────────────────────────────────────────── */
   if (done) {
@@ -166,34 +183,30 @@ export default function OnboardingPage() {
           <span className="mx-auto mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--mint)]">
             <Check className="h-7 w-7 text-[var(--ink)]" strokeWidth={3} />
           </span>
-
           <h1 className="text-[34px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">
-            {name.trim()} is open
+            {orgName.trim()} is open
             <br />
             <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
               for business.
             </span>
           </h1>
-
           <p className="mx-auto mt-5 max-w-sm text-[15.5px] leading-relaxed text-[var(--on-ground-soft)]">
-            Your page is live at{" "}
+            Your box office is live at{" "}
             <span className="font-bold text-[var(--on-ground)]">
               {origin}/{normalizeHandle(handle)}
             </span>
             . It stays empty until you publish something.
           </p>
-
           <button
             onClick={() => router.push("/events/create")}
-            className="mt-9 flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-[var(--paper)] py-3.5 text-[15px] font-extrabold text-[var(--ink)] transition-opacity hover:opacity-90"
+            className="mt-9 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--paper)] py-3.5 text-[15px] font-extrabold text-[var(--ink)] transition-opacity hover:opacity-90"
           >
             <Ticket className="h-4 w-4" />
             Create your first event
           </button>
-
           <button
             onClick={() => router.push("/overview")}
-            className="mt-3 w-full rounded-xl border border-[var(--hairline-firm)] py-3.5 text-[14.5px] font-bold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
+            className="mt-3 w-full rounded-full border border-[var(--hairline-firm)] py-3.5 text-[14.5px] font-bold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
           >
             Take me to the dashboard
           </button>
@@ -202,43 +215,42 @@ export default function OnboardingPage() {
     );
   }
 
-  /* ── Setup ─────────────────────────────────────────────────────── */
+  /* ── Create box office ─────────────────────────────────────────── */
   return (
-    <main className="lp flex min-h-screen flex-col items-center justify-center px-6 py-14 font-[family-name:var(--font-bricolage-grotesque)]">
-      <div className="w-full max-w-[460px]">
-        <h1 className="text-center text-[32px] font-extrabold leading-[1.06] tracking-tight sm:text-[36px]">
-          What&apos;s your box
-          <br />
-          <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
-            office called?
-          </span>
-        </h1>
-        <p className="mx-auto mt-4 max-w-sm text-center text-[15px] leading-relaxed text-[var(--on-ground-soft)]">
-          The name buyers see on your tickets and your event pages. Your own
-          name is fine if you don&apos;t have a brand yet — you can change it
-          later.
-        </p>
+    <main className="lp min-h-screen px-6 py-14 font-[family-name:var(--font-bricolage-grotesque)]">
+      <div className="mx-auto w-full max-w-[460px]">
+        <div className="rounded-2xl border border-[var(--hairline)] bg-[var(--ground-deep)] px-6 py-5">
+          <h1 className="text-[22px] font-extrabold leading-tight tracking-tight">
+            Your box office is a few steps away
+          </h1>
+          <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--on-ground-soft)]">
+            Some basics about you and the events you run. All of it can be
+            changed later.
+          </p>
+        </div>
 
-        <div className="mt-9 space-y-5">
+        <div className="mt-7 space-y-5">
           <div>
-            <label htmlFor="boxOffice" className="mb-1.5 block text-[12.5px] font-bold text-[var(--on-ground-soft)]">
-              Box office name
+            <label htmlFor="orgName" className={labelCls}>
+              Organisation name {req}
             </label>
             <input
-              id="boxOffice"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="orgName"
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
               placeholder="Lagos Nights"
-              autoFocus
               maxLength={60}
+              autoFocus
+              required
               className={field}
             />
+            <p className="mt-1.5 text-[12.5px] text-[var(--on-ground-faint)]">
+              The name buyers see on your tickets and event pages.
+            </p>
           </div>
 
           <div>
-            <label htmlFor="handle" className="mb-1.5 block text-[12.5px] font-bold text-[var(--on-ground-soft)]">
-              Your link
-            </label>
+            <label htmlFor="handle" className={labelCls}>Your link {req}</label>
             <div
               className={`flex items-center rounded-xl border bg-[var(--ground-deep)] pl-4 transition-colors ${
                 handle.length > 0 && !check.ok
@@ -268,11 +280,60 @@ export default function OnboardingPage() {
           </div>
 
           <div>
-            <span className="mb-1.5 block text-[12.5px] font-bold text-[var(--on-ground-soft)]">
-              Logo{" "}
-              <span className="font-normal text-[var(--on-ground-faint)]">
-                optional
+            <label htmlFor="country" className={labelCls}>Country {req}</label>
+            <select
+              id="country"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className={`${field} appearance-none`}
+            >
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <span className={labelCls}>Billing currency</span>
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--hairline)] bg-[var(--ground-raised)] px-4 py-3.5">
+              <Lock className="h-4 w-4 shrink-0 text-[var(--on-ground-faint)]" />
+              <span className="text-[15px] text-[var(--on-ground-soft)]">
+                Nigerian Naira (₦)
               </span>
+            </div>
+            <p className="mt-1.5 text-[12.5px] text-[var(--on-ground-faint)]">
+              The only currency we settle in today. More will follow.
+            </p>
+          </div>
+
+          <div>
+            <span className={labelCls}>
+              Are your tickets mainly free or paid? {req}
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              {(["free", "paid"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setMix(option)}
+                  className={`rounded-xl border py-3.5 text-[14.5px] font-bold capitalize transition-colors ${
+                    mix === option
+                      ? "border-[var(--coral)] bg-[var(--coral)]/15 text-[var(--on-ground)]"
+                      : "border-[var(--hairline-firm)] bg-[var(--ground-deep)] text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[12.5px] text-[var(--on-ground-faint)]">
+              Free events never carry a fee. You can run both.
+            </p>
+          </div>
+
+          <div>
+            <span className={labelCls}>
+              Logo <span className="font-normal text-[var(--on-ground-faint)]">optional</span>
             </span>
             <label
               htmlFor="logo"
@@ -287,34 +348,48 @@ export default function OnboardingPage() {
                 )}
               </span>
               <span className="text-[13.5px] text-[var(--on-ground-soft)]">
-                {logo ? "Change image" : "Add a logo — it appears on your event pages"}
+                {logo ? "Change image" : "Appears on your event pages"}
               </span>
-              <input
-                id="logo"
-                type="file"
-                accept="image/*"
-                onChange={pickLogo}
-                className="hidden"
-              />
+              <input id="logo" type="file" accept="image/*" onChange={pickLogo} className="hidden" />
             </label>
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={!canSave}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--paper)] text-[15px] font-extrabold text-[var(--ink)] transition-opacity hover:opacity-90 disabled:opacity-40"
-          >
-            {saving ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                Continue
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
+          <label className="flex cursor-pointer items-start gap-3 pt-1">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--coral)]"
+            />
+            <span className="text-[13.5px] leading-relaxed text-[var(--on-ground-soft)]">
+              I agree to use this only for events that are lawful, and that I
+              have the right to run, as set out in the{" "}
+              <Link href="/terms" className="underline hover:text-[var(--on-ground)]">
+                terms of service
+              </Link>
+              . {req}
+            </span>
+          </label>
 
-          <p className="text-center text-[13px] text-[var(--on-ground-faint)]">
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => router.push("/overview")}
+              className="rounded-full border border-[var(--hairline-firm)] px-6 py-3.5 text-[14.5px] font-bold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleCreate}
+              disabled={!canSave}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--mint)] py-3.5 text-[15px] font-extrabold text-[var(--ink)] transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create box office"}
+            </button>
+          </div>
+
+          <p className="pb-4 text-center text-[12.5px] text-[var(--on-ground-faint)]">
             You&apos;ll connect a bank account when you publish your first paid
             event, not now.
           </p>

@@ -112,6 +112,29 @@ ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
 ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS cover_image_url TEXT;
 ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS offer_type TEXT DEFAULT 'digital';
 
+-- Organiser setup, collected across the two screens after the email link.
+--   box_office_name  the public brand on tickets and event pages
+--   timezone         an event happens at a local time; without this a 9pm
+--                    door reads as 8pm to somebody in another region
+--   country          where the organiser operates
+--   referral_source  how they found us, answered once at signup
+--   marketing_opt_out  false means they accepted product email, matching the
+--                    opt-OUT checkbox on the form. Stored as given rather than
+--                    inverted, so the column and the checkbox never disagree.
+--   ticket_pricing_mix  'free' or 'paid' — what they mostly expect to run
+--   accepted_use_policy_at  when they agreed to the acceptable use policy.
+--                    A timestamp rather than a boolean, because the useful
+--                    question later is always WHEN they agreed, and to which
+--                    version of the wording.
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS box_office_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS timezone TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_source TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS marketing_opt_out BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ticket_pricing_mix TEXT
+  CHECK (ticket_pricing_mix IS NULL OR ticket_pricing_mix IN ('free', 'paid'));
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS accepted_use_policy_at TIMESTAMPTZ;
+
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS price_kobo BIGINT NOT NULL DEFAULT 0;
 
 -- Who absorbs the platform fee, chosen per event by the organiser.
