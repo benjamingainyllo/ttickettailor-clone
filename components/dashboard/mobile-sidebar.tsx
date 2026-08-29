@@ -26,26 +26,23 @@ import {
   Wallet
 } from "lucide-react";
 
+/** Kept in step with the desktop sidebar — see the note there. */
 const navGroups = [
   {
-    title: "GENERAL",
+    title: "SELLING",
     items: [
       { label: "Overview", icon: LayoutGrid, href: "/overview" },
-      { label: "Audience", icon: UsersRound, href: "/audience" },
-      { label: "Revenue", icon: CreditCard, href: "/revenue" },
-      { label: "Payouts", icon: Wallet, href: "/payouts" },
       { label: "Events", icon: Calendar, href: "/events" },
+      { label: "Attendees", icon: UsersRound, href: "/audience" },
     ]
   },
   {
-    title: "VENTURES",
+    title: "MONEY",
     items: [
-      { label: "Offers", icon: Gem, href: "/offers" },
-      { label: "Automations", icon: Workflow, href: "/automations" },
-      { label: "Experiments", icon: Compass, href: "/experiments" },
-      { label: "Integrations", icon: Link2, href: "/integrations", badge: "Soon" },
+      { label: "Sales", icon: CreditCard, href: "/revenue" },
+      { label: "Payouts", icon: Wallet, href: "/payouts" },
     ]
-  }
+  },
 ];
 
 interface MobileSidebarProps {
@@ -156,11 +153,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     >
                       <item.icon strokeWidth={1.5} className="h-5 w-5 shrink-0" />
                       <span className="text-sm">{item.label}</span>
-                      {item.badge && (
-                        <span className="ml-auto rounded-md bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-white border border-zinc-700">
-                          {item.badge}
-                        </span>
-                      )}
                     </Link>
                   );
                 })}

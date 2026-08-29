@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft, Calendar as CalendarIcon, MapPin, Users, Ticket, DollarSign,
-  Eye, Share2, ExternalLink, Inbox, Loader2, Globe, Lock, ScanLine,
+  Eye, Share2, ExternalLink, Inbox, Loader2, Globe, Lock, ScanLine, Package,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
 import { publishItem, unpublishItem } from "@/app/actions/publish";
 import { TicketTypesEditor } from "@/components/dashboard/ticket-types-editor";
+import { MerchEditor } from "@/components/dashboard/merch-editor";
 import { toast } from "sonner";
 
 interface EventDetailViewProps {
@@ -31,7 +32,7 @@ interface OrderRow {
 }
 
 export function EventDetailView({ event, onBack, onChanged }: EventDetailViewProps) {
-  const [tab, setTab] = useState<"overview" | "tickets" | "attendees">("overview");
+  const [tab, setTab] = useState<"overview" | "tickets" | "merch" | "attendees">("overview");
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -152,6 +153,7 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
             {([
               { key: "overview", label: "Overview", icon: Eye },
               { key: "tickets", label: "Tickets", icon: Ticket },
+              { key: "merch", label: "Merch", icon: Package },
               { key: "attendees", label: "Attendees", icon: Users },
             ] as const).map((t) => (
               <button
@@ -256,6 +258,12 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {tab === "merch" && (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+            <MerchEditor eventId={event.id} />
           </div>
         )}
 

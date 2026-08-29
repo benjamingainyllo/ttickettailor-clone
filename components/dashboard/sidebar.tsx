@@ -27,24 +27,31 @@ import {
   UserCircle
 } from "lucide-react";
 
+/**
+ * What an organiser actually does, in the order they do it.
+ *
+ * SELLING is the daily work: put an event up, watch it sell, see who is
+ * coming. MONEY is the weekly check. Everything else is settings.
+ *
+ * Gone from the old creator product: Offers (digital downloads — merch now
+ * lives on the event that sells it), Automations and Experiments, which were
+ * both empty placeholder screens. A nav item that leads to "coming soon"
+ * costs trust every time somebody clicks it hoping for something.
+ */
 const navGroups = [
   {
-    title: "GENERAL",
+    title: "SELLING",
     items: [
       { label: "Overview", icon: LayoutGrid, href: "/overview" },
-      { label: "Audience", icon: UsersRound, href: "/audience" },
-      { label: "Revenue", icon: CreditCard, href: "/revenue" },
-      { label: "Payouts", icon: Wallet, href: "/payouts" },
       { label: "Events", icon: Calendar, href: "/events" },
+      { label: "Attendees", icon: UsersRound, href: "/audience" },
     ]
   },
   {
-    title: "VENTURES",
+    title: "MONEY",
     items: [
-      { label: "Offers", icon: Gem, href: "/offers" },
-      { label: "Automations", icon: Workflow, href: "/automations" },
-      { label: "Experiments", icon: Compass, href: "/experiments" },
-      { label: "Integrations", icon: Link2, href: "/integrations", badge: "Soon" },
+      { label: "Sales", icon: CreditCard, href: "/revenue" },
+      { label: "Payouts", icon: Wallet, href: "/payouts" },
     ]
   },
 ];
@@ -160,11 +167,6 @@ export function Sidebar() {
                       {item.label}
                     </span>
 
-                    {!isCollapsed && item.badge && (
-                      <span className="ml-auto flex shrink-0 items-center justify-center rounded-md bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-white border border-zinc-700">
-                        {item.badge}
-                      </span>
-                    )}
                   </Link>
                 );
               })}

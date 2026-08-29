@@ -554,6 +554,118 @@ WHERE NOT EXISTS (
 
 
 -- ============================================================
+-- ---- Merchandise sold alongside a ticket -------------------------------
+--
+-- A T-shirt at a club night, a programme at a theatre run, a drink token.
+-- Scoped to ONE event rather than to the organiser, because that is how
+-- they are actually sold: at the door of a particular night, from the same
+-- checkout as the ticket.
+--
+-- Deliberately NOT the `offers` table. That one is user-level and belongs
+-- to the digital-products product this grew out of; a hoodie for Saturday
+-- has an allocation, a size, and an event it dies with.
+CREATE TABLE IF NOT EXISTS public.event_products (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+
+  name TEXT NOT NULL,
+  description TEXT,
+  price_kobo BIGINT NOT NULL DEFAULT 0 CHECK (price_kobo >= 0),
+  image_url TEXT,
+
+  -- Sizes, colours, flavours. NULL or empty means the item has no options.
+  -- An array rather than a variants table: a stall selling four shirt sizes
+  -- does not need a join, and the order line records the chosen string.
+  variants TEXT[],
+
+  -- NULL means unlimited. `sold_count` only ever moves through the
+  -- reserve/release functions below, never with a bare UPDATE.
+  quantity INTEGER CHECK (quantity IS NULL OR quantity >= 0),
+  sold_count INTEGER NOT NULL DEFAULT 0 CHECK (sold_count >= 0),
+  max_per_order INTEGER NOT NULL DEFAULT 10 CHECK (max_per_order > 0),
+
+  -- Physical goods someone has to hand over at the door; the door screen
+  -- shows these so nobody walks off without the shirt they paid for.
+  requires_collection BOOLEAN NOT NULL DEFAULT true,
+
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'hidden')),
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS event_products_event_idx
+  ON public.event_products(event_id, sort_order);
+
+-- What merchandise an order actually contained.
+--
+-- The ticket side of an order stays on `orders` itself, untouched. This is
+-- additive: settlement and ticket issuance do not read it, so adding merch
+-- cannot break the path that puts a QR code in somebody's inbox.
+--
+-- unit_price_kobo is copied at purchase rather than joined at read time.
+-- The organiser will raise the price next month and last month's receipt
+-- must not change with it.
+CREATE TABLE IF NOT EXISTS public.order_products (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES public.event_products(id) ON DELETE SET NULL,
+
+  -- Kept as text so a receipt still reads correctly after the product row
+  -- is edited or deleted.
+  name TEXT NOT NULL,
+  variant TEXT,
+
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  unit_price_kobo BIGINT NOT NULL CHECK (unit_price_kobo >= 0),
+
+  collected_at TIMESTAMPTZ,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS order_products_order_idx
+  ON public.order_products(order_id);
+
+ALTER TABLE public.event_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_products ENABLE ROW LEVEL SECURITY;
+
+-- Buyers can see what is on sale for a published event; only the organiser
+-- can change it. Mirrors the ticket_types rules exactly.
+DROP POLICY IF EXISTS "Anyone can view products of published events" ON public.event_products;
+CREATE POLICY "Anyone can view products of published events" ON public.event_products
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.events e
+      WHERE e.id = event_products.event_id
+        AND (e.publish_status = 'published' OR e.creator_id = auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS "Organisers manage their own products" ON public.event_products;
+CREATE POLICY "Organisers manage their own products" ON public.event_products
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.events e
+      WHERE e.id = event_products.event_id AND e.creator_id = auth.uid()
+    )
+  );
+
+-- Order lines are readable by the organiser whose event they belong to.
+-- Buyers reach their own order through its reference, which the server
+-- looks up with the service role.
+DROP POLICY IF EXISTS "Organisers see order lines for their events" ON public.order_products;
+CREATE POLICY "Organisers see order lines for their events" ON public.order_products
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_products.order_id AND o.creator_id = auth.uid()
+    )
+  );
+
+
 -- PART 5 — Rules the database enforces itself
 -- ============================================================
 
@@ -700,6 +812,50 @@ BEGIN
   SET sold_count = GREATEST(0, sold_count - COALESCE(p_quantity, 0)),
       updated_at = now()
   WHERE id = p_ticket_type_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ---- Merchandise inventory --------------------------------------------
+--
+-- Same shape as the ticket functions above, and for the same reason: two
+-- people going for the last shirt at the same moment must not both get it.
+-- The decision is the WHERE clause of a single UPDATE, so the database
+-- settles it rather than whoever's connection is quicker.
+CREATE OR REPLACE FUNCTION public.reserve_product_inventory(
+  p_product_id UUID,
+  p_quantity INTEGER
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  reserved INTEGER;
+BEGIN
+  IF p_quantity IS NULL OR p_quantity < 1 THEN
+    RETURN FALSE;
+  END IF;
+
+  UPDATE public.event_products
+  SET sold_count = sold_count + p_quantity,
+      updated_at = now()
+  WHERE id = p_product_id
+    AND status = 'active'
+    AND (quantity IS NULL OR sold_count + p_quantity <= quantity);
+
+  GET DIAGNOSTICS reserved = ROW_COUNT;
+  RETURN reserved > 0;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.release_product_inventory(
+  p_product_id UUID,
+  p_quantity INTEGER
+)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.event_products
+  SET sold_count = GREATEST(0, sold_count - COALESCE(p_quantity, 0)),
+      updated_at = now()
+  WHERE id = p_product_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
