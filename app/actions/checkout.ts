@@ -14,16 +14,16 @@ import { getPaymentProvider, isDemoPaymentMode } from "@/lib/payments";
 import { markOrderFailed, settleOrder } from "@/lib/orders";
 
 interface CheckoutPayload {
-  itemType: "offer" | "event";
+  itemType: "event";
   itemId: string;
   buyerEmail: string;
   buyerName?: string;
   buyerPhone?: string;
   /** Which tier, for events. Falls back to the event's only tier. */
   ticketTypeId?: string;
-  /** How many admissions. Events only; offers are always 1. */
+  /** How many admissions. */
   quantity?: number;
-  /** Merchandise added to the same order. Events only. */
+  /** Merchandise added to the same order. */
   products?: { productId: string; variant?: string | null; quantity: number }[];
 }
 
@@ -114,7 +114,7 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
 
     const requestedProducts = (payload.products ?? []).filter((p) => p.quantity > 0);
 
-    if (requestedProducts.length > 0 && payload.itemType === "event") {
+    if (requestedProducts.length > 0) {
       const { data: rows } = await admin
         .from("event_products")
         .select("id, name, price_kobo, variants, max_per_order, status")
@@ -192,8 +192,7 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
       reference,
       creator_id: creatorId,
       item_type: payload.itemType,
-      offer_id: payload.itemType === "offer" ? itemId : null,
-      event_id: payload.itemType === "event" ? itemId : null,
+      event_id: itemId,
       ticket_type_id: ticketTypeId,
       item_title: title,
       quantity,
@@ -542,31 +541,6 @@ type LoadedItem =
  */
 async function loadSellableItem(payload: CheckoutPayload): Promise<LoadedItem> {
   const admin = createAdminClient();
-
-  if (payload.itemType === "offer") {
-    const { data } = await admin
-      .from("offers")
-      .select("id, user_id, title, price_kobo, publish_status")
-      .eq("id", payload.itemId)
-      .maybeSingle();
-
-    if (!data) return { ok: false, error: "This item is no longer available." };
-    if (data.publish_status !== "published") {
-      return { ok: false, error: "This item isn't on sale yet." };
-    }
-
-    return {
-      ok: true,
-      id: data.id,
-      creatorId: data.user_id,
-      title: data.title,
-      unitPriceKobo: Number(data.price_kobo ?? 0),
-      ticketTypeId: null,
-      quantity: 1,
-      // Offers have no organiser-facing switch; the seller always absorbs it.
-      passFeeToBuyer: false,
-    };
-  }
 
   const { data: event } = await admin
     .from("events")

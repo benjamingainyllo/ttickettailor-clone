@@ -69,6 +69,20 @@ CREATE TRIGGER on_auth_user_created
 -- decimals — see lib/money.ts.
 -- ============================================================
 
+-- DEPRECATED — the digital-products feature this grew out of.
+--
+-- The product sells tickets and event merchandise now; nothing in the app
+-- reads or writes this table any more. It is kept rather than dropped
+-- because a DROP in a file designed to be re-run would destroy any rows
+-- still here, silently, every time somebody ran setup again.
+--
+-- To remove it for good, once you have confirmed it is empty:
+--
+--   SELECT count(*) FROM public.offers;        -- expect 0
+--   ALTER TABLE public.orders DROP COLUMN IF EXISTS offer_id;
+--   DROP TABLE IF EXISTS public.offers;
+--
+-- Do the orders column first; it references this table.
 CREATE TABLE IF NOT EXISTS public.offers (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -351,6 +365,9 @@ CREATE TABLE IF NOT EXISTS public.orders (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
   CONSTRAINT orders_item_present CHECK (
+    -- 'offer' stays allowed only so historical rows still satisfy the
+    -- constraint. Nothing writes it any more; see the note on the offers
+    -- table above.
     (item_type = 'offer' AND offer_id IS NOT NULL) OR
     (item_type = 'event' AND event_id IS NOT NULL)
   )

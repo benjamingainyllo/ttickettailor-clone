@@ -39,13 +39,12 @@ export default function OverviewPage() {
     setLoadError(null);
 
     try {
-      const [payout, offers, events, orderRows, audience] = await Promise.all([
+      const [payout, events, orderRows, audience] = await Promise.all([
         supabase
           .from("payout_accounts")
           .select("status, provider_subaccount_id")
           .eq("creator_id", user.id)
           .maybeSingle(),
-        supabase.from("offers").select("id, publish_status").eq("user_id", user.id),
         supabase.from("events").select("id, publish_status").eq("creator_id", user.id),
         supabase
           .from("orders")
@@ -63,7 +62,7 @@ export default function OverviewPage() {
         payout.data?.status === "active" && Boolean(payout.data?.provider_subaccount_id)
       );
 
-      const items = [...(offers.data ?? []), ...(events.data ?? [])];
+      const items = events.data ?? [];
       setPublishedCount(items.filter((i: any) => i.publish_status === "published").length);
       setDraftCount(items.filter((i: any) => i.publish_status !== "published").length);
       setOrders(orderRows.data ?? []);
@@ -122,10 +121,10 @@ export default function OverviewPage() {
       },
       {
         done: publishedCount > 0 || draftCount > 0,
-        title: "Create something to sell",
-        body: "A digital product, an event, or a session. It saves as a draft first.",
-        href: "/offers",
-        cta: "Create an offer",
+        title: "Create your first event",
+        body: "It saves as a draft first, so nothing goes on sale until you say so.",
+        href: "/events/create",
+        cta: "Create an event",
         icon: Sparkles,
       },
       {
@@ -140,8 +139,8 @@ export default function OverviewPage() {
         done: publishedCount > 0,
         title: "Publish and share",
         body: "Publishing gives you a link buyers can open and pay through.",
-        href: draftCount > 0 ? "/events" : "/offers",
-        cta: "Go to your items",
+        href: "/events",
+        cta: "Go to your events",
         icon: ArrowRight,
       },
     ];

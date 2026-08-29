@@ -31,7 +31,7 @@ export default function RevenuePage() {
 
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
-  const [offersCount, setOffersCount] = useState(0);
+  const [eventsCount, setEventsCount] = useState(0);
   const [orders, setOrders] = useState<Order[]>([]);
   const [totalNet, setTotalNet] = useState(0);
 
@@ -39,7 +39,7 @@ export default function RevenuePage() {
     if (!user) return;
 
     const fetchData = async () => {
-      // The ledger: every order across offers AND events.
+      // The ledger: every order, tickets and merchandise alike.
       const { data: rows } = await supabase
         .from("orders")
         .select("*")
@@ -54,13 +54,12 @@ export default function RevenuePage() {
         setTotalSales(paid.length);
       }
 
-      // Fetch offers count
       const { count } = await supabase
-        .from("offers")
+        .from("events")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
+        .eq("creator_id", user.id);
 
-      setOffersCount(count || 0);
+      setEventsCount(count || 0);
     };
 
     fetchData();
@@ -96,9 +95,9 @@ export default function RevenuePage() {
       iconBgColor: "rgba(168, 85, 247, 0.1)",
     },
     {
-      title: "Products Created",
-      value: String(offersCount),
-      change: "total offers",
+      title: "Events created",
+      value: String(eventsCount),
+      change: "drafts and published",
       icon: Plus,
       iconColor: "#3B82F6",
       iconBgColor: "rgba(59, 130, 246, 0.1)",
@@ -158,7 +157,7 @@ export default function RevenuePage() {
         )}
       </div>
 
-      {/* Order ledger — offers and events together */}
+      {/* Order ledger — every paid order */}
       <div className="rounded-xl border border-border bg-surface p-4 md:p-5">
         <h3 className="text-sm font-semibold text-text mb-4">Orders</h3>
         {orders.length > 0 ? (
@@ -195,7 +194,7 @@ export default function RevenuePage() {
             <CircleDollarSign className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
             <p className="text-sm font-medium text-text">No orders yet</p>
             <p className="text-xs text-subtle mt-1">
-              When someone buys an offer or a ticket, it appears here
+              When someone buys a ticket, it appears here
             </p>
           </div>
         )}

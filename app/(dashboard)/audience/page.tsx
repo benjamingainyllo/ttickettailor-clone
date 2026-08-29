@@ -177,7 +177,7 @@ export default function AudiencePage() {
             </div>
             <p className="text-sm font-semibold text-text">No contacts yet</p>
             <p className="mx-auto mt-1 max-w-xs px-6 text-xs text-subtle">
-              Everyone who buys an offer or a ticket is added here automatically, with what
+              Everyone who buys a ticket is added here automatically, with what
               they bought and what they spent.
             </p>
           </div>

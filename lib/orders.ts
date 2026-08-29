@@ -219,6 +219,9 @@ async function upsertAudienceMember(order: any) {
       .update({
         total_spent_kobo: Number(existing.total_spent_kobo ?? 0) + Number(order.gross_kobo),
         purchase_count: Number(existing.purchase_count ?? 0) + 1,
+        // Column named for the old digital-products feature. Kept rather
+        // than renamed: it holds whatever was bought, and a rename would
+        // be a migration with no benefit to anybody using the product.
         last_offer: order.item_title ?? null,
         stage: "buyer",
         last_seen: now,

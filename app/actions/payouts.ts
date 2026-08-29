@@ -145,7 +145,6 @@ export async function connectBankAccount(input: {
 
     revalidatePath("/payouts");
     revalidatePath("/events");
-    revalidatePath("/offers");
     return { success: true as const };
   } catch (error) {
     console.error("Bank connection failed:", error);

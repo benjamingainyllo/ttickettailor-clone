@@ -4,10 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-type ItemType = "offer" | "event";
+type ItemType = "event";
 
 const TABLE: Record<ItemType, { name: string; ownerColumn: string }> = {
-  offer: { name: "offers", ownerColumn: "user_id" },
   event: { name: "events", ownerColumn: "creator_id" },
 };
 
@@ -100,7 +99,7 @@ export async function publishItem(itemType: ItemType, itemId: string) {
     return { success: false as const, error: error.message };
   }
 
-  revalidatePath(itemType === "event" ? "/events" : "/offers");
+  revalidatePath("/events");
   return { success: true as const };
 }
 
@@ -122,6 +121,6 @@ export async function unpublishItem(itemType: ItemType, itemId: string) {
 
   if (error) return { success: false as const, error: error.message };
 
-  revalidatePath(itemType === "event" ? "/events" : "/offers");
+  revalidatePath("/events");
   return { success: true as const };
 }

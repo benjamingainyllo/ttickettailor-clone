@@ -35,14 +35,6 @@ interface CreatorProfile {
   avatar_url: string | null;
 }
 
-interface Offer {
-  id: string;
-  title: string;
-  description: string | null;
-  price_kobo: number;
-  cover_image_url: string | null;
-  offer_type: string;
-}
 
 interface StorefrontEvent {
   id: string;
@@ -62,12 +54,11 @@ export default function StorefrontPage() {
   const supabase = createClient();
 
   const [creator, setCreator] = useState<CreatorProfile | null>(null);
-  const [offers, setOffers] = useState<Offer[]>([]);
   const [events, setEvents] = useState<StorefrontEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
-  const [activeTab, setActiveTab] = useState<"offers" | "events" | "links">("offers");
+  const [activeTab, setActiveTab] = useState<"events" | "links">("events");
 
   useEffect(() => {
     if (!username) return;
@@ -93,18 +84,6 @@ export default function StorefrontPage() {
       // Check if this is the owner viewing their own profile
       if (user && user.id === profileData.id) {
         setIsOwner(true);
-      }
-
-      // Fetch published offers for this creator
-      const { data: offersData } = await supabase
-        .from("offers")
-        .select("*")
-        .eq("user_id", profileData.id)
-        .eq("publish_status", "published")
-        .order("created_at", { ascending: false });
-
-      if (offersData) {
-        setOffers(offersData as Offer[]);
       }
 
       // Fetch upcoming events for this creator
@@ -240,16 +219,6 @@ export default function StorefrontPage() {
         <div className="mt-12 space-y-4">
           <div className="flex items-center justify-around border-b border-zinc-800/50 pb-4">
             <button 
-              onClick={() => setActiveTab("offers")}
-              className={`text-sm font-semibold pb-4 px-4 -mb-[18px] transition-colors ${
-                activeTab === "offers" 
-                  ? "text-white border-b-2 border-blue-500" 
-                  : "text-zinc-500 hover:text-zinc-300"
-              }`}
-            >
-              Offers
-            </button>
-            <button 
               onClick={() => setActiveTab("events")}
               className={`text-sm font-medium pb-4 px-4 -mb-[18px] transition-colors ${
                 activeTab === "events" 
@@ -270,53 +239,6 @@ export default function StorefrontPage() {
               Links
             </button>
           </div>
-
-          {/* Offers Tab */}
-          {activeTab === "offers" && (
-            <>
-              {offers.length > 0 ? (
-                <div className="space-y-4 pt-4">
-                  {offers.map((offer) => (
-                    <a
-                      key={offer.id}
-                      href={`/offer/${offer.id}`}
-                      className="block rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 backdrop-blur-sm transition-all hover:border-zinc-700 hover:bg-zinc-800/50 active:scale-[0.98]"
-                    >
-                      <div className="flex items-center gap-4">
-                        {offer.cover_image_url ? (
-                          <img
-                            src={offer.cover_image_url}
-                            alt={offer.title}
-                            className="h-16 w-16 rounded-xl object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border border-zinc-800">
-                            <ShoppingBag className="h-6 w-6 text-blue-400" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-white truncate">{offer.title}</h3>
-                          <p className="text-xs text-zinc-500 mt-1 line-clamp-1">{offer.description}</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-bold text-emerald-400">{formatKobo(Number(offer.price_kobo ?? 0))}</p>
-                          <ChevronRight className="h-4 w-4 text-zinc-600 ml-auto mt-1" />
-                        </div>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <div className="pt-12 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900/50 border border-zinc-800 text-zinc-700">
-                    <ShoppingBag className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-zinc-300">No active offers</h3>
-                  <p className="mt-1 text-xs text-zinc-600">This creator hasn&apos;t published any offers yet.</p>
-                </div>
-              )}
-            </>
-          )}
 
           {/* Events Tab */}
           {activeTab === "events" && (
