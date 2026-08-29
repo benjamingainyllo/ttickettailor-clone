@@ -42,8 +42,6 @@ export async function middleware(request: NextRequest) {
     "/payouts",
     "/events",
     "/offers",
-    "/automations",
-    "/experiments",
     "/integrations",
     "/settings",
     "/onboarding",
