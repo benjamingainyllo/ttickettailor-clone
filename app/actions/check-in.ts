@@ -31,6 +31,19 @@ export interface CheckInResult {
     seatIndex: number;
     checkedInAt: string | null;
   };
+  /**
+   * Merchandise on this ticket's ORDER that nobody has handed over yet.
+   *
+   * Attached to the order rather than the ticket, so somebody who bought
+   * four tickets and one hoodie sees the hoodie on whichever of the four is
+   * scanned first — and, once it is marked collected, on none of them.
+   */
+  collect?: {
+    id: string;
+    name: string;
+    variant: string | null;
+    quantity: number;
+  }[];
 }
 
 export async function checkInTicket(
@@ -53,7 +66,7 @@ export async function checkInTicket(
 
   const { data: ticket } = await admin
     .from("tickets")
-    .select("id, code, event_id, creator_id, holder_name, ticket_type_name, seat_index, status, checked_in_at")
+    .select("id, code, event_id, creator_id, order_id, holder_name, ticket_type_name, seat_index, status, checked_in_at")
     .eq("code", code)
     .maybeSingle();
 
@@ -98,8 +111,11 @@ export async function checkInTicket(
         ticket.checked_in_at ? ` at ${new Date(ticket.checked_in_at).toLocaleTimeString()}` : ""
       }.`,
       ticket: summary,
+      collect: await outstandingMerch(ticket.order_id),
     };
   }
+
+  const outstanding = await outstandingMerch(ticket.order_id);
 
   const now = new Date().toISOString();
 
@@ -125,7 +141,70 @@ export async function checkInTicket(
     outcome: "admitted",
     message: "Let them in.",
     ticket: { ...summary, checkedInAt: admitted.checked_in_at },
+    collect: outstanding,
   };
+}
+
+/**
+ * What this order bought that still needs handing over.
+ *
+ * Only items the organiser marked as collected at the door, and only those
+ * not already given out. Anything digital or already collected would just be
+ * noise on a screen somebody is reading in the dark with a queue waiting.
+ */
+async function outstandingMerch(orderId: string | null) {
+  if (!orderId) return [];
+  try {
+    const { data } = await createAdminClient()
+      .from("order_products")
+      .select("id, name, variant, quantity, collected_at, event_products(requires_collection)")
+      .eq("order_id", orderId)
+      .is("collected_at", null);
+
+    return (data ?? [])
+      .filter((line: any) => line.event_products?.requires_collection !== false)
+      .map((line: any) => ({
+        id: line.id,
+        name: line.name,
+        variant: line.variant,
+        quantity: Number(line.quantity ?? 1),
+      }));
+  } catch (error) {
+    // The door must keep working. A ticket scan is not worth failing over a
+    // merchandise lookup.
+    console.error("Could not load merchandise for this order:", error);
+    return [];
+  }
+}
+
+/** Mark merchandise handed over, so a second scan does not ask for it again. */
+export async function markCollected(orderProductId: string): Promise<{ ok: boolean }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+
+  const admin = createAdminClient();
+
+  // Confirm the line belongs to an order for one of this organiser's events
+  // before writing — the door page runs on a phone that may be in anybody's
+  // hands, and the id came from the client.
+  const { data: line } = await admin
+    .from("order_products")
+    .select("id, orders(creator_id)")
+    .eq("id", orderProductId)
+    .maybeSingle();
+
+  if (!line || (line as any).orders?.creator_id !== user.id) return { ok: false };
+
+  const { error } = await admin
+    .from("order_products")
+    .update({ collected_at: new Date().toISOString() })
+    .eq("id", orderProductId)
+    .is("collected_at", null);
+
+  return { ok: !error };
 }
 
 /** Undo a check-in, for the inevitable mis-scan. */

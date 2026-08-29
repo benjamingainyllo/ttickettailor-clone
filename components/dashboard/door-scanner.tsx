@@ -7,7 +7,7 @@ import {
   ArrowLeft, Camera, CameraOff, CheckCircle2, XCircle, AlertTriangle,
   Loader2, Keyboard, RotateCcw, Users,
 } from "lucide-react";
-import { checkInTicket, undoCheckIn, getDoorStats, type CheckInResult } from "@/app/actions/check-in";
+import { checkInTicket, undoCheckIn, getDoorStats, markCollected, type CheckInResult } from "@/app/actions/check-in";
 import { toast } from "sonner";
 
 /**
@@ -64,6 +64,8 @@ export function DoorScanner({
   const [mode, setMode] = useState<Mode>("camera");
   const [cameraState, setCameraState] = useState<"idle" | "starting" | "live" | "denied" | "unavailable">("idle");
   const [result, setResult] = useState<CheckInResult | null>(null);
+  /** Lines being marked handed-over, so the button cannot be double-tapped. */
+  const [collecting, setCollecting] = useState<string[]>([]);
   const [checking, setChecking] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [stats, setStats] = useState(initialStats);
@@ -225,6 +227,28 @@ export function DoorScanner({
     setManualCode("");
   }
 
+  /**
+   * Mark merchandise handed over.
+   *
+   * Removed from the card optimistically. The person on the door has already
+   * passed the shirt across by the time they tap this, and a spinner in a
+   * queue is worse than a rare stale row — a failure is logged and the line
+   * reappears on the next scan of the same order.
+   */
+  async function handleCollect(orderProductId: string) {
+    setCollecting((ids) => [...ids, orderProductId]);
+    setResult((current) =>
+      current
+        ? { ...current, collect: (current.collect ?? []).filter((l) => l.id !== orderProductId) }
+        : current
+    );
+
+    const { ok } = await markCollected(orderProductId);
+    if (!ok) toast.error("Couldn't mark that as given. It'll show again on the next scan.");
+
+    setCollecting((ids) => ids.filter((id) => id !== orderProductId));
+  }
+
   async function handleUndo() {
     if (!result?.ticket?.code) return;
     const undone = await undoCheckIn(result.ticket.code);
@@ -261,7 +285,15 @@ export function DoorScanner({
         </div>
       </header>
 
-      {result && <ResultBanner result={result} onDismiss={() => setResult(null)} onUndo={handleUndo} />}
+      {result && (
+        <ResultBanner
+          result={result}
+          onDismiss={() => setResult(null)}
+          onUndo={handleUndo}
+          onCollect={handleCollect}
+          collecting={collecting}
+        />
+      )}
 
       <div className="flex gap-2">
         {(["camera", "manual"] as const).map((m) => (
@@ -379,10 +411,14 @@ function ResultBanner({
   result,
   onDismiss,
   onUndo,
+  onCollect,
+  collecting,
 }: {
   result: CheckInResult;
   onDismiss: () => void;
   onUndo: () => void;
+  onCollect: (orderProductId: string) => void;
+  collecting: string[];
 }) {
   const tone = {
     admitted: {
@@ -426,6 +462,39 @@ function ResultBanner({
                 {" · "}
                 <span className="font-mono">{result.ticket.code}</span>
               </p>
+            </div>
+          )}
+
+          {/* Anything bought that still has to be handed over. Deliberately
+              loud: the door is dark, there is a queue, and a shirt somebody
+              paid for and did not receive becomes a refund request. */}
+          {result.collect && result.collect.length > 0 && (
+            <div className="mt-3 rounded-lg border-2 border-black/25 bg-black/15 p-3">
+              <p className="text-[11px] font-black uppercase tracking-wider">
+                Also hand over
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {result.collect.map((line) => (
+                  <li key={line.id} className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-bold">
+                      {line.quantity > 1 && `${line.quantity} × `}
+                      {line.name}
+                      {line.variant && (
+                        <span className="ml-1.5 rounded bg-black/20 px-1.5 py-0.5 text-xs">
+                          {line.variant}
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      onClick={() => onCollect(line.id)}
+                      disabled={collecting.includes(line.id)}
+                      className="shrink-0 rounded-md bg-black/25 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide transition-colors hover:bg-black/40 disabled:opacity-50"
+                    >
+                      {collecting.includes(line.id) ? "…" : "Given"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
