@@ -9,7 +9,15 @@ export function siteUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
   if (configured) return configured.replace(/\/$/, "");
 
-  // Vercel supplies this automatically on preview and production builds.
+  // Vercel's stable address for the live site — the one an organiser would
+  // actually type. Preferred over VERCEL_URL, which is a different hostname
+  // for every single deployment: a ticket link built from that keeps working
+  // by luck, but points at a build rather than at the site, and reads like a
+  // phishing link when it lands in somebody's inbox.
+  const production = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (production) return `https://${production}`;
+
+  // Preview builds only, where a per-deployment host is the right answer.
   const vercel = process.env.VERCEL_URL;
   if (vercel) return `https://${vercel}`;
 

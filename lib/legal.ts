@@ -42,7 +42,7 @@ export const LEGAL = {
   jurisdiction: "Nigeria",
 
   /** Public site. */
-  site: "https://ttickettailor-clone.vercel.app",
+  site: "https://benjamin-ticket.vercel.app",
 
   /** Shown at the top of each page. Update whenever the wording changes. */
   updated: "28 August 2026",

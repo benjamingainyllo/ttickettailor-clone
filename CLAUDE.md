@@ -47,7 +47,7 @@ If a change genuinely needs review first, say plainly that it is waiting to
 be merged rather than describing it as deployed. Never report a deploy that
 hasn't happened.
 
-The live site is https://ttickettailor-clone.vercel.app and the Supabase
+The live site is https://benjamin-ticket.vercel.app and the Supabase
 project ref is `fpximoqxdutedhxiqvlo` — its dashboard URLs are
 `https://supabase.com/dashboard/project/fpximoqxdutedhxiqvlo/...`, which
 saves sending him hunting through menus.
