@@ -55,6 +55,24 @@ export default function OnboardingPage() {
     !user.user_metadata?.password_set &&
     user.app_metadata?.provider === "email";
 
+  /**
+   * Somebody who has already done this doesn't get asked again.
+   *
+   * The sign-in button sends everyone here, because it can't know from the
+   * browser whether this is a first visit. Without this an organiser who
+   * signs in with Google every Friday lands on "create your box office"
+   * every Friday, and has to re-tick the policy box to get past it.
+   *
+   * `done` guards the success screen, which sets a box office name a moment
+   * before this would fire.
+   */
+  useEffect(() => {
+    if (done || saving) return;
+    if (profile?.box_office_name && profile?.handle) {
+      router.replace("/overview");
+    }
+  }, [profile, done, saving, router]);
+
   useEffect(() => {
     if (!profile) return;
     if (profile.box_office_name) setOrgName(profile.box_office_name);

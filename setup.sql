@@ -43,14 +43,42 @@ CREATE POLICY "Users can insert own profile" ON public.profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Give every new signup a profile row automatically.
+--
+-- Where the name comes from depends on how they signed up, and the two
+-- disagree. Our own screens write first_name and last_name. Google writes
+-- given_name / family_name / full_name / name, and the picture under
+-- 'picture' rather than 'avatar_url'.
+--
+-- Reading only our own keys is why a Google signup would land with no name
+-- at all: the dashboard greets them as "there", the sidebar calls them
+-- "Creator", and their storefront and ticket emails show the same. Google
+-- sent the name; nothing was looking for it.
+--
+-- full_name is split on the first space. Not a rule that holds everywhere,
+-- but it is only a display name, it is the same guess the signup screen
+-- makes, and Settings can correct it.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
+DECLARE
+  meta JSONB := COALESCE(NEW.raw_user_meta_data, '{}'::jsonb);
+  whole TEXT := NULLIF(TRIM(COALESCE(meta ->> 'full_name', meta ->> 'name', '')), '');
 BEGIN
-  INSERT INTO public.profiles (id, first_name, last_name)
+  INSERT INTO public.profiles (id, first_name, last_name, avatar_url)
   VALUES (
     NEW.id,
-    NEW.raw_user_meta_data ->> 'first_name',
-    NEW.raw_user_meta_data ->> 'last_name'
+    COALESCE(
+      NULLIF(meta ->> 'first_name', ''),
+      NULLIF(meta ->> 'given_name', ''),
+      NULLIF(SPLIT_PART(whole, ' ', 1), '')
+    ),
+    COALESCE(
+      NULLIF(meta ->> 'last_name', ''),
+      NULLIF(meta ->> 'family_name', ''),
+      -- Everything after the first space, so double-barrelled surnames
+      -- survive. Empty when there is only one word.
+      NULLIF(TRIM(SUBSTRING(whole FROM POSITION(' ' IN whole) + 1)), whole)
+    ),
+    COALESCE(NULLIF(meta ->> 'avatar_url', ''), NULLIF(meta ->> 'picture', ''))
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
@@ -61,6 +89,31 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Fill in anyone who already signed up before the function above learned to
+-- read Google's keys. Only touches rows that are still empty, so it never
+-- overwrites a name somebody typed themselves, and it is safe to re-run.
+UPDATE public.profiles p
+SET
+  first_name = COALESCE(p.first_name, NULLIF(u.raw_user_meta_data ->> 'given_name', ''),
+                        NULLIF(SPLIT_PART(TRIM(COALESCE(u.raw_user_meta_data ->> 'full_name',
+                                                        u.raw_user_meta_data ->> 'name', '')), ' ', 1), '')),
+  last_name  = COALESCE(
+                 p.last_name,
+                 NULLIF(u.raw_user_meta_data ->> 'family_name', ''),
+                 -- Same split as the function above, for a Google account
+                 -- that sent only a full name.
+                 NULLIF(TRIM(SUBSTRING(
+                   TRIM(COALESCE(u.raw_user_meta_data ->> 'full_name',
+                                 u.raw_user_meta_data ->> 'name', ''))
+                   FROM POSITION(' ' IN TRIM(COALESCE(u.raw_user_meta_data ->> 'full_name',
+                                                      u.raw_user_meta_data ->> 'name', ''))) + 1)),
+                 TRIM(COALESCE(u.raw_user_meta_data ->> 'full_name',
+                               u.raw_user_meta_data ->> 'name', '')))),
+  avatar_url = COALESCE(p.avatar_url, NULLIF(u.raw_user_meta_data ->> 'picture', ''))
+FROM auth.users u
+WHERE u.id = p.id
+  AND (p.first_name IS NULL OR p.last_name IS NULL OR p.avatar_url IS NULL);
 
 
 -- ============================================================
