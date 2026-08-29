@@ -79,7 +79,7 @@ export function ticketConfirmationEmail(input: TicketEmailInput): EmailMessage {
             ${escapeHtml(t.code)}
           </div>
           <a href="${ticketUrl(t.code)}"
-             style="display:inline-block;margin-top:12px;font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;">
+             style="display:inline-block;margin-top:12px;font-size:13px;font-weight:600;color:#E0512F;text-decoration:none;">
             Open ticket &amp; QR code &rarr;
           </a>
         </td>
@@ -97,7 +97,7 @@ export function ticketConfirmationEmail(input: TicketEmailInput): EmailMessage {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px;">
             <tr>
               <td>
-                <div style="font-size:13px;font-weight:700;color:#4f46e5;letter-spacing:.04em;">PAYLANCE</div>
+                <div style="font-size:13px;font-weight:700;color:#E0512F;letter-spacing:.04em;">PAYLANCE</div>
                 <h1 style="margin:16px 0 4px;font-size:24px;line-height:1.25;font-weight:800;">
                   You're going to ${escapeHtml(input.eventTitle)}
                 </h1>
@@ -107,7 +107,7 @@ export function ticketConfirmationEmail(input: TicketEmailInput): EmailMessage {
 
                 ${
                   detailLines.length
-                    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border-left:3px solid #4f46e5;padding-left:14px;">
+                    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border-left:3px solid #E0512F;padding-left:14px;">
                         ${when ? `<tr><td style="padding:2px 0;font-size:14px;color:#3f3f46;"><strong>When</strong>&nbsp;&nbsp;${escapeHtml(when)}</td></tr>` : ""}
                         ${input.eventLocation ? `<tr><td style="padding:2px 0;font-size:14px;color:#3f3f46;"><strong>Where</strong>&nbsp;&nbsp;${escapeHtml(input.eventLocation)}</td></tr>` : ""}
                       </table>`
@@ -119,7 +119,7 @@ export function ticketConfirmationEmail(input: TicketEmailInput): EmailMessage {
                 </table>
 
                 <a href="${allTicketsLink}"
-                   style="display:block;margin-top:8px;padding:14px;background:#18181b;color:#ffffff;border-radius:12px;text-align:center;font-size:14px;font-weight:700;text-decoration:none;">
+                   style="display:block;margin-top:8px;padding:14px;background:#1B1512;color:#ffffff;border-radius:12px;text-align:center;font-size:14px;font-weight:700;text-decoration:none;">
                   Show ${count === 1 ? "my ticket" : "all my tickets"}
                 </a>
 

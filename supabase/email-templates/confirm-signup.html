@@ -1,0 +1,61 @@
+<!--
+  Paste into Supabase: Authentication -> Emails -> Confirm signup.
+
+  Used when an account is created with a password rather than a magic link.
+  Most people will not see this one — signing up here is email-only — but
+  Supabase sends it for password signups and it should not be the default
+  unbranded template if it ever fires.
+-->
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1B1512;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px;">
+            <tr>
+              <td>
+                <div style="font-size:13px;font-weight:700;color:#E0512F;letter-spacing:.04em;">PAYLANCE</div>
+
+                <h1 style="margin:16px 0 8px;font-size:24px;line-height:1.25;font-weight:800;">
+                  Confirm your email
+                </h1>
+
+                <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#52525b;">
+                  One click and your account is ready. This just proves the
+                  address is yours.
+                </p>
+
+                <a href="{{ .ConfirmationURL }}"
+                   style="display:block;padding:14px;background:#1B1512;color:#ffffff;border-radius:12px;text-align:center;font-size:15px;font-weight:700;text-decoration:none;">
+                  Confirm my email
+                </a>
+
+                <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#71717a;">
+                  This link works once and expires in an hour. If the button
+                  doesn&rsquo;t work, copy this into your browser:
+                </p>
+                <p style="margin:8px 0 0;font-size:12px;line-height:1.5;color:#a1a1aa;word-break:break-all;">
+                  {{ .ConfirmationURL }}
+                </p>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;border-top:1px solid #e4e4e7;">
+                  <tr>
+                    <td style="padding-top:20px;font-size:12.5px;line-height:1.6;color:#a1a1aa;">
+                      Didn&rsquo;t create an account? Ignore this and nothing
+                      happens.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <p style="margin:20px 0 0;font-size:12px;color:#a1a1aa;">
+            Paylance &mdash; a flat fee per ticket, never a percentage.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,42 +1,58 @@
 import Link from "next/link";
-import { LEGAL_NAV, MARKETING_NAV } from "./nav-links";
+import { FOOTER_COLUMNS } from "./nav-links";
 
+/**
+ * The footer, in columns.
+ *
+ * Every link here goes somewhere that exists. The reference this follows
+ * carries About, Press, Careers, a help centre and five social accounts —
+ * none of which we have, and a column of dead links looks far worse than a
+ * short column of real ones. Columns get added as the pages behind them do;
+ * FOOTER_COLUMNS is where.
+ */
 export function SiteFooter() {
   return (
-    <footer className="border-t border-[var(--hairline)] px-6 py-12 sm:px-10 lg:px-16">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 sm:flex-row">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 rotate-[-4deg] items-center justify-center rounded-lg bg-[var(--coral)] text-[11px] font-black text-white">
-            P
-          </span>
-          <span className="text-[15px] font-extrabold tracking-tight">Paylance</span>
-        </Link>
-
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          {MARKETING_NAV.map(([to, label]) => (
-            <Link key={to} href={to} className="text-[12px] font-semibold text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]">
-              {label}
-            </Link>
-          ))}
-          <Link href="/login" className="text-[12px] font-semibold text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]">
-            Sign in
+    <footer className="border-t border-[var(--hairline)] px-6 py-14 sm:px-10 lg:px-16">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex flex-col gap-12 lg:flex-row lg:justify-between lg:gap-16">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5 self-start">
+            <span className="flex h-9 w-9 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[14px] font-black text-white">
+              P
+            </span>
+            <span className="text-[21px] font-extrabold tracking-tight">Paylance</span>
           </Link>
+
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:flex lg:gap-x-16">
+            {FOOTER_COLUMNS.map((column) => (
+              <div key={column.title}>
+                <p className="text-[13px] font-semibold text-[var(--on-ground-faint)]">
+                  {column.title}
+                </p>
+                <ul className="mt-4 space-y-3">
+                  {column.links.map(([href, label]) => (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        className="text-[14px] text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
+                      >
+                        {label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <p className="text-[12px] text-[var(--on-ground-faint)]">© {new Date().getFullYear()} Paylance</p>
-      </div>
-
-      {/* Legal sits on its own line: findable when looked for, quiet otherwise. */}
-      <div className="mx-auto mt-8 flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-[var(--hairline)] pt-6">
-        {LEGAL_NAV.map(([to, label]) => (
-          <Link
-            key={to}
-            href={to}
-            className="text-[12px] text-[var(--on-ground-faint)] hover:text-[var(--on-ground-soft)]"
-          >
-            {label}
-          </Link>
-        ))}
+        <div className="mt-14 flex flex-col gap-3 border-t border-[var(--hairline)] pt-7 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[12.5px] text-[var(--on-ground-faint)]">
+            © {new Date().getFullYear()} Paylance
+          </p>
+          <p className="text-[12.5px] text-[var(--on-ground-faint)]">
+            A flat fee per ticket. Never a percentage.
+          </p>
+        </div>
       </div>
     </footer>
   );
