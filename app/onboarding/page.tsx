@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { checkHandle, normalizeHandle } from "@/lib/handle";
 import { SetPasswordGate } from "@/components/auth/set-password-gate";
+import { COUNTRIES } from "@/lib/locale";
+import { useHost } from "@/lib/use-origin";
 import { Check, ImagePlus, Loader2, Lock, Ticket } from "lucide-react";
 
 /**
@@ -27,14 +29,6 @@ import { Check, ImagePlus, Loader2, Lock, Ticket } from "lucide-react";
  * event, not to open an account, and the publish gate already refuses
  * without them.
  */
-
-const COUNTRIES = [
-  "Nigeria", "Ghana", "Kenya", "South Africa", "Egypt", "Tanzania", "Uganda",
-  "Rwanda", "Senegal", "Côte d'Ivoire", "Cameroon", "Ethiopia", "Morocco",
-  "United Kingdom", "United States", "Canada", "Ireland", "Germany", "France",
-  "Netherlands", "Spain", "Portugal", "Italy", "United Arab Emirates",
-  "Australia", "New Zealand", "India", "Somewhere else",
-];
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -77,8 +71,7 @@ export default function OnboardingPage() {
     if (!handleEdited) setHandle(normalizeHandle(orgName));
   }, [orgName, handleEdited]);
 
-  const origin =
-    typeof window !== "undefined" ? window.location.host : "";
+  const origin = useHost();
 
   const check = useMemo(() => checkHandle(handle), [handle]);
   const canSave =

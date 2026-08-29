@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { COUNTRIES, timezones } from "@/lib/locale";
+import { useHost, useOrigin } from "@/lib/use-origin";
 import { useAuth } from "@/components/auth/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { checkHandle, normalizeHandle } from "@/lib/handle";
@@ -17,8 +19,7 @@ const CATEGORIES = [
 export default function SettingsPage() {
   // The real host this deployment is served from. paylance.me was hardcoded
   // here and does not exist — an organiser copying that link got nowhere.
-  const publicHost =
-    typeof window !== "undefined" ? window.location.host : "";
+  const publicHost = useHost();
 
   const { user, profile, refreshProfile, signOut } = useAuth();
   const supabase = createClient();
@@ -26,6 +27,9 @@ export default function SettingsPage() {
 
   const [tab, setTab] = useState<"profile" | "security">("profile");
 
+  const [boxOfficeName, setBoxOfficeName] = useState("");
+  const [timezone, setTimezone] = useState("");
+  const [country, setCountry] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [handle, setHandle] = useState("");
@@ -43,6 +47,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!profile) return;
+    setBoxOfficeName(profile.box_office_name || "");
+    setTimezone(profile.timezone || "");
+    setCountry(profile.country || "");
     setFirstName(profile.first_name || "");
     setLastName(profile.last_name || "");
     setHandle(profile.handle || "");
@@ -54,8 +61,8 @@ export default function SettingsPage() {
 
   const handleState = handle ? checkHandle(handle) : { ok: true as const };
   const handleUnchanged = normalizeHandle(handle) === (profile?.handle || "");
-  const publicUrl =
-    typeof window !== "undefined" && handle ? `${window.location.origin}/${normalizeHandle(handle)}` : "";
+  const origin = useOrigin();
+  const publicUrl = origin && handle ? `${origin}/${normalizeHandle(handle)}` : "";
 
   const onPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -92,6 +99,9 @@ export default function SettingsPage() {
 
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
+        box_office_name: boxOfficeName || null,
+        timezone: timezone || null,
+        country: country || null,
         first_name: firstName || null,
         last_name: lastName || null,
         handle: handle ? normalizeHandle(handle) : null,
@@ -205,6 +215,16 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex-1 space-y-4">
+                {/* The box office name comes first because it is the one
+                    buyers actually see — on the ticket, on the event page,
+                    and in the email that arrives after they pay. */}
+                <Field
+                  label="Box office name"
+                  value={boxOfficeName}
+                  onChange={setBoxOfficeName}
+                  placeholder="Lagos Nights"
+                />
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="First name" value={firstName} onChange={setFirstName} placeholder="Chidi" />
                   <Field label="Last name" value={lastName} onChange={setLastName} placeholder="Okonkwo" />
@@ -291,6 +311,43 @@ export default function SettingsPage() {
                     </select>
                   </div>
                   <Field label="Location" value={location} onChange={setLocation} placeholder="Lagos" />
+
+                  <div>
+                    <label htmlFor="tz" className="mb-1 block text-xs font-medium text-subtle">
+                      Timezone
+                    </label>
+                    <select
+                      id="tz"
+                      value={timezone}
+                      onChange={(e) => setTimezone(e.target.value)}
+                      className="h-10 w-full appearance-none rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="">Not set</option>
+                      {timezones().map((z) => (
+                        <option key={z} value={z}>{z.replace(/_/g, " ")}</option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-subtle">
+                      Door times on your events show in this zone.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="country" className="mb-1 block text-xs font-medium text-subtle">
+                      Country
+                    </label>
+                    <select
+                      id="country"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="h-10 w-full appearance-none rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="">Not set</option>
+                      {COUNTRIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <button

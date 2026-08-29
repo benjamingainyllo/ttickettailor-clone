@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, Lock } from "lucide-react";
+import { detectTimezone, timezones } from "@/lib/locale";
 
 /**
  * Screen one after the link in the email: the account itself.
@@ -50,28 +51,9 @@ export function SetPasswordGate({
 
   // Default to wherever the browser says it is. Almost always right, and it
   // saves an organiser hunting through a list to find their own city.
-  const [timezone, setTimezone] = useState(() => {
-    try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos";
-    } catch {
-      return "Africa/Lagos";
-    }
-  });
+  const [timezone, setTimezone] = useState(detectTimezone);
 
-  const zones = useMemo(() => {
-    try {
-      const all = (Intl as unknown as {
-        supportedValuesOf?: (k: string) => string[];
-      }).supportedValuesOf?.("timeZone");
-      if (all?.length) return all;
-    } catch {
-      /* falls through to the short list */
-    }
-    return [
-      "Africa/Lagos", "Africa/Accra", "Africa/Nairobi", "Africa/Johannesburg",
-      "Europe/London", "Europe/Paris", "America/New_York", "America/Los_Angeles",
-    ];
-  }, []);
+  const zones = useMemo(() => timezones(), []);
 
   const checks = {
     length: password.length >= 8,

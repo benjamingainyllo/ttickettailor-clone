@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
+import { useOrigin } from "@/lib/use-origin";
 import { publishItem, unpublishItem } from "@/app/actions/publish";
 import { TicketTypesEditor } from "@/components/dashboard/ticket-types-editor";
 import { MerchEditor } from "@/components/dashboard/merch-editor";
@@ -93,7 +94,7 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
   };
 
   const shareUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/event/${event.id}` : "";
+    origin ? `${origin}/event/${event.id}` : "";
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-md">
