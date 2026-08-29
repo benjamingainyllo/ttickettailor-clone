@@ -162,18 +162,43 @@ export async function markOrderFailed(reference: string, status: "failed" | "aba
     .update({ status, updated_at: new Date().toISOString() })
     .eq("reference", reference)
     .eq("status", "pending")
-    .select("ticket_type_id, quantity")
+    .select("id, ticket_type_id, quantity")
     .maybeSingle();
 
-  if (!failed?.ticket_type_id) return;
+  if (!failed) return;
 
   // Put the seats back on the shelf. Without this an abandoned checkout
   // would hold an allocation forever and the event would sell out at the
   // wrong number.
-  await admin.rpc("release_ticket_inventory", {
-    p_ticket_type_id: failed.ticket_type_id,
-    p_quantity: failed.quantity ?? 1,
-  });
+  if (failed.ticket_type_id) {
+    await admin.rpc("release_ticket_inventory", {
+      p_ticket_type_id: failed.ticket_type_id,
+      p_quantity: failed.quantity ?? 1,
+    });
+  }
+
+  // And the merchandise. Same reasoning, same consequence: a shirt held by
+  // an abandoned checkout is a shirt nobody can buy, and the organiser would
+  // be told they had sold out with the stock still in the box.
+  //
+  // Guarded by the same 'pending' update above, so a second call finds
+  // nothing and releases nothing — the stock cannot be handed back twice.
+  const { data: lines } = await admin
+    .from("order_products")
+    .select("product_id, quantity")
+    .eq("order_id", failed.id);
+
+  for (const line of lines ?? []) {
+    if (!line.product_id) continue;
+    try {
+      await admin.rpc("release_product_inventory", {
+        p_product_id: line.product_id,
+        p_quantity: line.quantity ?? 1,
+      });
+    } catch (error) {
+      console.error("Could not release product inventory:", error);
+    }
+  }
 }
 
 /** A buyer becomes an audience contact the moment they actually pay. */

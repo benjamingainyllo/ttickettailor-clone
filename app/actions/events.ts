@@ -24,6 +24,19 @@ export interface PublicTicketType {
  * Returns the host alongside the event: a guest is deciding whether to trust
  * a person with money, so the page can't render without knowing who that is.
  */
+/** Merchandise as a buyer sees it. No stock counts, only availability. */
+export interface PublicProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  priceKobo: number;
+  imageUrl: string | null;
+  variants: string[] | null;
+  maxPerOrder: number;
+  remaining: number | null;
+  soldOut: boolean;
+}
+
 export async function getEventById(id: string) {
   const supabase = createClient();
 
@@ -36,11 +49,11 @@ export async function getEventById(id: string) {
 
   if (error) {
     console.error("Error fetching event:", error);
-    return { success: false as const, error: error.message, event: null, host: null, ticketTypes: [] };
+    return { success: false as const, error: error.message, event: null, host: null, ticketTypes: [], products: [] };
   }
 
   if (!event) {
-    return { success: false as const, error: "Event not found", event: null, host: null, ticketTypes: [] };
+    return { success: false as const, error: "Event not found", event: null, host: null, ticketTypes: [], products: [] };
   }
 
   const { data: host } = await supabase
@@ -85,5 +98,33 @@ export async function getEventById(id: string) {
     };
   });
 
-  return { success: true as const, event, host: host ?? null, ticketTypes };
+  // Merchandise sold alongside the ticket. sold_count is never sent to the
+  // browser — only whether stock remains, and how many can go in one order.
+  const { data: merchRows } = await supabase
+    .from("event_products")
+    .select("id, name, description, price_kobo, image_url, variants, quantity, sold_count, max_per_order")
+    .eq("event_id", event.id)
+    .eq("status", "active")
+    .order("sort_order");
+
+  const products: PublicProduct[] = (merchRows ?? []).map((row) => {
+    const remaining =
+      row.quantity === null || row.quantity === undefined
+        ? null
+        : Math.max(0, Number(row.quantity) - Number(row.sold_count ?? 0));
+
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      priceKobo: Number(row.price_kobo ?? 0),
+      imageUrl: row.image_url,
+      variants: row.variants ?? null,
+      maxPerOrder: Number(row.max_per_order ?? 10),
+      remaining,
+      soldOut: remaining === 0,
+    };
+  });
+
+  return { success: true as const, event, host: host ?? null, ticketTypes, products };
 }

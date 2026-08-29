@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { getEventById, type PublicTicketType } from "@/app/actions/events";
+import { getEventById, type PublicProduct, type PublicTicketType } from "@/app/actions/events";
+import { MerchPicker, type Basket } from "@/components/storefront/merch-picker";
 import { createCheckoutSession } from "@/app/actions/checkout";
 import { bandFeeKobo, formatKobo } from "@/lib/money";
 import { Loader2, Calendar, MapPin, Users, ExternalLink, CheckCircle2, Minus, Plus } from "lucide-react";
@@ -10,6 +11,9 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
   const [event, setEvent] = useState<any>(null);
   const [host, setHost] = useState<any>(null);
   const [ticketTypes, setTicketTypes] = useState<PublicTicketType[]>([]);
+  const [products, setProducts] = useState<PublicProduct[]>([]);
+  /** productId -> what the buyer picked. Absent means not in the basket. */
+  const [basket, setBasket] = useState<Basket>({});
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [email, setEmail] = useState("");
@@ -30,6 +34,7 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
           setEvent(res.event);
           setHost(res.host ?? null);
           setTicketTypes(res.ticketTypes ?? []);
+          setProducts(res.products ?? []);
           // Preselect the first tier a buyer can actually buy, so a
           // single-tier event needs no choosing at all.
           const firstAvailable = (res.ticketTypes ?? []).find((t) => t.available);
@@ -59,7 +64,16 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
   // checkouts, and it would be the organiser who paid for that.
   const passFee = Boolean(event?.pass_fee_to_buyer) && !isFree;
   const feeKobo = passFee ? bandFeeKobo(priceKobo) * quantity : 0;
-  const totalKobo = subtotalKobo + feeKobo;
+
+  const merchKobo = products.reduce((sum, p) => {
+    const picked = basket[p.id];
+    return picked ? sum + p.priceKobo * picked.quantity : sum;
+  }, 0);
+
+  const totalKobo = subtotalKobo + feeKobo + merchKobo;
+
+  // A free ticket with a paid shirt is still a paid order.
+  const payingSomething = totalKobo > 0;
 
   // The most this tier will sell in one go: its own per-order cap, and
   // never more than it has left.
@@ -95,6 +109,13 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
         buyerName: name || undefined,
         ticketTypeId: selectedTierId ?? undefined,
         quantity,
+        products: Object.entries(basket)
+          .filter(([, picked]) => picked.quantity > 0)
+          .map(([productId, picked]) => ({
+            productId,
+            variant: picked.variant,
+            quantity: picked.quantity,
+          })),
       });
 
       if (res.success && res.completedWithoutPayment) {
@@ -326,6 +347,12 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
                   </>
                 )}
 
+                <MerchPicker
+                  products={products}
+                  basket={basket}
+                  onChange={setBasket}
+                />
+
                 <div>
                   <label htmlFor="name" className="mb-1 block text-sm font-medium text-zinc-400">
                     Your name
@@ -354,18 +381,39 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
                   />
                 </div>
 
-                {feeKobo > 0 && (
+                {(feeKobo > 0 || merchKobo > 0) && (
                   <div className="space-y-1.5 rounded-lg border border-zinc-800 bg-zinc-800/40 px-4 py-3 text-sm">
                     <div className="flex justify-between text-zinc-400">
-                      <span>
-                        {quantity > 1 ? `${quantity} tickets` : "Ticket"}
+                      <span>{quantity > 1 ? `${quantity} tickets` : "Ticket"}</span>
+                      <span className="tabular-nums">
+                        {subtotalKobo === 0 ? "Free" : formatKobo(subtotalKobo)}
                       </span>
-                      <span className="tabular-nums">{formatKobo(subtotalKobo)}</span>
                     </div>
-                    <div className="flex justify-between text-zinc-400">
-                      <span>Booking fee</span>
-                      <span className="tabular-nums">{formatKobo(feeKobo)}</span>
-                    </div>
+
+                    {products.map((product) => {
+                      const picked = basket[product.id];
+                      if (!picked) return null;
+                      return (
+                        <div key={product.id} className="flex justify-between text-zinc-400">
+                          <span className="truncate pr-3">
+                            {picked.quantity > 1 ? `${picked.quantity} × ` : ""}
+                            {product.name}
+                            {picked.variant ? ` (${picked.variant})` : ""}
+                          </span>
+                          <span className="shrink-0 tabular-nums">
+                            {formatKobo(product.priceKobo * picked.quantity)}
+                          </span>
+                        </div>
+                      );
+                    })}
+
+                    {feeKobo > 0 && (
+                      <div className="flex justify-between text-zinc-400">
+                        <span>Booking fee</span>
+                        <span className="tabular-nums">{formatKobo(feeKobo)}</span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between border-t border-zinc-700 pt-1.5 font-semibold text-white">
                       <span>Total</span>
                       <span className="tabular-nums">{formatKobo(totalKobo)}</span>
@@ -386,7 +434,7 @@ export default function EventCheckoutPage({ params }: { params: { id: string } }
                     </>
                   ) : nothingOnSale ? (
                     "Sold out"
-                  ) : isFree ? (
+                  ) : !payingSomething ? (
                     quantity > 1 ? `Get ${quantity} tickets — free` : "Count me in — it's free"
                   ) : (
                     `Pay ${formatKobo(totalKobo)}`

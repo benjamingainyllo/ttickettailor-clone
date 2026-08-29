@@ -23,6 +23,8 @@ interface CheckoutPayload {
   ticketTypeId?: string;
   /** How many admissions. Events only; offers are always 1. */
   quantity?: number;
+  /** Merchandise added to the same order. Events only. */
+  products?: { productId: string; variant?: string | null; quantity: number }[];
 }
 
 interface CheckoutResult {
@@ -52,6 +54,7 @@ function siteOrigin() {
  */
 export async function createCheckoutSession(payload: CheckoutPayload): Promise<CheckoutResult> {
   let reservation: { ticketTypeId: string; quantity: number } | null = null;
+  let productsTaken: { productId: string; quantity: number }[] = [];
 
   try {
     if (!payload.itemId || !payload.itemType) {
@@ -68,7 +71,7 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
 
     const { creatorId, id: itemId, title, unitPriceKobo, ticketTypeId, quantity, passFeeToBuyer } = item;
     const reference = uuidv4();
-    const grossKobo: Kobo = unitPriceKobo * quantity;
+    const ticketsKobo: Kobo = unitPriceKobo * quantity;
 
     // Take the allocation before the order exists. Doing it the other way
     // round would leave an order nobody can honour when the last tickets
@@ -96,6 +99,95 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
       reservation = { ticketTypeId, quantity };
     }
 
+    // ---- Merchandise on the same order ----------------------------------
+    //
+    // Priced from the database, never from what the browser sent. A payload
+    // is just a claim: it says which item and how many, and the price is
+    // looked up here.
+    const merchLines: {
+      productId: string;
+      name: string;
+      variant: string | null;
+      quantity: number;
+      unitPriceKobo: Kobo;
+    }[] = [];
+
+    const requestedProducts = (payload.products ?? []).filter((p) => p.quantity > 0);
+
+    if (requestedProducts.length > 0 && payload.itemType === "event") {
+      const { data: rows } = await admin
+        .from("event_products")
+        .select("id, name, price_kobo, variants, max_per_order, status")
+        .eq("event_id", itemId)
+        .in("id", requestedProducts.map((p) => p.productId));
+
+      for (const want of requestedProducts) {
+        const row = rows?.find((r) => r.id === want.productId);
+        if (!row || row.status !== "active") {
+          await releaseProducts(productsTaken);
+          await releaseReservation(reservation);
+          return { success: false, error: "One of those items is no longer available." };
+        }
+
+        const wanted = Math.floor(Number(want.quantity));
+        if (!Number.isSafeInteger(wanted) || wanted < 1) {
+          await releaseProducts(productsTaken);
+          await releaseReservation(reservation);
+          return { success: false, error: "Choose at least one of each item." };
+        }
+
+        const cap = Number(row.max_per_order ?? 10);
+        if (wanted > cap) {
+          await releaseProducts(productsTaken);
+          await releaseReservation(reservation);
+          return { success: false, error: `You can buy at most ${cap} of ${row.name}.` };
+        }
+
+        // A variant that is not on the product's own list is refused rather
+        // than stored, so a receipt can never claim a size that was never
+        // offered.
+        const options: string[] = row.variants ?? [];
+        let variant: string | null = null;
+        if (options.length > 0) {
+          if (!want.variant || !options.includes(want.variant)) {
+            await releaseProducts(productsTaken);
+            await releaseReservation(reservation);
+            return { success: false, error: `Choose an option for ${row.name}.` };
+          }
+          variant = want.variant;
+        }
+
+        const { data: got, error: reserveError } = await admin.rpc(
+          "reserve_product_inventory",
+          { p_product_id: row.id, p_quantity: wanted }
+        );
+
+        if (reserveError || !got) {
+          await releaseProducts(productsTaken);
+          await releaseReservation(reservation);
+          return { success: false, error: `${row.name} just sold out.` };
+        }
+
+        productsTaken = [...productsTaken, { productId: row.id, quantity: wanted }];
+        merchLines.push({
+          productId: row.id,
+          name: row.name,
+          variant,
+          quantity: wanted,
+          unitPriceKobo: Number(row.price_kobo ?? 0),
+        });
+      }
+    }
+
+    const merchKobo: Kobo = merchLines.reduce(
+      (sum, line) => sum + line.unitPriceKobo * line.quantity,
+      0
+    );
+
+    // Merchandise counts toward the total, which means a free ticket with a
+    // paid shirt is a PAID order and must not take the free path below.
+    const grossKobo: Kobo = ticketsKobo + merchKobo;
+
     const orderRow = {
       reference,
       creator_id: creatorId,
@@ -112,26 +204,35 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
 
     // ---- Free: record the order, no money moves, tickets issue on settle. ----
     if (grossKobo === 0) {
-      const { error: insertError } = await admin.from("orders").insert({
-        ...orderRow,
-        gross_kobo: 0,
-        platform_fee_kobo: 0,
-        provider_fee_kobo: 0,
-        net_kobo: 0,
-        status: "pending",
-      });
+      const { data: freeOrder, error: insertError } = await admin
+        .from("orders")
+        .insert({
+          ...orderRow,
+          gross_kobo: 0,
+          platform_fee_kobo: 0,
+          provider_fee_kobo: 0,
+          net_kobo: 0,
+          status: "pending",
+        })
+        .select("id")
+        .single();
 
-      if (insertError) {
+      if (insertError || !freeOrder) {
         console.error("Free registration failed:", insertError);
+        await releaseProducts(productsTaken);
         await releaseReservation(reservation);
         return { success: false, error: "Could not complete your registration." };
       }
+
+      await recordMerch(freeOrder.id, merchLines);
 
       const settled = await settleOrder({ reference, channel: "unknown" });
       if (!settled.ok) {
         // settleOrder failing leaves the order pending; markOrderFailed
         // both fails it and hands the seats back.
         await markOrderFailed(reference, "failed");
+        await releaseProducts(productsTaken);
+        productsTaken = [];
         reservation = null;
         return { success: false, error: "Could not complete your registration." };
       }
@@ -154,6 +255,7 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
     ) {
       // Deliberately not falling back to a non-split charge: that would put
       // the money in Paylance's account, which we must never do.
+      await releaseProducts(productsTaken);
       await releaseReservation(reservation);
       return {
         success: false,
@@ -176,20 +278,27 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
     // provider's own record of the transaction.
     const chargeKobo: Kobo = passFeeToBuyer ? grossKobo + platformFeeKobo : grossKobo;
 
-    const { error: insertError } = await admin.from("orders").insert({
-      ...orderRow,
-      gross_kobo: chargeKobo,
-      platform_fee_kobo: platformFeeKobo,
-      provider_fee_kobo: 0,
-      net_kobo: chargeKobo - platformFeeKobo,
-      status: "pending",
-    });
+    const { data: paidOrder, error: insertError } = await admin
+      .from("orders")
+      .insert({
+        ...orderRow,
+        gross_kobo: chargeKobo,
+        platform_fee_kobo: platformFeeKobo,
+        provider_fee_kobo: 0,
+        net_kobo: chargeKobo - platformFeeKobo,
+        status: "pending",
+      })
+      .select("id")
+      .single();
 
-    if (insertError) {
+    if (insertError || !paidOrder) {
       console.error("Order creation failed:", insertError);
+      await releaseProducts(productsTaken);
       await releaseReservation(reservation);
       return { success: false, error: "Could not start checkout." };
     }
+
+    await recordMerch(paidOrder.id, merchLines);
 
     const provider = getPaymentProvider();
 
@@ -210,24 +319,82 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
         },
       });
 
-      // The order now owns the allocation — it is released by
-      // markOrderFailed if the payment never lands.
+      // The order now owns both allocations — seats and merchandise — and
+      // markOrderFailed hands both back if the payment never lands.
       reservation = null;
+      productsTaken = [];
       return { success: true, authorizationUrl, reference };
     } catch (providerError) {
+      // markOrderFailed releases both the seats and the merchandise, so the
+      // local copies are cleared rather than released again.
       await markOrderFailed(reference, "failed");
       reservation = null;
+      productsTaken = [];
       console.error("Provider init failed:", providerError);
       return { success: false, error: "Could not start payment. Please try again." };
     }
   } catch (error) {
     console.error("Checkout error:", error);
+    await releaseProducts(productsTaken);
     await releaseReservation(reservation);
     return { success: false, error: "Something went wrong starting checkout." };
   }
 }
 
 /** Hand back an allocation no order ended up owning. */
+/**
+ * Hand merchandise stock back.
+ *
+ * Best-effort and never throws. A failure here must not stop the ticket
+ * reservation being released too — the buyer losing their seat because a
+ * shirt could not be un-reserved would be the worse of the two bugs.
+ */
+/**
+ * Write what the order contained.
+ *
+ * Best-effort: the name and price are copied onto the line, so a later edit
+ * to the product cannot rewrite somebody's receipt. A failure here is logged
+ * rather than thrown — the buyer has a valid ticket either way, and losing
+ * the checkout over a merch line would be the worse outcome.
+ */
+async function recordMerch(
+  orderId: string,
+  lines: { productId: string; name: string; variant: string | null; quantity: number; unitPriceKobo: number }[]
+) {
+  if (lines.length === 0) return;
+  try {
+    const { error } = await createAdminClient().from("order_products").insert(
+      lines.map((line) => ({
+        order_id: orderId,
+        product_id: line.productId,
+        name: line.name,
+        variant: line.variant,
+        quantity: line.quantity,
+        unit_price_kobo: line.unitPriceKobo,
+      }))
+    );
+    if (error) console.error("Could not record merchandise lines:", error);
+  } catch (error) {
+    console.error("Could not record merchandise lines:", error);
+  }
+}
+
+async function releaseProducts(
+  taken: { productId: string; quantity: number }[]
+) {
+  const admin = createAdminClient();
+  for (const item of taken) {
+    try {
+      await admin.rpc("release_product_inventory", {
+        p_product_id: item.productId,
+        p_quantity: item.quantity,
+      });
+    } catch (error) {
+      console.error("Could not release product inventory:", error);
+    }
+  }
+}
+
 async function releaseReservation(
   reservation: { ticketTypeId: string; quantity: number } | null
 ) {
