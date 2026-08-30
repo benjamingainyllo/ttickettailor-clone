@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { getEventById, type PublicProduct, type PublicTicketType } from "@/app/actions/events";
 import { MerchPicker, type Basket } from "@/components/storefront/merch-picker";
 import { createCheckoutSession } from "@/app/actions/checkout";
+import { getDeliveryChannels } from "@/app/actions/delivery";
 import { bandFeeKobo, formatKobo } from "@/lib/money";
 import { formatE164, toE164 } from "@/lib/whatsapp/phone";
 import { Loader2, Calendar, MapPin, Users, ExternalLink, CheckCircle2, Minus, Plus } from "lucide-react";
@@ -20,10 +21,16 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  /** WhatsApp only leads once it can actually send. */
+  const [whatsappLive, setWhatsappLive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [registered, setRegistered] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getDeliveryChannels().then((c) => setWhatsappLive(c.whatsapp)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -98,10 +105,19 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
 
   /** Normalised now, so a typo is caught before money moves, not after. */
   const phoneE164 = toE164(phone);
+  const deliveryLine = whatsappLive
+    ? "on WhatsApp, and by email as a backup"
+    : "by email";
 
   const handleCheckout = () => {
-    if (!phoneE164) {
+    // A typo is only worth blocking on when WhatsApp is the thing
+    // delivering. Until then a bad number costs nothing.
+    if (whatsappLive && !phoneE164) {
       setCheckoutError("Check the WhatsApp number — that doesn't look right.");
+      return;
+    }
+    if (phone && !phoneE164) {
+      setCheckoutError("That WhatsApp number doesn't look right.");
       return;
     }
     if (!email) {
@@ -116,7 +132,7 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
         itemId: event.id,
         buyerEmail: email,
         buyerName: name || undefined,
-        buyerPhone: phoneE164,
+        buyerPhone: phoneE164 ?? undefined,
         ticketTypeId: selectedTierId ?? undefined,
         quantity,
         products: Object.entries(basket)
@@ -408,7 +424,9 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                   />
                 </div>
                 <div>
-                  <label htmlFor="phone" className={label}>WhatsApp number</label>
+                  <label htmlFor="phone" className={label}>
+                    {whatsappLive ? "WhatsApp number" : "WhatsApp number (optional)"}
+                  </label>
                   <input
                     id="phone"
                     type="tel"
@@ -417,19 +435,23 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="0803 123 4567"
                     className={`${field} mt-2`}
-                    required
+                    required={whatsappLive}
                   />
                   {/* Read the number back. WhatsApp fails silently on a
                       malformed number, so the only safe moment to catch a
                       typo is before paying, while somebody is looking. */}
                   <p className="mt-1.5 text-[12px] text-[var(--dl-ink-soft)]">
-                    {phoneE164
-                      ? `Your ticket goes to ${formatE164(phoneE164)} on WhatsApp.`
-                      : "Your ticket arrives here on WhatsApp, the moment you pay."}
+                    {whatsappLive
+                      ? phoneE164
+                        ? `Your ticket goes to ${formatE164(phoneE164)} on WhatsApp.`
+                        : "Your ticket arrives here on WhatsApp, the moment you pay."
+                      : "WhatsApp tickets are coming. Leave your number and you'll get one there too."}
                   </p>
                 </div>
                 <div>
-                  <label htmlFor="email" className={label}>Email (backup copy)</label>
+                  <label htmlFor="email" className={label}>
+                    {whatsappLive ? "Email (backup copy)" : "Email"}
+                  </label>
                   <input
                     id="email"
                     type="email"
@@ -437,7 +459,7 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     className={`${field} mt-2`}
-                    required
+                    required={whatsappLive}
                   />
                 </div>
 
@@ -505,8 +527,8 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
 
                 <p className="text-center text-[12.5px] leading-relaxed text-[var(--dl-ink-soft)]">
                   {isFree
-                    ? "No account needed. Your ticket arrives on WhatsApp, and by email as a backup."
-                    : "No account needed. Card or bank transfer. Your ticket arrives on WhatsApp, and by email as a backup."}
+                    ? `No account needed. Your ticket arrives ${deliveryLine}.`
+                    : `No account needed. Card or bank transfer. Your ticket arrives ${deliveryLine}.`}
                 </p>
               </div>
             )}
