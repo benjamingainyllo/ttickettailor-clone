@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Plus, Calendar as CalendarIcon, MapPin, Users, Search, Ticket, Zap,
-  DollarSign, Globe, Lock, Loader2,
+  Banknote, Globe, Lock, Loader2,
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { EventDetailView } from "@/components/dashboard/event-detail-view";
@@ -86,33 +86,34 @@ export default function EventsPage() {
       title: "Event Revenue",
       value: formatKobo(totalRevenueKobo),
       change: events.length > 0 ? "From paid orders" : "No revenue yet",
-      icon: DollarSign,
-      iconColor: "#22C55E",
-      iconBgColor: "rgba(34, 197, 94, 0.1)",
+      // Banknote, not DollarSign: every amount in this product is naira.
+      icon: Banknote,
+      iconColor: "#9BE3C0",
+      iconBgColor: "rgba(155, 227, 192, 0.1)",
     },
     {
       title: "Total Attendees",
       value: totalAttendees.toString(),
       change: events.length > 0 ? "Across all events" : "No sign-ups yet",
       icon: Users,
-      iconColor: "#3B82F6",
-      iconBgColor: "rgba(59, 130, 246, 0.1)",
+      iconColor: "#B7C4FF",
+      iconBgColor: "rgba(183, 196, 255, 0.1)",
     },
     {
       title: "Avg. Ticket",
       value: totalAttendees > 0 ? formatKobo(Math.floor(totalRevenueKobo / totalAttendees)) : "—",
       change: totalAttendees > 0 ? "Per attendee" : "No sales yet",
       icon: Ticket,
-      iconColor: "#A855F7",
-      iconBgColor: "rgba(168, 85, 247, 0.1)",
+      iconColor: "#DDBBF5",
+      iconBgColor: "rgba(221, 187, 245, 0.1)",
     },
     {
       title: "Live",
       value: liveCount.toString(),
       change: `${events.length - liveCount} in draft`,
       icon: Zap,
-      iconColor: "#F97316",
-      iconBgColor: "rgba(249, 115, 22, 0.1)",
+      iconColor: "#FF6A45",
+      iconBgColor: "rgba(255, 106, 69, 0.1)",
     },
   ];
 
@@ -128,12 +129,12 @@ export default function EventsPage() {
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-full rounded-lg border border-border bg-muted/50 pl-9 pr-4 text-xs text-text focus:border-white/20 focus:outline-none sm:w-64"
+              className="h-9 w-full rounded-lg border border-border bg-muted/50 pl-9 pr-4 text-xs text-text focus:border-[var(--coral)] focus:outline-none sm:w-64"
             />
           </div>
           <button
             onClick={() => router.push("/events/create")}
-            className="flex h-9 items-center justify-center gap-2 rounded-lg bg-white px-4 text-xs font-semibold text-black transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            className="flex h-9 items-center justify-center gap-2 rounded-lg bg-[var(--coral)] px-4 text-xs font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="h-4 w-4" />
             Create Event
@@ -171,7 +172,7 @@ export default function EventsPage() {
               <div
                 key={event.id}
                 onClick={() => setSelectedEvent(event)}
-                className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20"
+                className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:border-[var(--hairline-firm)] hover:shadow-lg hover:shadow-black/20"
               >
                 <div className="relative h-40 w-full overflow-hidden bg-muted">
                   {event.cover_image_url ? (
@@ -186,16 +187,20 @@ export default function EventsPage() {
                     </div>
                   )}
                   <div
-                    className={`absolute right-3 top-3 flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-medium text-white backdrop-blur-md ${
-                      isPublished ? "bg-emerald-600/90" : "bg-black/60"
+                    className={`absolute right-3 top-3 flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold backdrop-blur-md ${
+                      isPublished
+                        ? "bg-[#9BE3C0e6] text-[var(--ink)]"
+                        : "bg-black/60 text-white"
                     }`}
                   >
                     {isPublished ? <Globe className="h-2.5 w-2.5" /> : <Lock className="h-2.5 w-2.5" />}
                     {isPublished ? "Live" : "Draft"}
                   </div>
                   <div
-                    className={`absolute bottom-3 left-3 rounded-full px-3 py-1 text-[10px] font-bold text-white shadow-lg ${
-                      priceKobo === 0 ? "bg-emerald-600" : "bg-blue-600"
+                    className={`absolute bottom-3 left-3 rounded-full px-3 py-1 text-[10px] font-bold shadow-lg ${
+                      priceKobo === 0
+                        ? "bg-[var(--mint)] text-[var(--ink)]"
+                        : "bg-[var(--coral)] text-white"
                     }`}
                   >
                     {priceKobo === 0 ? "FREE" : `${formatKobo(priceKobo)} / ticket`}
@@ -233,7 +238,7 @@ export default function EventsPage() {
                     </span>
                     <div className="text-right">
                       <p className="text-[10px] uppercase text-subtle">Revenue</p>
-                      <p className="text-xs font-bold text-emerald-500">
+                      <p className="text-xs font-bold text-[var(--mint)]">
                         {formatKobo(revenueByEvent[event.id] ?? 0)}
                       </p>
                     </div>
@@ -245,7 +250,7 @@ export default function EventsPage() {
 
           <button
             onClick={() => router.push("/events/create")}
-            className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-transparent transition-all hover:border-zinc-700 hover:bg-muted/10"
+            className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-transparent transition-all hover:border-[var(--hairline-firm)] hover:bg-muted/10"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-subtle">
               <Plus className="h-6 w-6" />

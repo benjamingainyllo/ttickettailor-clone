@@ -148,10 +148,10 @@ export default function PayoutsPage() {
       )}
 
       {demoMode && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+        <div className="flex items-start gap-3 rounded-xl border border-[#FFDE594c] bg-[#FFDE591a] p-4">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--marker)]" />
           <div>
-            <p className="text-sm font-bold text-amber-500">Demo mode — no payment gateway connected</p>
+            <p className="text-sm font-bold text-[var(--marker)]">Demo mode — no payment gateway connected</p>
             <p className="mt-1 text-xs text-subtle">
               You can connect a pretend bank account here so the rest of the product works
               end to end. It is not a real account and no money can move. When a real gateway
@@ -162,8 +162,8 @@ export default function PayoutsPage() {
       )}
 
       {/* How the money actually moves — worth stating plainly. */}
-      <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+      <div className="flex items-start gap-3 rounded-xl border border-[#FF6A4533] bg-[#FF6A450d] p-4">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--coral)]" />
         <p className="text-xs leading-relaxed text-subtle">
           Paylance never holds your money. When someone pays, the transaction is split at the
           moment of payment — your share goes directly to your bank, and we only receive our fee.
@@ -175,8 +175,8 @@ export default function PayoutsPage() {
         <div className="rounded-2xl border border-border bg-surface p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10">
-                <Landmark className="h-5 w-5 text-emerald-500" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#9BE3C01a]">
+                <Landmark className="h-5 w-5 text-[var(--mint)]" />
               </div>
               <div>
                 <p className="text-sm font-bold text-text">{account.account_name}</p>
@@ -185,7 +185,7 @@ export default function PayoutsPage() {
                 </p>
               </div>
             </div>
-            <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-500">
+            <span className="flex items-center gap-1.5 rounded-full bg-[#9BE3C01a] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--mint)]">
               <CheckCircle2 className="h-3 w-3" /> Connected
             </span>
           </div>
@@ -193,8 +193,8 @@ export default function PayoutsPage() {
       ) : (
         <div className="rounded-2xl border border-border bg-surface p-6">
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10">
-              <Landmark className="h-5 w-5 text-blue-500" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FF6A451a]">
+              <Landmark className="h-5 w-5 text-[var(--coral)]" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-text">Connect your bank account</h2>
@@ -208,7 +208,7 @@ export default function PayoutsPage() {
               <select
                 value={bankCode}
                 onChange={(e) => setBankCode(e.target.value)}
-                className="h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-blue-500 focus:outline-none"
+                className="h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-[var(--coral)] focus:outline-none"
               >
                 <option value="">Select your bank</option>
                 {banks.map((b) => (
@@ -233,7 +233,7 @@ export default function PayoutsPage() {
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
                 placeholder="0123456789"
-                className="h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text placeholder:text-subtle focus:border-blue-500 focus:outline-none"
+                className="h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none"
               />
             </div>
 
@@ -244,7 +244,7 @@ export default function PayoutsPage() {
             )}
 
             {resolvedName && (
-              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+              <div className="rounded-lg border border-[#9BE3C033] bg-[#9BE3C00d] px-4 py-3">
                 <p className="text-[10px] uppercase tracking-wider text-subtle">Account name</p>
                 <p className="text-sm font-bold text-text">{resolvedName}</p>
               </div>
@@ -253,7 +253,7 @@ export default function PayoutsPage() {
             <button
               onClick={handleConnect}
               disabled={!resolvedName || connecting}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-white text-sm font-bold text-black transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--coral)] text-sm font-bold text-white transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100"
             >
               {connecting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

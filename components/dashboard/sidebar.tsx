@@ -1,30 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 import {
-  Search,
+  Calendar,
   ChevronsLeft,
   ChevronsRight,
-  Sun,
-  Moon,
-  LayoutGrid,
   CreditCard,
-  UsersRound,
-  Gem,
-  Workflow,
-  Compass,
-  Link2,
-  Settings2,
-  Calendar,
   ExternalLink,
-  Layers3,
+  LayoutGrid,
   LogOut,
+  Plus,
+  Settings2,
+  UsersRound,
   Wallet,
-  UserCircle
 } from "lucide-react";
 
 /**
@@ -40,133 +32,146 @@ import {
  */
 const navGroups = [
   {
-    title: "SELLING",
+    title: "Selling",
     items: [
       { label: "Overview", icon: LayoutGrid, href: "/overview" },
       { label: "Events", icon: Calendar, href: "/events" },
       { label: "Attendees", icon: UsersRound, href: "/audience" },
-    ]
+    ],
   },
   {
-    title: "MONEY",
+    title: "Money",
     items: [
       { label: "Sales", icon: CreditCard, href: "/revenue" },
       { label: "Payouts", icon: Wallet, href: "/payouts" },
-    ]
+    ],
   },
 ];
 
+/**
+ * The sidebar.
+ *
+ * Repainted onto the brand — it was black-and-zinc with no brand colour in
+ * it at all, which is what made the dashboard read as a different product
+ * from the site that sells it.
+ *
+ * Three controls came out, all of which were decoration:
+ *
+ *   A SEARCH BOX with no state and no handler. It looked like the way to
+ *   find an event and did nothing when you typed in it.
+ *
+ *   A DARK/LIGHT TOGGLE. The dashboard now renders inside .lp, which is a
+ *   single dark world by design, so the switch had no effect on anything —
+ *   a control that visibly does nothing is worse than no control.
+ *
+ *   A GREEN PRESENCE DOT on the avatar, which implied an online status
+ *   this product does not have and never checks.
+ *
+ * What replaced them is the one button an organiser actually wants at hand:
+ * make an event.
+ */
 export function Sidebar() {
   const pathname = usePathname();
   const { user, profile, signOut } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [theme, setTheme] = useState("dark");
-  const [mounted, setMounted] = useState(false);
 
-  // Derive display values from auth context
-  const userName = profile?.first_name || user?.user_metadata?.first_name || "Creator";
+  const userName = profile?.first_name || user?.user_metadata?.first_name || "Organiser";
   const userEmail = user?.email || "";
   const userHandle = profile?.handle || "";
   const userPhoto = profile?.avatar_url || null;
 
-  useEffect(() => {
-    setMounted(true);
-    const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
-    setTheme(currentTheme);
-  }, []);
+  const item = (active: boolean) =>
+    `group flex h-10 items-center rounded-xl text-[14px] transition-colors ${
+      active
+        ? "bg-[var(--ground-raised)] font-bold text-[var(--on-ground)]"
+        : "font-semibold text-[var(--on-ground-soft)] hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)]"
+    } ${isCollapsed ? "justify-center px-0" : "gap-3 px-3"}`;
 
-  if (!mounted) return null;
-
-  const handleLogout = async () => {
-    await signOut();
-  };
-
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-    localStorage.setItem("theme", newTheme);
-  };
+  const icon = `shrink-0 ${isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]"}`;
+  const label = `truncate transition-all duration-300 ${
+    isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+  }`;
 
   return (
-    <aside 
-      className={`relative hidden lg:flex flex-col border-r border-zinc-700 bg-black transition-all duration-300 ease-in-out ${
+    <aside
+      className={`relative hidden h-screen shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-[var(--hairline)] bg-[var(--ground)] transition-[width] duration-300 ease-in-out lg:flex ${
         isCollapsed ? "w-[80px]" : "w-[260px]"
-      } h-screen overflow-y-auto overflow-x-hidden`}
+      }`}
     >
-      {/* Header & Logo */}
       <div className="flex h-[72px] shrink-0 items-center justify-between px-5">
-        <div className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ${isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}`}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-black">
-            <Layers3 className="h-5 w-5 fill-current" />
-          </div>
-          <span className="truncate text-lg font-bold tracking-tight text-white">Paylance</span>
-        </div>
-        
-        <button 
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors ${isCollapsed ? "mx-auto" : ""}`}
+        <Link
+          href="/overview"
+          className={`flex items-center gap-2.5 overflow-hidden transition-all duration-300 ${
+            isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+          }`}
         >
-          {isCollapsed ? <ChevronsRight strokeWidth={1.5} className="h-5 w-5" /> : <ChevronsLeft strokeWidth={1.5} className="h-5 w-5" />}
+          <span className="flex h-8 w-8 shrink-0 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[13px] font-black text-white">
+            P
+          </span>
+          <span className="truncate text-[17px] font-extrabold tracking-tight">
+            Paylance
+          </span>
+        </Link>
+
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          aria-label={isCollapsed ? "Expand the menu" : "Collapse the menu"}
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--on-ground-faint)] transition-colors hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)] ${
+            isCollapsed ? "mx-auto" : ""
+          }`}
+        >
+          {isCollapsed ? (
+            <ChevronsRight strokeWidth={1.75} className="h-5 w-5" />
+          ) : (
+            <ChevronsLeft strokeWidth={1.75} className="h-5 w-5" />
+          )}
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="px-5 pb-6 pt-2">
-        <div className={`relative flex items-center transition-all duration-300 ${isCollapsed ? "justify-center" : ""}`}>
-          <Search strokeWidth={1.5} className={`absolute text-zinc-500 transition-all duration-300 ${isCollapsed ? "left-1/2 -translate-x-1/2 h-5 w-5" : "left-3 h-4 w-4"}`} />
-          <input 
-            type="text" 
-            placeholder="Search" 
-            className={`h-10 w-full rounded-xl border border-zinc-800 bg-zinc-900/50 text-sm text-white placeholder:text-zinc-500 focus:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-800 transition-all duration-300 ${
-              isCollapsed ? "cursor-pointer px-0 opacity-0" : "pl-9 pr-4 opacity-100"
-            }`}
-          />
-          {/* Overlay button for search when collapsed */}
-          {isCollapsed && (
-            <button className="absolute inset-0 h-full w-full rounded-xl hover:bg-eclipse-medium/50"></button>
-          )}
-        </div>
+      <div className="px-3 pb-5 pt-1">
+        <Link
+          href="/events/create"
+          title={isCollapsed ? "New event" : undefined}
+          className={`flex h-10 items-center rounded-xl bg-[var(--coral)] text-[14px] font-extrabold text-white transition-opacity hover:opacity-90 ${
+            isCollapsed ? "justify-center px-0" : "gap-2 px-3"
+          }`}
+        >
+          <Plus strokeWidth={2.5} className="h-[18px] w-[18px] shrink-0" />
+          <span className={label}>New event</span>
+        </Link>
       </div>
 
-      {/* Navigation */}
       <div className="flex-1 px-3">
         {navGroups.map((group, index) => (
-          <div key={group.title} className={index !== 0 ? "mt-6" : ""}>
-            {/* Group Title */}
-            <div className={`mb-2 px-3 text-xs font-semibold tracking-wider text-zinc-600 transition-all duration-300 ${
-              isCollapsed ? "h-0 overflow-hidden opacity-0" : "opacity-100"
-            }`}>
+          <div key={group.title} className={index !== 0 ? "mt-7" : ""}>
+            <p
+              className={`mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-ground-faint)] transition-all duration-300 ${
+                isCollapsed ? "h-0 overflow-hidden opacity-0" : "opacity-100"
+              }`}
+            >
               {group.title}
-            </div>
-            
-            {/* Divider for collapsed state instead of text title */}
+            </p>
+
             {isCollapsed && index !== 0 && (
-              <div className="mx-auto mb-4 mt-2 h-px w-8 bg-white/10"></div>
+              <div className="mx-auto mb-4 mt-2 h-px w-8 bg-[var(--hairline)]" />
             )}
 
             <nav className="space-y-1">
-              {group.items.map((item) => {
-                const isActive = pathname === item.href;
+              {group.items.map((entry) => {
+                const active = pathname === entry.href;
                 return (
                   <Link
-                    key={item.label}
-                    href={item.href as any}
-                    title={isCollapsed ? item.label : undefined}
-                    className={`group flex h-10 items-center rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? "bg-zinc-800 text-white font-medium"
-                        : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
-                    } ${isCollapsed ? "justify-center px-0" : "px-3 gap-3"}`}
+                    key={entry.label}
+                    href={entry.href as never}
+                    title={isCollapsed ? entry.label : undefined}
+                    aria-current={active ? "page" : undefined}
+                    className={item(active)}
                   >
-                    <item.icon strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]"}`} />
-                    
-                    <span className={`truncate text-sm transition-all duration-300 ${
-                      isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                    }`}>
-                      {item.label}
-                    </span>
-
+                    <entry.icon
+                      strokeWidth={1.75}
+                      className={`${icon} ${active ? "text-[var(--coral)]" : ""}`}
+                    />
+                    <span className={label}>{entry.label}</span>
                   </Link>
                 );
               })}
@@ -175,125 +180,62 @@ export function Sidebar() {
         ))}
       </div>
 
-      {/* Profile & Settings Footer */}
-      <div className="mt-auto p-4 border-t border-white/10">
-        {/* PROFILE GROUP */}
-        <div className={`mb-2 px-3 text-[10px] font-bold tracking-widest text-zinc-600 transition-all duration-300 ${
-          isCollapsed ? "h-0 overflow-hidden opacity-0" : "opacity-100"
-        }`}>
-          PROFILE
-        </div>
-
-        {/* Settings Button */}
-        <Link
-          href="/settings"
-          className={`mb-1 flex h-10 w-full items-center rounded-xl bg-transparent transition-colors hover:bg-zinc-800/50 hover:text-white ${
-            isCollapsed ? "justify-center px-0" : "px-3 gap-3 text-zinc-400"
-          }`}
-        >
-          <Settings2 strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]"}`} />
-          <span className={`text-sm font-medium transition-all duration-300 ${
-            isCollapsed ? "hidden opacity-0" : "opacity-100"
-          }`}>
-            Settings
-          </span>
+      <div className="mt-auto border-t border-[var(--hairline)] p-3">
+        <Link href="/settings" className={item(pathname === "/settings")}>
+          <Settings2 strokeWidth={1.75} className={icon} />
+          <span className={label}>Settings</span>
         </Link>
 
-        {/* Profile Page Link */}
         {userHandle && (
           <Link
-            href={`/${userHandle}` as any}
+            href={`/${userHandle}` as never}
             target="_blank"
-            className={`mb-1 flex h-10 w-full items-center rounded-xl bg-transparent transition-colors hover:bg-zinc-800/50 hover:text-white ${
-              isCollapsed ? "justify-center px-0" : "px-3 gap-3 text-zinc-400"
-            }`}
+            title={isCollapsed ? "Your public page" : undefined}
+            className={item(false)}
           >
-            <ExternalLink strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]"}`} />
-            <span className={`text-sm font-medium transition-all duration-300 ${
-              isCollapsed ? "hidden opacity-0" : "opacity-100"
-            }`}>
-              My Profile
-            </span>
+            <ExternalLink strokeWidth={1.75} className={icon} />
+            <span className={label}>Your public page</span>
           </Link>
         )}
 
-        {/* Theme Toggle Button */}
         <button
-          onClick={toggleTheme}
-          className={`mb-1 flex h-10 w-full items-center rounded-xl bg-transparent transition-colors hover:bg-zinc-800/50 ${
-            isCollapsed ? "justify-center" : "justify-between px-3 text-zinc-400 hover:text-white"
+          onClick={() => signOut()}
+          className={`flex h-10 w-full items-center rounded-xl text-[14px] font-semibold text-[var(--on-ground-soft)] transition-colors hover:bg-[#FF6A451a] hover:text-[var(--coral)] ${
+            isCollapsed ? "justify-center px-0" : "gap-3 px-3"
           }`}
         >
-          <div className={`flex items-center ${isCollapsed ? "" : "gap-3"}`}>
-            {theme === "dark" ? (
-              <Moon strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]"}`} />
-            ) : (
-              <Sun strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]"}`} />
-            )}
-            
-            <span className={`text-sm font-medium transition-all duration-300 ${
-              isCollapsed ? "hidden opacity-0" : "opacity-100"
-            }`}>
-              {theme === "dark" ? "Dark Mode" : "Light Mode"}
-            </span>
-          </div>
-          
-          {!isCollapsed && (
-            <div className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
-              theme === "dark" ? "bg-eclipse-medium" : "bg-white/20"
-            }`}>
-              <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200 ease-in-out ${
-                  theme === "dark" ? "translate-x-4" : "translate-x-1"
-                }`}
-              />
-            </div>
-          )}
+          <LogOut strokeWidth={1.75} className={icon} />
+          <span className={label}>Log out</span>
         </button>
 
-        {/* Log Out Button */}
-        <button
-          onClick={handleLogout}
-          className={`mb-6 flex h-10 w-full items-center rounded-xl bg-transparent transition-colors hover:bg-red-500/10 hover:text-red-500 ${
-            isCollapsed ? "justify-center" : "px-3 gap-3 text-zinc-400"
-          }`}
-        >
-          <LogOut strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]"}`} />
-          <span className={`text-sm font-medium transition-all duration-300 ${
-            isCollapsed ? "hidden opacity-0" : "opacity-100"
-          }`}>
-            Log out
-          </span>
-        </button>
-
-        {/* User Identity Section - Moved to Bottom */}
         <div
-          className={`flex w-full items-center rounded-xl p-1.5 transition-colors hover:bg-zinc-800/50 ${
+          className={`mt-3 flex w-full items-center border-t border-[var(--hairline)] pt-3 ${
             isCollapsed ? "justify-center" : "gap-3 text-left"
           }`}
         >
-          <div className="relative shrink-0">
-            {userPhoto ? (
-              <Image
-                src={userPhoto}
-                alt={userName}
-                width={36}
-                height={36}
-                className="h-9 w-9 rounded-full object-cover ring-2 ring-zinc-800"
-              />
-            ) : (
-              <div className="h-9 w-9 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 ring-2 ring-zinc-800">
-                <UsersRound className="h-5 w-5" />
-              </div>
-            )}
-            <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full border-2 border-eclipse-dark bg-emerald-500"></span>
-          </div>
-          
-          <div className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${
-            isCollapsed ? "hidden opacity-0" : "opacity-100"
-          }`}>
-            <span className="truncate text-sm font-semibold text-white">{userName}</span>
-            <span className="truncate text-xs text-zinc-500">{userEmail}</span>
+          {userPhoto ? (
+            <Image
+              src={userPhoto}
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ground-raised)] text-[13px] font-extrabold text-[var(--on-ground-soft)]">
+              {(userName[0] || "P").toUpperCase()}
+            </span>
+          )}
+
+          <div
+            className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${
+              isCollapsed ? "hidden opacity-0" : "opacity-100"
+            }`}
+          >
+            <span className="truncate text-[13.5px] font-bold">{userName}</span>
+            <span className="truncate text-[12px] text-[var(--on-ground-faint)]">
+              {userEmail}
+            </span>
           </div>
         </div>
       </div>

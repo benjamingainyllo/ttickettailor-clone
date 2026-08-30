@@ -1,6 +1,7 @@
 "use client";
 
-import { Menu, Layers3 } from "lucide-react";
+import Link from "next/link";
+import { Menu } from "lucide-react";
 import { useState } from "react";
 import { MobileSidebar } from "./mobile-sidebar";
 
@@ -9,17 +10,18 @@ export function MobileHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-zinc-700 bg-black px-4 lg:hidden">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black">
-            <Layers3 className="h-5 w-5 fill-current" />
-          </div>
-          <span className="text-lg font-bold tracking-tight text-white">Paylance</span>
-        </div>
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[var(--hairline)] bg-[var(--ground)] px-4 lg:hidden">
+        <Link href="/overview" className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[13px] font-black text-white">
+            P
+          </span>
+          <span className="text-[17px] font-extrabold tracking-tight">Paylance</span>
+        </Link>
 
         <button
           onClick={() => setIsOpen(true)}
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-900 hover:text-white"
+          aria-label="Open the menu"
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--on-ground-soft)] transition-colors hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)]"
         >
           <Menu className="h-6 w-6" />
         </button>

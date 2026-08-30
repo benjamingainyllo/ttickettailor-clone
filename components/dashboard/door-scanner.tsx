@@ -337,19 +337,19 @@ export function DoorScanner({
             )}
 
             {cameraState !== "live" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-zinc-900 px-6 text-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--ground-deep)] px-6 text-center">
                 {cameraState === "starting" ? (
                   <>
-                    <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
-                    <p className="text-xs text-zinc-400">Starting the camera…</p>
+                    <Loader2 className="h-6 w-6 animate-spin text-[var(--on-ground-faint)]" />
+                    <p className="text-xs text-[var(--on-ground-soft)]">Starting the camera…</p>
                   </>
                 ) : (
                   <>
-                    <CameraOff className="h-8 w-8 text-zinc-600" />
+                    <CameraOff className="h-8 w-8 text-[var(--on-ground-faint)]" />
                     <p className="text-sm font-semibold text-white">
                       {cameraState === "denied" ? "No camera access" : "Camera unavailable"}
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-[var(--on-ground-soft)]">
                       {cameraState === "denied"
                         ? "Allow camera access in your browser, or type codes in instead."
                         : "This browser won't give us a camera. Type codes in instead."}
@@ -365,7 +365,7 @@ export function DoorScanner({
                       )}
                       <button
                         onClick={() => setMode("manual")}
-                        className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-bold text-white"
+                        className="rounded-lg border border-[var(--hairline-firm)] px-3 py-2 text-xs font-bold text-white"
                       >
                         Type it instead
                       </button>
@@ -389,7 +389,7 @@ export function DoorScanner({
             autoCapitalize="characters"
             autoComplete="off"
             spellCheck={false}
-            className="h-14 w-full rounded-xl border border-border bg-muted px-4 text-center font-mono text-lg font-bold uppercase tracking-[0.15em] text-text placeholder:font-sans placeholder:tracking-normal placeholder:text-subtle focus:border-blue-500 focus:outline-none"
+            className="h-14 w-full rounded-xl border border-border bg-muted px-4 text-center font-mono text-lg font-bold uppercase tracking-[0.15em] text-text placeholder:font-sans placeholder:tracking-normal placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none"
           />
           <button
             type="submit"
@@ -422,26 +422,26 @@ function ResultBanner({
 }) {
   const tone = {
     admitted: {
-      bg: "bg-emerald-500",
+      bg: "bg-[var(--mint)]",
       text: "text-black",
       icon: CheckCircle2,
       title: "Let them in",
     },
     already_checked_in: {
-      bg: "bg-amber-500",
+      bg: "bg-[var(--marker)]",
       text: "text-black",
       icon: AlertTriangle,
       title: "Already used",
     },
     wrong_event: {
-      bg: "bg-amber-500",
+      bg: "bg-[var(--marker)]",
       text: "text-black",
       icon: AlertTriangle,
       title: "Wrong event",
     },
-    void: { bg: "bg-red-600", text: "text-white", icon: XCircle, title: "Not valid" },
-    not_found: { bg: "bg-red-600", text: "text-white", icon: XCircle, title: "Not found" },
-    not_yours: { bg: "bg-red-600", text: "text-white", icon: XCircle, title: "Not your event" },
+    void: { bg: "bg-[var(--danger)]", text: "text-white", icon: XCircle, title: "Not valid" },
+    not_found: { bg: "bg-[var(--danger)]", text: "text-white", icon: XCircle, title: "Not found" },
+    not_yours: { bg: "bg-[var(--danger)]", text: "text-white", icon: XCircle, title: "Not your event" },
   }[result.outcome];
 
   const Icon = tone.icon;

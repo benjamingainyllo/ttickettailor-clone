@@ -3,7 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const data = [
-  { name: "Payment Link", value: 100, color: "#3B82F6" },
+  { name: "Payment Link", value: 100, color: "#B7C4FF" },
 ];
 
 export function RevenueDonutChart() {
@@ -45,12 +45,12 @@ export function RevenueDonutChart() {
       
       <div className="mt-4 flex items-center justify-between text-[11px]">
         <div className="flex items-center gap-2 text-subtle">
-          <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+          <span className="h-2 w-2 rounded-full bg-[var(--coral)]"></span>
           PAYMENT LINK
         </div>
         <div className="flex items-center gap-2">
           <div className="h-1 w-16 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-blue-500 w-full"></div>
+            <div className="h-full bg-[var(--coral)] w-full"></div>
           </div>
           <span className="text-subtle">100%</span>
         </div>

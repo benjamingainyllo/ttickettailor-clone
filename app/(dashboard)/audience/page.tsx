@@ -105,9 +105,9 @@ export default function AudiencePage() {
   };
 
   const metrics = [
-    { title: "Contacts", value: String(audience.length), icon: Users, accent: "text-blue-500", bg: "bg-blue-500/10" },
-    { title: "Buyers", value: String(buyers), icon: UserCheck, accent: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { title: "Repeat buyers", value: String(repeatBuyers), icon: Repeat, accent: "text-purple-500", bg: "bg-purple-500/10" },
+    { title: "Contacts", value: String(audience.length), icon: Users, accent: "text-[var(--coral)]", bg: "bg-[#FF6A451a]" },
+    { title: "Buyers", value: String(buyers), icon: UserCheck, accent: "text-[var(--mint)]", bg: "bg-[#9BE3C01a]" },
+    { title: "Repeat buyers", value: String(repeatBuyers), icon: Repeat, accent: "text-[var(--lilac)]", bg: "bg-[#DDBBF51a]" },
   ];
 
   return (
@@ -128,7 +128,7 @@ export default function AudiencePage() {
               placeholder="Search contacts..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-9 w-full rounded-lg border border-border bg-muted/50 pl-9 pr-4 text-xs text-text focus:border-white/20 focus:outline-none sm:w-56"
+              className="h-9 w-full rounded-lg border border-border bg-muted/50 pl-9 pr-4 text-xs text-text focus:border-[var(--coral)] focus:outline-none sm:w-56"
             />
           </div>
           <button
@@ -213,7 +213,7 @@ export default function AudiencePage() {
                       <span className="text-xs text-subtle">{person.last_offer || "—"}</span>
                     </td>
                     <td className="px-6 py-4 text-xs">{person.purchase_count ?? 0}</td>
-                    <td className="px-6 py-4 font-semibold text-emerald-500">
+                    <td className="px-6 py-4 font-semibold text-[var(--mint)]">
                       {formatKobo(Number(person.total_spent_kobo ?? 0))}
                     </td>
                     <td className="px-6 py-4 text-xs text-subtle">{timeAgo(person.last_seen)}</td>
@@ -242,11 +242,11 @@ function Avatar({ name, email }: { name: string | null; email: string }) {
     : email.slice(0, 2).toUpperCase();
 
   const palette = [
-    "bg-blue-500/15 text-blue-500",
-    "bg-emerald-500/15 text-emerald-500",
-    "bg-purple-500/15 text-purple-500",
-    "bg-amber-500/15 text-amber-500",
-    "bg-rose-500/15 text-rose-500",
+    "bg-[#FF6A4526] text-[var(--coral)]",
+    "bg-[#9BE3C026] text-[var(--mint)]",
+    "bg-[#DDBBF526] text-[var(--lilac)]",
+    "bg-[#FFDE5926] text-[var(--marker)]",
+    "bg-[#FF547026] text-[var(--danger)]",
   ];
   const tone = palette[email.charCodeAt(0) % palette.length];
 
@@ -308,7 +308,7 @@ function ContactDrawer({ person, onClose }: { person: AudienceMember; onClose: (
         <div className="mt-6 grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-border bg-muted/40 p-4">
             <p className="text-[10px] uppercase tracking-widest text-subtle">Total spent</p>
-            <p className="mt-1 text-lg font-bold text-emerald-500">
+            <p className="mt-1 text-lg font-bold text-[var(--mint)]">
               {formatKobo(Number(person.total_spent_kobo ?? 0))}
             </p>
           </div>
@@ -345,8 +345,8 @@ function ContactDrawer({ person, onClose }: { person: AudienceMember; onClose: (
                 <div
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                     o.item_type === "event"
-                      ? "bg-orange-500/10 text-orange-500"
-                      : "bg-blue-500/10 text-blue-500"
+                      ? "bg-[#FF6A451a] text-[var(--coral)]"
+                      : "bg-[#FF6A451a] text-[var(--coral)]"
                   }`}
                 >
                   {o.item_type === "event" ? (
@@ -366,7 +366,7 @@ function ContactDrawer({ person, onClose }: { person: AudienceMember; onClose: (
                 <div className="shrink-0 text-right">
                   <p
                     className={`text-xs font-bold ${
-                      o.status === "paid" ? "text-emerald-500" : "text-amber-500"
+                      o.status === "paid" ? "text-[var(--mint)]" : "text-[var(--marker)]"
                     }`}
                   >
                     {formatKobo(Number(o.gross_kobo))}

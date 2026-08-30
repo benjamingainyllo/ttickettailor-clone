@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CircleDollarSign, Heart, Plus, Wallet, ShoppingBag } from "lucide-react";
+import { Banknote, Heart, Plus, Wallet, ShoppingBag } from "lucide-react";
 import { TopFilters } from "@/components/dashboard/top-filters";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -74,33 +74,33 @@ export default function RevenuePage() {
       title: "Total Revenue",
       value: formatKobo(totalRevenue),
       change: "all time",
-      icon: CircleDollarSign,
-      iconColor: "#22C55E",
-      iconBgColor: "rgba(34, 197, 94, 0.1)",
+      icon: Banknote,
+      iconColor: "#9BE3C0",
+      iconBgColor: "rgba(155, 227, 192, 0.1)",
     },
     {
       title: "Settled",
       value: formatKobo(totalNet),
       change: "to your bank",
       icon: Wallet,
-      iconColor: "#F97316",
-      iconBgColor: "rgba(249, 115, 22, 0.1)",
+      iconColor: "#FF6A45",
+      iconBgColor: "rgba(255, 106, 69, 0.1)",
     },
     {
       title: "Total Sales",
       value: String(totalSales),
       change: "completed orders",
       icon: Heart,
-      iconColor: "#A855F7",
-      iconBgColor: "rgba(168, 85, 247, 0.1)",
+      iconColor: "#DDBBF5",
+      iconBgColor: "rgba(221, 187, 245, 0.1)",
     },
     {
       title: "Events created",
       value: String(eventsCount),
       change: "drafts and published",
       icon: Plus,
-      iconColor: "#3B82F6",
-      iconBgColor: "rgba(59, 130, 246, 0.1)",
+      iconColor: "#B7C4FF",
+      iconBgColor: "rgba(183, 196, 255, 0.1)",
     }
   ];
 
@@ -145,14 +145,14 @@ export default function RevenuePage() {
             <hr className="border-border" />
             <div className="flex justify-between text-sm">
               <span className="font-semibold text-text">Settled to your bank</span>
-              <span className="font-bold text-[#22c55e]">{formatKobo(totalNet)}</span>
+              <span className="font-bold text-[#9BE3C0]">{formatKobo(totalNet)}</span>
             </div>
           </div>
         ) : (
           <div className="text-center py-8">
-            <ShoppingBag className="h-10 w-10 text-zinc-700 mx-auto mb-3" />
+            <ShoppingBag className="h-10 w-10 text-[var(--on-ground-faint)] mx-auto mb-3" />
             <p className="text-sm text-subtle">No revenue yet</p>
-            <p className="text-xs text-zinc-600 mt-1">Your first sale will show up here</p>
+            <p className="text-xs text-[var(--on-ground-faint)] mt-1">Your first sale will show up here</p>
           </div>
         )}
       </div>
@@ -179,7 +179,7 @@ export default function RevenuePage() {
                 <div className="text-right shrink-0 pl-3">
                   <p
                     className={`text-sm font-bold ${
-                      order.status === "paid" ? "text-[#22c55e]" : "text-amber-500"
+                      order.status === "paid" ? "text-[#9BE3C0]" : "text-[var(--marker)]"
                     }`}
                   >
                     {formatKobo(Number(order.gross_kobo))}
@@ -191,7 +191,7 @@ export default function RevenuePage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <CircleDollarSign className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
+            <Banknote className="h-12 w-12 text-[var(--on-ground-faint)] mx-auto mb-3" />
             <p className="text-sm font-medium text-text">No orders yet</p>
             <p className="text-xs text-subtle mt-1">
               When someone buys a ticket, it appears here

@@ -159,7 +159,7 @@ export function TicketTypesEditor({ eventId }: { eventId: string }) {
         <p className="text-sm text-subtle">{loadError}</p>
         <button
           onClick={fetchTiers}
-          className="mt-3 text-sm font-semibold text-blue-500 hover:underline"
+          className="mt-3 text-sm font-semibold text-[var(--coral)] hover:underline"
         >
           Try again
         </button>
@@ -274,7 +274,7 @@ function TierRow({
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-bold text-text">{tier.name}</span>
             {soldOut && (
-              <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-500">
+              <span className="rounded-full bg-[#FF54701a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--danger)]">
                 Sold out
               </span>
             )}
@@ -305,7 +305,7 @@ function TierRow({
             <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className={`h-full rounded-full transition-all ${
-                  soldOut ? "bg-red-500" : "bg-blue-500"
+                  soldOut ? "bg-[var(--danger)]" : "bg-[var(--coral)]"
                 }`}
                 style={{ width: `${pct}%` }}
               />
@@ -327,7 +327,7 @@ function TierRow({
             <button
               onClick={onRemove}
               aria-label={`Remove ${tier.name}`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-subtle transition-colors hover:bg-red-500/10 hover:text-red-500"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-subtle transition-colors hover:bg-[#FF54701a] hover:text-[var(--danger)]"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -363,10 +363,10 @@ function TierForm({
   isEdit: boolean;
 }) {
   const field =
-    "h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text placeholder:text-subtle focus:border-blue-500 focus:outline-none";
+    "h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none";
 
   return (
-    <div className="rounded-xl border border-blue-500/40 bg-surface p-4">
+    <div className="rounded-xl border border-[#FF6A4566] bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-sm font-bold text-text">
           {isEdit ? "Edit ticket type" : "New ticket type"}

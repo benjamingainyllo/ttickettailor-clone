@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  CircleDollarSign, Users, ShoppingBag, Ticket, Loader2, Check, ArrowRight,
+  Banknote, Users, ShoppingBag, Ticket, Loader2, Check, ArrowRight,
   Landmark, UserRound, Sparkles, Inbox,
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
@@ -158,7 +158,7 @@ export default function OverviewPage() {
 
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-blue-600 transition-all duration-500"
+            className="h-full rounded-full bg-[var(--coral)] transition-all duration-500"
             style={{ width: `${(completed / steps.length) * 100}%` }}
           />
         </div>
@@ -173,7 +173,7 @@ export default function OverviewPage() {
             >
               <div
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                  step.done ? "bg-emerald-500/10 text-emerald-500" : "bg-blue-500/10 text-blue-500"
+                  step.done ? "bg-[#9BE3C01a] text-[var(--mint)]" : "bg-[#FF6A451a] text-[var(--coral)]"
                 }`}
               >
                 {step.done ? <Check className="h-5 w-5" /> : <step.icon className="h-5 w-5" />}
@@ -214,33 +214,33 @@ export default function OverviewPage() {
       title: "Revenue",
       value: formatKobo(grossKobo),
       change: `${paidOrders.length} paid ${paidOrders.length === 1 ? "order" : "orders"}`,
-      icon: CircleDollarSign,
-      iconColor: "#22C55E",
-      iconBgColor: "rgba(34, 197, 94, 0.1)",
+      icon: Banknote,
+      iconColor: "#9BE3C0",
+      iconBgColor: "rgba(155, 227, 192, 0.1)",
     },
     {
       title: "Settled to you",
       value: formatKobo(netKobo),
       change: "after fees",
       icon: Landmark,
-      iconColor: "#3B82F6",
-      iconBgColor: "rgba(59, 130, 246, 0.1)",
+      iconColor: "#B7C4FF",
+      iconBgColor: "rgba(183, 196, 255, 0.1)",
     },
     {
       title: "Buyers",
       value: String(audienceCount),
       change: audienceCount === 0 ? "no buyers yet" : "in your audience",
       icon: Users,
-      iconColor: "#8B5CF6",
-      iconBgColor: "rgba(139, 92, 246, 0.1)",
+      iconColor: "#DDBBF5",
+      iconBgColor: "rgba(221, 187, 245, 0.1)",
     },
     {
       title: "Live items",
       value: String(publishedCount),
       change: `${draftCount} in draft`,
       icon: ShoppingBag,
-      iconColor: "#F97316",
-      iconBgColor: "rgba(249, 115, 22, 0.1)",
+      iconColor: "#FF6A45",
+      iconBgColor: "rgba(255, 106, 69, 0.1)",
     },
   ];
 
@@ -264,10 +264,10 @@ export default function OverviewPage() {
       </div>
 
       {!hasBank && (
-        <div className="flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
-          <Landmark className="h-4 w-4 shrink-0 text-blue-500" />
+        <div className="flex items-center gap-3 rounded-xl border border-[#FF6A4533] bg-[#FF6A450d] px-4 py-3">
+          <Landmark className="h-4 w-4 shrink-0 text-[var(--coral)]" />
           <p className="flex-1 text-xs text-subtle">Connect your bank to publish paid items.</p>
-          <Link href="/payouts" className="shrink-0 text-xs font-bold text-blue-500 hover:underline">
+          <Link href="/payouts" className="shrink-0 text-xs font-bold text-[var(--coral)] hover:underline">
             Connect
           </Link>
         </div>
@@ -307,8 +307,8 @@ export default function OverviewPage() {
                 <div
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                     o.item_type === "event"
-                      ? "bg-orange-500/10 text-orange-500"
-                      : "bg-blue-500/10 text-blue-500"
+                      ? "bg-[#FF6A451a] text-[var(--coral)]"
+                      : "bg-[#FF6A451a] text-[var(--coral)]"
                   }`}
                 >
                   {o.item_type === "event" ? (
@@ -329,7 +329,7 @@ export default function OverviewPage() {
                 <div className="shrink-0 text-right">
                   <p
                     className={`text-sm font-bold ${
-                      o.status === "paid" ? "text-emerald-500" : "text-amber-500"
+                      o.status === "paid" ? "text-[var(--mint)]" : "text-[var(--marker)]"
                     }`}
                   >
                     {formatKobo(Number(o.gross_kobo))}

@@ -42,7 +42,7 @@ export function ComingSoon({
         </div>
 
         <div className="mt-6 flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-500">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#FFDE5940] bg-[#FFDE591a] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--marker)]">
             <Hammer className="h-3 w-3" />
             Not built yet
           </span>

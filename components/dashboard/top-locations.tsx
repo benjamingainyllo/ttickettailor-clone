@@ -13,7 +13,7 @@ export function TopLocations() {
         
         <div className="flex-1">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div className="h-full w-[80%] bg-blue-600"></div>
+            <div className="h-full w-[80%] bg-[var(--coral)]"></div>
           </div>
         </div>
         

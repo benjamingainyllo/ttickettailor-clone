@@ -155,7 +155,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
   const active = items.filter((i) => i.status === "active");
   const hidden = items.filter((i) => i.status === "hidden");
   const input =
-    "w-full rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-text placeholder:text-subtle focus:border-blue-500 focus:outline-none";
+    "w-full rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-text placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none";
   const label = "mb-1 block text-xs font-medium text-subtle";
 
   const editor = (
@@ -174,7 +174,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted hover:border-blue-500"
+            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted hover:border-[var(--coral)]"
           >
             {uploading ? (
               <Loader2 className="h-4 w-4 animate-spin text-subtle" />
@@ -275,7 +275,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
             onChange={(e) =>
               setForm({ ...form, requiresCollection: e.target.checked })
             }
-            className="mt-0.5 h-4 w-4 accent-blue-600"
+            className="mt-0.5 h-4 w-4 accent-[var(--coral)]"
           />
           <span className="text-xs text-subtle">
             Collected at the door. Shows on the check-in screen so nobody walks
@@ -287,7 +287,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
           <button
             onClick={save}
             disabled={saving || uploading}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-lg bg-[var(--coral)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--coral)] disabled:opacity-60"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {editingId ? "Save changes" : "Add item"}
@@ -318,7 +318,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
               setAdding(true);
               setForm(EMPTY_FORM);
             }}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+            className="rounded-lg bg-[var(--coral)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--coral)]"
           >
             Add item
           </button>
@@ -343,7 +343,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
               setAdding(true);
               setForm(EMPTY_FORM);
             }}
-            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+            className="mt-4 rounded-lg bg-[var(--coral)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--coral)]"
           >
             Add your first item
           </button>
@@ -409,7 +409,7 @@ function ItemRow({
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-sm font-bold text-text">{item.name}</p>
           {soldOut && !muted && (
-            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-500">
+            <span className="rounded-full bg-[#FFDE5926] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--marker)]">
               Sold out
             </span>
           )}
@@ -440,7 +440,7 @@ function ItemRow({
           <button
             onClick={onRemove}
             aria-label={`Remove ${item.name}`}
-            className="rounded-lg p-2 text-subtle hover:bg-muted hover:text-red-500"
+            className="rounded-lg p-2 text-subtle hover:bg-muted hover:text-[var(--danger)]"
           >
             <Trash2 className="h-4 w-4" />
           </button>

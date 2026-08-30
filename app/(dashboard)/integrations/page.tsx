@@ -78,8 +78,8 @@ export default function IntegrationsPage() {
       </div>
 
       {demo && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+        <div className="flex items-start gap-3 rounded-xl border border-[#FFDE5940] bg-[#FFDE591a] p-4">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--marker)]" />
           <p className="text-xs leading-relaxed text-subtle">
             Demo mode ends the moment a payment gateway key is added — no code changes, no
             migration. Until then, treat every amount in the dashboard as practice data.
@@ -119,9 +119,9 @@ export default function IntegrationsPage() {
 
 function StatusPill({ status }: { status: "live" | "demo" | "missing" }) {
   const styles = {
-    live: "border-emerald-500/25 bg-emerald-500/10 text-emerald-500",
-    demo: "border-amber-500/25 bg-amber-500/10 text-amber-500",
-    missing: "border-red-500/25 bg-red-500/10 text-red-500",
+    live: "border-[#9BE3C040] bg-[#9BE3C01a] text-[var(--mint)]",
+    demo: "border-[#FFDE5940] bg-[#FFDE591a] text-[var(--marker)]",
+    missing: "border-[#FF547040] bg-[#FF54701a] text-[var(--danger)]",
   }[status];
 
   const label = { live: "Connected", demo: "Demo mode", missing: "Not set up" }[status];

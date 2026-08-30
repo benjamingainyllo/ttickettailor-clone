@@ -16,15 +16,15 @@ export function PerformanceChart() {
         <h3 className="text-sm font-semibold text-text">Performance</h3>
         <div className="flex items-center gap-4 text-[10px] text-subtle">
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600"></span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--coral)]"></span>
             Revenue
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-orange-500"></span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--coral)]"></span>
             Visits
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--mint)]"></span>
             Leads
           </div>
         </div>
@@ -59,9 +59,9 @@ export function PerformanceChart() {
               labelStyle={{ color: "rgb(var(--text))" }}
               itemStyle={{ color: "rgb(var(--text))" }}
             />
-            <Line type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="visits" stroke="#F97316" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="leads" stroke="#22C55E" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="revenue" stroke="#B7C4FF" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="visits" stroke="#FF6A45" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="leads" stroke="#9BE3C0" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>

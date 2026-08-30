@@ -13,7 +13,7 @@ export function TrafficSource() {
         
         <div className="flex-1">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div className="h-full w-full bg-green-500"></div>
+            <div className="h-full w-full bg-[var(--mint)]"></div>
           </div>
         </div>
         

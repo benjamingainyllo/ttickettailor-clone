@@ -172,7 +172,7 @@ export default function SettingsPage() {
             onClick={() => setTab(key)}
             className={`border-b-2 px-4 py-3 text-xs font-semibold transition-colors ${
               tab === key
-                ? "border-blue-500 text-text"
+                ? "border-[var(--coral)] text-text"
                 : "border-transparent text-subtle hover:text-text"
             }`}
           >
@@ -232,7 +232,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label className="mb-1 block text-xs font-medium text-subtle">Handle</label>
-                  <div className="flex items-center overflow-hidden rounded-lg border border-border bg-muted focus-within:border-blue-500">
+                  <div className="flex items-center overflow-hidden rounded-lg border border-border bg-muted focus-within:border-[var(--coral)]">
                     <span className="shrink-0 border-r border-border px-3 py-2.5 text-xs text-subtle">
                       {publicHost}/
                     </span>
@@ -245,16 +245,16 @@ export default function SettingsPage() {
                     {handle && (
                       <span className="shrink-0 pr-3">
                         {handleState.ok ? (
-                          <Check className="h-4 w-4 text-emerald-500" />
+                          <Check className="h-4 w-4 text-[var(--mint)]" />
                         ) : (
-                          <X className="h-4 w-4 text-red-500" />
+                          <X className="h-4 w-4 text-[var(--danger)]" />
                         )}
                       </span>
                     )}
                   </div>
 
                   {handle && !handleState.ok ? (
-                    <p className="mt-1.5 text-[11px] text-red-400">{handleState.reason}</p>
+                    <p className="mt-1.5 text-[11px] text-[var(--danger)]">{handleState.reason}</p>
                   ) : handle && handleState.ok && handleUnchanged ? (
                     <div className="mt-1.5 flex flex-wrap items-center gap-3">
                       <button
@@ -270,7 +270,7 @@ export default function SettingsPage() {
                         href={`/${normalizeHandle(handle)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-[11px] text-blue-500 hover:underline"
+                        className="inline-flex items-center gap-1.5 text-[11px] text-[var(--coral)] hover:underline"
                       >
                         View storefront <ExternalLink className="h-3 w-3" />
                       </a>
@@ -289,7 +289,7 @@ export default function SettingsPage() {
                     onChange={(e) => setBio(e.target.value.slice(0, 200))}
                     rows={3}
                     placeholder="A line about what you make."
-                    className="w-full resize-none rounded-lg border border-border bg-muted p-3 text-sm text-text placeholder:text-subtle focus:border-blue-500 focus:outline-none"
+                    className="w-full resize-none rounded-lg border border-border bg-muted p-3 text-sm text-text placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none"
                   />
                   <p className="mt-1 text-right text-[10px] text-subtle">{bio.length}/200</p>
                 </div>
@@ -300,7 +300,7 @@ export default function SettingsPage() {
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-blue-500 focus:outline-none"
+                      className="h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-[var(--coral)] focus:outline-none"
                     >
                       <option value="">Choose one</option>
                       {CATEGORIES.map((c) => (
@@ -320,7 +320,7 @@ export default function SettingsPage() {
                       id="tz"
                       value={timezone}
                       onChange={(e) => setTimezone(e.target.value)}
-                      className="h-10 w-full appearance-none rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-blue-500 focus:outline-none"
+                      className="h-10 w-full appearance-none rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-[var(--coral)] focus:outline-none"
                     >
                       <option value="">Not set</option>
                       {timezones().map((z) => (
@@ -340,7 +340,7 @@ export default function SettingsPage() {
                       id="country"
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      className="h-10 w-full appearance-none rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-blue-500 focus:outline-none"
+                      className="h-10 w-full appearance-none rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-[var(--coral)] focus:outline-none"
                     >
                       <option value="">Not set</option>
                       {COUNTRIES.map((c) => (
@@ -353,7 +353,7 @@ export default function SettingsPage() {
                 <button
                   onClick={saveProfile}
                   disabled={savingProfile}
-                  className="flex h-10 items-center justify-center rounded-lg bg-white px-6 text-xs font-bold text-black transition-transform hover:scale-[1.02] disabled:opacity-60"
+                  className="flex h-10 items-center justify-center rounded-lg bg-[var(--coral)] px-6 text-xs font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60"
                 >
                   {savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
                 </button>
@@ -367,8 +367,8 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <div className="rounded-2xl border border-border bg-surface p-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-                <Lock className="h-5 w-5 text-blue-500" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF6A451a]">
+                <Lock className="h-5 w-5 text-[var(--coral)]" />
               </div>
               <div>
                 <h2 className="text-sm font-bold text-text">Change password</h2>
@@ -384,7 +384,7 @@ export default function SettingsPage() {
                     type={showPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-border bg-muted px-3 pr-10 text-sm text-text focus:border-blue-500 focus:outline-none"
+                    className="h-10 w-full rounded-lg border border-border bg-muted px-3 pr-10 text-sm text-text focus:border-[var(--coral)] focus:outline-none"
                   />
                   <button
                     type="button"
@@ -402,17 +402,17 @@ export default function SettingsPage() {
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-blue-500 focus:outline-none"
+                  className="h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-[var(--coral)] focus:outline-none"
                 />
                 {confirmPassword.length > 0 && newPassword !== confirmPassword && (
-                  <p className="mt-1.5 text-[11px] text-red-400">These don&apos;t match.</p>
+                  <p className="mt-1.5 text-[11px] text-[var(--danger)]">These don&apos;t match.</p>
                 )}
               </div>
 
               <button
                 onClick={savePassword}
                 disabled={savingPassword}
-                className="flex h-10 items-center justify-center rounded-lg bg-white px-6 text-xs font-bold text-black disabled:opacity-60"
+                className="flex h-10 items-center justify-center rounded-lg bg-[var(--coral)] px-6 text-xs font-bold text-white disabled:opacity-60"
               >
                 {savingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update password"}
               </button>
@@ -471,7 +471,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text placeholder:text-subtle focus:border-blue-500 focus:outline-none"
+        className="h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none"
       />
     </div>
   );

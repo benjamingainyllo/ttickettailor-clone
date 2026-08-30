@@ -29,7 +29,7 @@ export default async function DoorPage({ params }: { params: { id: string } }) {
         </p>
         <Link
           href="/events"
-          className="mt-6 inline-block text-sm font-semibold text-blue-500 hover:underline"
+          className="mt-6 inline-block text-sm font-semibold text-[var(--coral)] hover:underline"
         >
           Back to events
         </Link>

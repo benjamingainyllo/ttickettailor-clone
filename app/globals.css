@@ -43,6 +43,28 @@ html[data-theme="light"] {
    and the page moved out from under it.
    ============================================================ */
 .lp {
+  /*
+   * The dashboard's older token names, pointed at the brand.
+   *
+   * Most dashboard screens are written against bg-background, bg-surface,
+   * text-subtle, border-border and so on, which Tailwind resolves through
+   * these six variables. Repainting them here moves every one of those
+   * screens onto the brand palette at once, instead of hand-editing a few
+   * hundred colour classes and missing some.
+   *
+   * They are space-separated RGB triples because the Tailwind config wraps
+   * them in rgb(... / <alpha-value>) so opacity modifiers keep working.
+   * The two derived ones are what their translucent originals actually
+   * composite to over --ground: subtle is on-ground at 52%, border is
+   * on-ground at 14%.
+   */
+  --background: 18 8 15;    /* --ground */
+  --surface: 27 13 24;      /* --ground-deep */
+  --muted: 36 20 48;        /* --ground-raised, the plum */
+  --border: 51 42 47;
+  --text: 253 248 240;      /* --on-ground */
+  --subtle: 141 132 130;
+
   /* The page */
   --ground: #12080F;       /* warm near-black, not a neutral one */
   --ground-deep: #1B0D18;  /* the next shade up, for banding */
@@ -56,6 +78,10 @@ html[data-theme="light"] {
   --ink-soft: #6B5D53;     /* body copy on a light object */
 
   --coral: #FF6A45;        /* the one loud accent */
+  /* Semantic colours, kept separate from the accent on purpose: coral means
+     "this is the action", so it cannot also mean "this went well" or "this
+     went wrong" without the dashboard losing the ability to say either. */
+  --danger: #FF5470;       /* refunds, failures, destructive things */
   --marker: #FFDE59;       /* highlighter yellow */
   --marker-pink: #FFB3C7;
   --mint: #9BE3C0;
