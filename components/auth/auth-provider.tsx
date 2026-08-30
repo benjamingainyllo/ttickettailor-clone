@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, stillWanted = () => true) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", userId)
         .single();
 
-      if (data && !error) {
+      if (data && !error && stillWanted()) {
         setProfile(data as Profile);
       }
     } catch (e) {
@@ -88,44 +88,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = "/";
   };
 
+  /**
+   * NOTHING IN THE onAuthStateChange CALLBACK MAY AWAIT A SUPABASE CALL.
+   *
+   * This is not a style preference. It hung the "Get started" button on the
+   * signup screen forever, and the mechanism is worth writing down because
+   * the code that causes it looks completely reasonable.
+   *
+   * supabase-js guards its session with a lock. updateUser() takes that
+   * lock, and while still holding it, awaits every onAuthStateChange
+   * listener. This callback used to await a profile query. A query needs an
+   * access token, so it asks for the session — which wants the same lock.
+   *
+   * That re-entrant request does not fail: it is queued, and the lock holder
+   * refuses to finish until the queue drains. So updateUser waits on the
+   * listener, the listener waits on the query, and the query waits on
+   * updateUser. Nothing times out, because only a first acquisition gets the
+   * five-second timeout and this one never reaches it. The button just spins.
+   *
+   * So: the callback below is synchronous and touches nothing but React
+   * state. Loading the profile happens in its own effect, after the lock has
+   * been released.
+   */
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
-    const getSession = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (!mounted) return;
+        setUser(session?.user ?? null);
+      })
+      .catch((e) => console.error("Failed to get session:", e))
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
 
-        if (mounted && session?.user) {
-          setUser(session.user);
-          await fetchProfile(session.user.id);
-        }
-      } catch (e) {
-        console.error("Failed to get session:", e);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    getSession();
-
-    // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
-
-      if (session?.user) {
-        setUser(session.user);
-        await fetchProfile(session.user.id);
-      } else {
-        setUser(null);
-        setProfile(null);
-      }
+      setUser(session?.user ?? null);
+      if (!session?.user) setProfile(null);
       setLoading(false);
     });
 
@@ -135,6 +139,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The profile follows whoever is signed in, one step behind and safely
+  // outside the lock above.
+  const userId = user?.id ?? null;
+  useEffect(() => {
+    if (!userId) return;
+    let mounted = true;
+    fetchProfile(userId, () => mounted);
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   return (
     <AuthContext.Provider
