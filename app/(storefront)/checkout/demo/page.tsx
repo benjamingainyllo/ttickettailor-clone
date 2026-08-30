@@ -94,11 +94,11 @@ function DemoCheckoutContent() {
     <div className="dl flex min-h-screen items-center justify-center px-4 py-12 font-[family-name:var(--font-bricolage-grotesque)]">
       <div className="w-full max-w-md">
         {/* Unmissable: nothing here is real. */}
-        <div className="mb-4 flex items-start gap-3 rounded-[3px] border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+        <div className="mb-4 flex items-start gap-3 rounded-[3px] border-2 border-[var(--dl-line)] bg-[#FFDE59] px-4 py-3">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--dl-ink)]" />
           <div>
-            <p className="text-sm font-bold text-amber-400">Simulated checkout</p>
-            <p className="mt-0.5 text-xs text-amber-200/70">
+            <p className="text-[14px] font-extrabold text-[var(--dl-ink)]">Simulated checkout</p>
+            <p className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--dl-ink)]">
               No payment gateway is connected, so no money moves. This screen stands in for
               the real payment page so the rest of the flow can be tested.
             </p>

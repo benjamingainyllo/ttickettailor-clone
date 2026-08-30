@@ -31,18 +31,33 @@ export async function getPayoutAccount() {
 
   if (!user) return { success: false as const, account: null, settlements: [] };
 
-  const { data: account } = await supabase
+  const { data: account, error: accountError } = await supabase
     .from("payout_accounts")
     .select("*")
     .eq("creator_id", user.id)
     .maybeSingle();
 
-  const { data: settlements } = await supabase
+  // Both errors used to be discarded, which is worse than it sounds: a
+  // failed read is indistinguishable from "no account yet", so the page
+  // would show the connect form as if nothing were wrong, and connecting
+  // would keep failing with no explanation anywhere.
+  if (accountError) {
+    console.error("Could not read the payout account:", accountError);
+    return { success: false as const, account: null, settlements: [] };
+  }
+
+  const { data: settlements, error: settlementsError } = await supabase
     .from("settlements")
     .select("*")
     .eq("creator_id", user.id)
     .order("settled_at", { ascending: false })
     .limit(50);
+
+  if (settlementsError) {
+    // Not fatal — the bank connection is the part that matters on this
+    // page, and it is worth showing even when the history won't load.
+    console.error("Could not read settlements:", settlementsError);
+  }
 
   return {
     success: true as const,

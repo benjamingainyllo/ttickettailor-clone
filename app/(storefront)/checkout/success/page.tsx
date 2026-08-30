@@ -99,7 +99,7 @@ function CheckoutSuccessContent() {
 
         {status === "pending" && (
           <>
-            <Clock className="mx-auto h-12 w-12 text-amber-500" />
+            <Clock className="mx-auto h-12 w-12 text-[var(--marker)]" />
             <h1 className="mt-4 text-[24px] font-extrabold tracking-[-0.03em]">Payment processing</h1>
             <p className="mt-2 text-sm text-subtle">
               We&apos;re still confirming your payment with Paystack. This page will update automatically — you can also refresh in a moment.
@@ -109,7 +109,7 @@ function CheckoutSuccessContent() {
 
         {status === "failed" && (
           <>
-            <XCircle className="mx-auto h-12 w-12 text-red-500" />
+            <XCircle className="mx-auto h-12 w-12 text-[var(--dl-danger)]" />
             <h1 className="mt-4 text-[24px] font-extrabold tracking-[-0.03em]">Payment not completed</h1>
             <p className="mt-2 text-sm text-subtle">{errorMessage || "Your payment could not be confirmed."}</p>
           </>
