@@ -18,6 +18,7 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
   const [quantity, setQuantity] = useState(1);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [registered, setRegistered] = useState(false);
@@ -107,6 +108,7 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
         itemId: event.id,
         buyerEmail: email,
         buyerName: name || undefined,
+        buyerPhone: phone || undefined,
         ticketTypeId: selectedTierId ?? undefined,
         quantity,
         products: Object.entries(basket)
@@ -396,6 +398,21 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                     placeholder="Chidi Okonkwo"
                     className={`${field} mt-2`}
                   />
+                </div>
+                <div>
+                  <label htmlFor="phone" className={label}>WhatsApp number</label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0803 123 4567"
+                    className={`${field} mt-2`}
+                  />
+                  <p className="mt-1.5 text-[12px] text-[var(--dl-ink-soft)]">
+                    Where your ticket goes. Leave it out and we&apos;ll only email it.
+                  </p>
                 </div>
                 <div>
                   <label htmlFor="email" className={label}>Email</label>

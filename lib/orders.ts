@@ -3,6 +3,8 @@ import type { Kobo } from "@/lib/money";
 import type { PaymentChannel } from "@/lib/payments";
 import { issueTicketsForOrder, type IssuedTicket } from "@/lib/tickets";
 import { getEmailProvider } from "@/lib/email";
+import { getWhatsAppProvider, toE164 } from "@/lib/whatsapp";
+import { orderTicketsUrl, ticketUrl } from "@/lib/site";
 import { ticketConfirmationEmail } from "@/lib/email/templates";
 
 /**
@@ -106,9 +108,72 @@ async function fulfillOrder(order: any) {
     // replayed webhook cannot email the buyer their tickets twice.
     if (!issued.firstIssue || issued.tickets.length === 0) return;
 
-    await sendTicketEmail(order, issued.tickets);
+    await deliverTickets(order, issued.tickets);
   } catch (error) {
     console.error("Fulfilment failed for order", order?.reference, error);
+  }
+}
+
+/**
+ * Getting the tickets to the buyer.
+ *
+ * WhatsApp first, because this is Nigeria and that is where people
+ * actually read things — an email can sit unopened until the day after the
+ * event. Email still goes every time regardless, because it is the
+ * durable copy: it survives a changed phone, a lost chat, and a WhatsApp
+ * template that Meta has suspended.
+ *
+ * Neither failure stops the other, and neither stops the order. The
+ * tickets exist in the database the moment payment settles; a message is
+ * how somebody is told, not what makes it real. The ticket page is always
+ * reachable from the order reference.
+ */
+async function deliverTickets(order: any, tickets: IssuedTicket[]) {
+  // Sent in parallel: a slow WhatsApp call should not hold up the email,
+  // and this runs inside a webhook that a provider will time out.
+  await Promise.allSettled([
+    sendTicketWhatsApp(order, tickets),
+    sendTicketEmail(order, tickets),
+  ]);
+}
+
+async function sendTicketWhatsApp(order: any, tickets: IssuedTicket[]) {
+  const phone = order.buyer_phone ? toE164(order.buyer_phone) : null;
+  if (!phone) return; // No number given, or not one we can send to.
+
+  const admin = createAdminClient();
+  const { data: event } = await admin
+    .from("events")
+    .select("title, date, time, location")
+    .eq("id", order.event_id)
+    .maybeSingle();
+
+  const when = [
+    event?.date
+      ? new Date(event.date).toLocaleDateString("en-NG", {
+          weekday: "short",
+          day: "numeric",
+          month: "long",
+        })
+      : null,
+    event?.time,
+  ]
+    .filter(Boolean)
+    .join(" · ") || null;
+
+  const result = await getWhatsAppProvider().sendTickets({
+    to: phone,
+    buyerName: order.buyer_name ?? null,
+    eventTitle: event?.title ?? order.item_title ?? "your event",
+    when,
+    location: event?.location ?? null,
+    orderReference: order.reference,
+    ticketsUrl: orderTicketsUrl(order.reference),
+    tickets: tickets.map((t) => ({ code: t.code, url: ticketUrl(t.code) })),
+  });
+
+  if (!result.ok) {
+    console.error("Ticket WhatsApp failed for order", order.reference, result.error);
   }
 }
 
