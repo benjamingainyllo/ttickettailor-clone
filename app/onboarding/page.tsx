@@ -46,6 +46,16 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
+  /**
+   * What went wrong, left on screen until they change something.
+   *
+   * This used to be a toast. A toast is the wrong shape for a failure the
+   * person cannot act on and cannot repeat back to anyone: it fades after a
+   * few seconds, so all that is left is a button that "doesn't work", with
+   * the actual reason sitting in a developer console nobody is going to open.
+   */
+  const [failure, setFailure] = useState<string | null>(null);
+
   // A magic-link signup leaves the account with no password. Until one is set
   // the organiser has no way back in, so that screen comes before this one.
   const [passwordDone, setPasswordDone] = useState(false);
@@ -108,9 +118,39 @@ export default function OnboardingPage() {
     reader.readAsDataURL(file);
   };
 
+  /** Say what a database refusal actually means, and what fixes it. */
+  const explain = (error: { code?: string; message?: string }): string => {
+    const code = error.code ?? "";
+    const message = error.message ?? "";
+
+    // A column the app expects but the database has not got. This is the
+    // one that happens when setup.sql has not been re-run after a change,
+    // and it is invisible without saying so out loud.
+    if (code === "42703" || code === "PGRST204" || /column .* does not exist/i.test(message)) {
+      return (
+        "Your database is missing a recent update, so there is nowhere to " +
+        "save this. Open the Supabase SQL editor, paste in setup.sql from " +
+        "the project and run it, then try again. " +
+        `(Technical detail, for me: ${message})`
+      );
+    }
+    if (code === "23505") {
+      return "That link is already taken. Try a different one.";
+    }
+    if (code === "42501" || /row-level security/i.test(message)) {
+      return (
+        "The database refused the change for this account. Re-running " +
+        "setup.sql in the Supabase SQL editor usually fixes it. " +
+        `(Technical detail, for me: ${message})`
+      );
+    }
+    return `Couldn't create your box office. ${message || "Please try again."}`;
+  };
+
   const handleCreate = async () => {
     if (!user || !canSave) return;
     setSaving(true);
+    setFailure(null);
 
     try {
       let avatarUrl = profile?.avatar_url ?? null;
@@ -142,21 +182,29 @@ export default function OnboardingPage() {
       };
       if (avatarUrl) row.avatar_url = avatarUrl;
 
-      const { error } = await supabase
+      // .select() matters: without it an update that row-level security
+      // filtered out comes back with no error AND no rows, and the screen
+      // would cheerfully report success having saved nothing at all.
+      const { data: saved, error } = await supabase
         .from("profiles")
         .update(row)
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .select("id");
 
       if (error) {
-        // 23505 is the unique violation on handle — somebody has it already.
-        if (error.code === "23505") {
-          toast.error("That link is taken. Try another.");
-          setHandleEdited(true);
-          setSaving(false);
-          return;
-        }
         console.error("Box office creation failed:", error);
-        toast.error("Couldn't create your box office. Please try again.");
+        if (error.code === "23505") setHandleEdited(true);
+        setFailure(explain(error));
+        setSaving(false);
+        return;
+      }
+
+      if (!saved || saved.length === 0) {
+        setFailure(
+          "The database accepted the request but saved nothing, which " +
+            "means this account can't write to its own profile. Re-run " +
+            "setup.sql in the Supabase SQL editor and try again."
+        );
         setSaving(false);
         return;
       }
@@ -165,7 +213,11 @@ export default function OnboardingPage() {
       setDone(true);
     } catch (err) {
       console.error("Onboarding failed:", err);
-      toast.error("Something went wrong. Please try again.");
+      setFailure(
+        err instanceof Error
+          ? `Something went wrong: ${err.message}`
+          : "Something went wrong. Please try again."
+      );
     } finally {
       setSaving(false);
     }
@@ -381,6 +433,22 @@ export default function OnboardingPage() {
               . {req}
             </span>
           </label>
+
+          {failure && (
+            /* Literal hex, not [var(--coral)]/10 — Tailwind cannot alpha a
+               var() colour and drops the class silently, leaving no tint. */
+            <div
+              role="alert"
+              className="rounded-xl border border-[#E0512F] bg-[#E0512F1a] p-4"
+            >
+              <p className="text-[13px] font-bold text-[var(--coral)]">
+                Couldn&apos;t save
+              </p>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--on-ground-soft)]">
+                {failure}
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-1">
             <button
