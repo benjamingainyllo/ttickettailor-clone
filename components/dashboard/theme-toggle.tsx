@@ -25,7 +25,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-subtle hover:text-text"
+      className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface px-3 py-2 text-xs text-subtle hover:text-text"
     >
       <span className="flex items-center gap-2">
         {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}

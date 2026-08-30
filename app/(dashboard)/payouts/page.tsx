@@ -129,18 +129,18 @@ export default function PayoutsPage() {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-text">Payouts</h1>
-        <p className="mt-1 text-xs text-subtle">
+        <h1 className="text-[32px] font-extrabold leading-[1] tracking-[-0.04em] sm:text-[40px]">Payouts</h1>
+        <p className="mt-3 text-[15px] text-[var(--dl-ink-soft)]">
           Money from your sales settles straight into your own bank account.
         </p>
       </div>
 
       {loadError && (
-        <div className="rounded-xl border border-border bg-surface p-6 text-center">
+        <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-6 text-center">
           <p className="text-sm text-text">{loadError}</p>
           <button
             onClick={load}
-            className="mt-3 rounded-lg border border-border bg-muted px-4 py-2 text-xs font-medium text-text"
+            className="mt-3 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 py-2 text-xs font-medium text-text"
           >
             Retry
           </button>
@@ -148,11 +148,11 @@ export default function PayoutsPage() {
       )}
 
       {demoMode && (
-        <div className="flex items-start gap-3 rounded-xl border border-[#FFDE594c] bg-[#FFDE591a] p-4">
+        <div className="flex items-start gap-3 rounded-[3px] border border-[#FFDE594c] bg-[#FFDE591a] p-4">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--marker)]" />
           <div>
             <p className="text-sm font-bold text-[var(--marker)]">Demo mode — no payment gateway connected</p>
-            <p className="mt-1 text-xs text-subtle">
+            <p className="mt-3 text-[15px] text-[var(--dl-ink-soft)]">
               You can connect a pretend bank account here so the rest of the product works
               end to end. It is not a real account and no money can move. When a real gateway
               is set up, this becomes a genuine bank connection with no other change.
@@ -162,8 +162,8 @@ export default function PayoutsPage() {
       )}
 
       {/* How the money actually moves — worth stating plainly. */}
-      <div className="flex items-start gap-3 rounded-xl border border-[#FF6A4533] bg-[#FF6A450d] p-4">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--coral)]" />
+      <div className="flex items-start gap-3 rounded-[3px] border border-[#FF6A4533] bg-[#FF6A450d] p-4">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--dl-ink)]" />
         <p className="text-xs leading-relaxed text-subtle">
           Paylance never holds your money. When someone pays, the transaction is split at the
           moment of payment — your share goes directly to your bank, and we only receive our fee.
@@ -172,10 +172,10 @@ export default function PayoutsPage() {
       </div>
 
       {isConnected ? (
-        <div className="rounded-2xl border border-border bg-surface p-6">
+        <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#9BE3C01a]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-[3px] bg-[#9BE3C01a]">
                 <Landmark className="h-5 w-5 text-[var(--mint)]" />
               </div>
               <div>
@@ -185,16 +185,16 @@ export default function PayoutsPage() {
                 </p>
               </div>
             </div>
-            <span className="flex items-center gap-1.5 rounded-full bg-[#9BE3C01a] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--mint)]">
+            <span className="flex items-center gap-1.5 rounded-[3px] bg-[#9BE3C01a] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--mint)]">
               <CheckCircle2 className="h-3 w-3" /> Connected
             </span>
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-border bg-surface p-6">
+        <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-6">
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FF6A451a]">
-              <Landmark className="h-5 w-5 text-[var(--coral)]" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-[3px] bg-[#FF6A451a]">
+              <Landmark className="h-5 w-5 text-[var(--dl-ink)]" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-text">Connect your bank account</h2>
@@ -208,7 +208,7 @@ export default function PayoutsPage() {
               <select
                 value={bankCode}
                 onChange={(e) => setBankCode(e.target.value)}
-                className="h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text focus:border-[var(--coral)] focus:outline-none"
+                className="h-11 w-full rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-3 text-sm text-text focus:border-[var(--dl-line)] focus:outline-none"
               >
                 <option value="">Select your bank</option>
                 {banks.map((b) => (
@@ -233,7 +233,7 @@ export default function PayoutsPage() {
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
                 placeholder="0123456789"
-                className="h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none"
+                className="h-11 w-full rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-3 text-sm text-text placeholder:text-subtle focus:border-[var(--dl-line)] focus:outline-none"
               />
             </div>
 
@@ -244,7 +244,7 @@ export default function PayoutsPage() {
             )}
 
             {resolvedName && (
-              <div className="rounded-lg border border-[#9BE3C033] bg-[#9BE3C00d] px-4 py-3">
+              <div className="rounded-[3px] border border-[#9BE3C033] bg-[#9BE3C00d] px-4 py-3">
                 <p className="text-[10px] uppercase tracking-wider text-subtle">Account name</p>
                 <p className="text-sm font-bold text-text">{resolvedName}</p>
               </div>
@@ -253,7 +253,7 @@ export default function PayoutsPage() {
             <button
               onClick={handleConnect}
               disabled={!resolvedName || connecting}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--coral)] text-sm font-bold text-white transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-[3px] bg-[var(--dl-ink)] text-sm font-bold text-white transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100"
             >
               {connecting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -273,7 +273,7 @@ export default function PayoutsPage() {
       )}
 
       {/* Settlement history — reporting only. */}
-      <div className="rounded-2xl border border-border bg-surface p-6">
+      <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-6">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-text">Settlement history</h3>
           {settlements.length > 0 && (
@@ -285,11 +285,11 @@ export default function PayoutsPage() {
 
         {settlements.length === 0 ? (
           <div className="py-12 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-subtle">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[3px] bg-muted text-subtle">
               <Inbox className="h-6 w-6" />
             </div>
             <p className="text-sm font-medium text-text">No settlements yet</p>
-            <p className="mt-1 text-xs text-subtle">
+            <p className="mt-3 text-[15px] text-[var(--dl-ink-soft)]">
               Payouts from your sales will be listed here once they land.
             </p>
           </div>
@@ -298,7 +298,7 @@ export default function PayoutsPage() {
             {settlements.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3"
+                className="flex items-center justify-between rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/30 p-3"
               >
                 <div>
                   <p className="text-sm font-medium text-text">{formatKobo(Number(s.amount_kobo))}</p>

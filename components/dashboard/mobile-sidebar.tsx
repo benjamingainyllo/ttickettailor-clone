@@ -51,7 +51,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const userPhoto = profile?.avatar_url || null;
 
   const item = (active: boolean) =>
-    `flex h-11 items-center gap-3 rounded-xl px-3 text-[15px] transition-colors ${
+    `flex h-11 items-center gap-3 rounded-[3px] px-3 text-[15px] transition-colors ${
       active
         ? "bg-[var(--ground-raised)] font-bold text-[var(--on-ground)]"
         : "font-semibold text-[var(--on-ground-soft)] hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)]"
@@ -77,7 +77,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           <button
             onClick={onClose}
             aria-label="Close the menu"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--on-ground-soft)] transition-colors hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)]"
+            className="flex h-9 w-9 items-center justify-center rounded-[3px] text-[var(--on-ground-soft)] transition-colors hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -87,7 +87,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           <Link
             href="/events/create"
             onClick={onClose}
-            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[var(--coral)] text-[15px] font-extrabold text-white"
+            className="flex h-11 items-center justify-center gap-2 rounded-[3px] bg-[var(--dl-ink)] text-[15px] font-extrabold text-white"
           >
             <Plus strokeWidth={2.5} className="h-[18px] w-[18px]" />
             New event
@@ -113,7 +113,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     >
                       <entry.icon
                         strokeWidth={1.75}
-                        className={`h-[18px] w-[18px] shrink-0 ${active ? "text-[var(--coral)]" : ""}`}
+                        className={`h-[18px] w-[18px] shrink-0 ${active ? "text-[var(--dl-ink)]" : ""}`}
                       />
                       {entry.label}
                     </Link>
@@ -144,7 +144,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
           <button
             onClick={() => signOut()}
-            className="flex h-11 w-full items-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-[var(--on-ground-soft)] transition-colors hover:bg-[#FF6A451a] hover:text-[var(--coral)]"
+            className="flex h-11 w-full items-center gap-3 rounded-[3px] px-3 text-[15px] font-semibold text-[var(--on-ground-soft)] transition-colors hover:bg-[#FF6A451a] hover:text-[var(--dl-ink)]"
           >
             <LogOut strokeWidth={1.75} className="h-[18px] w-[18px] shrink-0" />
             Log out
@@ -157,10 +157,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 alt=""
                 width={36}
                 height={36}
-                className="h-9 w-9 shrink-0 rounded-full object-cover"
+                className="h-9 w-9 shrink-0 rounded-[3px] object-cover"
               />
             ) : (
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ground-raised)] text-[13px] font-extrabold text-[var(--on-ground-soft)]">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[var(--ground-raised)] text-[13px] font-extrabold text-[var(--on-ground-soft)]">
                 {(userName[0] || "P").toUpperCase()}
               </span>
             )}

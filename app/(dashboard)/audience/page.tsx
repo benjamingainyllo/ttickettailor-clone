@@ -105,7 +105,7 @@ export default function AudiencePage() {
   };
 
   const metrics = [
-    { title: "Contacts", value: String(audience.length), icon: Users, accent: "text-[var(--coral)]", bg: "bg-[#FF6A451a]" },
+    { title: "Contacts", value: String(audience.length), icon: Users, accent: "text-[var(--dl-ink)]", bg: "bg-[#FF6A451a]" },
     { title: "Buyers", value: String(buyers), icon: UserCheck, accent: "text-[var(--mint)]", bg: "bg-[#9BE3C01a]" },
     { title: "Repeat buyers", value: String(repeatBuyers), icon: Repeat, accent: "text-[var(--lilac)]", bg: "bg-[#DDBBF51a]" },
   ];
@@ -114,8 +114,8 @@ export default function AudiencePage() {
     <section className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-text">Audience</h1>
-          <p className="mt-1 text-xs text-subtle">
+          <h1 className="text-[32px] font-extrabold leading-[1] tracking-[-0.04em] sm:text-[40px]">Audience</h1>
+          <p className="mt-3 text-[15px] text-[var(--dl-ink-soft)]">
             Everyone who has bought from you. Yours to keep, wherever you go next.
           </p>
         </div>
@@ -128,34 +128,37 @@ export default function AudiencePage() {
               placeholder="Search contacts..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-9 w-full rounded-lg border border-border bg-muted/50 pl-9 pr-4 text-xs text-text focus:border-[var(--coral)] focus:outline-none sm:w-56"
+              className="h-9 w-full rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/50 pl-9 pr-4 text-xs text-text focus:border-[var(--dl-line)] focus:outline-none sm:w-56"
             />
           </div>
           <button
             onClick={exportCsv}
             disabled={audience.length === 0}
-            className="flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-4 text-xs font-semibold text-text transition-colors hover:bg-muted disabled:opacity-40"
+            className="flex h-9 items-center justify-center gap-2 rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/50 px-4 text-xs font-semibold text-text transition-colors hover:bg-muted disabled:opacity-40"
           >
             <Download className="h-3.5 w-3.5" /> Export CSV
           </button>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      {/* One ruled block, as on every other page. */}
+      <div className="flex flex-wrap rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
         {metrics.map((m) => (
-          <div key={m.title} className="rounded-2xl border border-border bg-surface p-5">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${m.bg}`}>
-              <m.icon className={`h-5 w-5 ${m.accent}`} />
-            </div>
-            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-subtle">
+          <div
+            key={m.title}
+            className="min-w-[152px] flex-1 border-l-2 border-[var(--dl-line)] px-5 py-4 first:border-l-0"
+          >
+            <p className="text-[27px] font-extrabold tracking-[-0.035em] [font-variant-numeric:tabular-nums]">
+              {m.value}
+            </p>
+            <p className="mt-1 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
               {m.title}
             </p>
-            <p className="mt-1 text-2xl font-bold text-text">{m.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className="overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-surface">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-6 w-6 animate-spin text-subtle" />
@@ -165,14 +168,14 @@ export default function AudiencePage() {
             <p className="text-sm text-text">{loadError}</p>
             <button
               onClick={load}
-              className="mt-4 rounded-lg border border-border bg-muted px-4 py-2 text-xs font-medium text-text"
+              className="mt-4 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 py-2 text-xs font-medium text-text"
             >
               Retry
             </button>
           </div>
         ) : audience.length === 0 ? (
           <div className="py-20 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-subtle">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[3px] bg-muted text-subtle">
               <UsersRound className="h-7 w-7" />
             </div>
             <p className="text-sm font-semibold text-text">No contacts yet</p>
@@ -242,7 +245,7 @@ function Avatar({ name, email }: { name: string | null; email: string }) {
     : email.slice(0, 2).toUpperCase();
 
   const palette = [
-    "bg-[#FF6A4526] text-[var(--coral)]",
+    "bg-[#FF6A4526] text-[var(--dl-ink)]",
     "bg-[#9BE3C026] text-[var(--mint)]",
     "bg-[#DDBBF526] text-[var(--lilac)]",
     "bg-[#FFDE5926] text-[var(--marker)]",
@@ -251,7 +254,7 @@ function Avatar({ name, email }: { name: string | null; email: string }) {
   const tone = palette[email.charCodeAt(0) % palette.length];
 
   return (
-    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ${tone}`}>
+    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[3px] text-xs font-bold ${tone}`}>
       {initials}
     </div>
   );
@@ -306,13 +309,13 @@ function ContactDrawer({ person, onClose }: { person: AudienceMember; onClose: (
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-border bg-muted/40 p-4">
+          <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/40 p-4">
             <p className="text-[10px] uppercase tracking-widest text-subtle">Total spent</p>
             <p className="mt-1 text-lg font-bold text-[var(--mint)]">
               {formatKobo(Number(person.total_spent_kobo ?? 0))}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-muted/40 p-4">
+          <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/40 p-4">
             <p className="text-[10px] uppercase tracking-widest text-subtle">Orders</p>
             <p className="mt-1 text-lg font-bold text-text">{person.purchase_count ?? 0}</p>
           </div>
@@ -320,7 +323,7 @@ function ContactDrawer({ person, onClose }: { person: AudienceMember; onClose: (
 
         <a
           href={`mailto:${person.email}`}
-          className="mt-3 flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-muted/50 text-xs font-semibold text-text transition-colors hover:bg-muted"
+          className="mt-3 flex h-10 items-center justify-center gap-2 rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/50 text-xs font-semibold text-text transition-colors hover:bg-muted"
         >
           <Mail className="h-3.5 w-3.5" /> Email {person.name?.split(" ")[0] || "them"}
         </a>
@@ -340,13 +343,13 @@ function ContactDrawer({ person, onClose }: { person: AudienceMember; onClose: (
             {orders.map((o) => (
               <div
                 key={o.id}
-                className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3"
+                className="flex items-center gap-3 rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/30 p-3"
               >
                 <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] ${
                     o.item_type === "event"
-                      ? "bg-[#FF6A451a] text-[var(--coral)]"
-                      : "bg-[#FF6A451a] text-[var(--coral)]"
+                      ? "bg-[#FF6A451a] text-[var(--dl-ink)]"
+                      : "bg-[#FF6A451a] text-[var(--dl-ink)]"
                   }`}
                 >
                   {o.item_type === "event" ? (

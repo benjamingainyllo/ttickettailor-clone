@@ -196,29 +196,15 @@ export default function CreateEventPage() {
   /* A row: an icon, then whatever goes in it. No labels — the placeholder
      is the label, which is what keeps the page short enough to scan. */
   const row =
-    "flex items-center gap-3.5 rounded-2xl border border-[var(--hairline)] bg-[var(--ground-deep)] px-4 py-3.5 transition-colors focus-within:border-[var(--coral)]";
+    "flex items-center gap-3.5 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 py-3.5";
   const rowIcon = "h-[18px] w-[18px] shrink-0 text-[var(--on-ground-faint)]";
   const rowInput =
     "w-full bg-transparent text-[15px] text-[var(--on-ground)] placeholder-[var(--on-ground-faint)] outline-none [color-scheme:dark]";
   const addChip =
-    "inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] px-3.5 py-2 text-[13px] font-bold text-[var(--on-ground-soft)] transition-colors hover:border-[var(--coral)] hover:text-[var(--on-ground)]";
+    "inline-flex items-center gap-1.5 rounded-[3px] border-2 border-[var(--dl-line)] px-3.5 py-2 text-[13px] font-bold text-[var(--on-ground-soft)] transition-colors hover:border-[var(--dl-line)] hover:text-[var(--on-ground)]";
 
   return (
-    <div className="lp relative -m-4 min-h-full overflow-hidden bg-[var(--ground)] px-5 py-6 font-[family-name:var(--font-bricolage-grotesque)] text-[var(--on-ground)] md:-m-6 md:px-8 md:py-8">
-      {/*
-        A wash of colour behind the page, because making a flyer on a grey
-        form feels like filing a tax return. Two soft pools of the brand's
-        own accents rather than the reference's full rainbow — loud enough
-        to feel like an occasion, quiet enough that white text stays
-        readable over it. Purely decorative, so it is hidden from
-        screen readers and sits behind everything.
-      */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-40 -top-48 h-[560px] w-[560px] rounded-full bg-[#FF6A45] opacity-30 blur-[120px]" />
-        <div className="absolute -right-32 top-10 h-[520px] w-[520px] rounded-full bg-[#DDBBF5] opacity-25 blur-[120px]" />
-        <div className="absolute -bottom-32 left-1/4 h-[420px] w-[420px] rounded-full bg-[#9BE3C0] opacity-[0.18] blur-[120px]" />
-      </div>
-
+    <div className="relative">
       <form onSubmit={handleCreateEvent} className="relative mx-auto max-w-6xl">
         <div className="mb-8 flex items-center justify-between gap-4">
           <Link
@@ -229,7 +215,7 @@ export default function CreateEventPage() {
             Events
           </Link>
 
-          <span className="rounded-full border border-[var(--hairline)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--on-ground-faint)]">
+          <span className="rounded-[3px] border-2 border-[var(--dl-line)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--on-ground-faint)]">
             Draft
           </span>
         </div>
@@ -244,7 +230,7 @@ export default function CreateEventPage() {
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Untitled event"
               aria-label="Event name"
-              className="w-full bg-transparent text-[38px] font-extrabold leading-[1.02] tracking-[-0.03em] text-[var(--on-ground)] outline-none placeholder:text-[var(--on-ground-faint)] sm:text-[52px]"
+              className="w-full bg-transparent text-[32px] font-extrabold leading-[1] tracking-[-0.04em] outline-none placeholder:text-[var(--dl-ink-faint)] sm:text-[40px]"
             />
             <p className="mt-3 text-[14.5px] text-[var(--on-ground-soft)]">
               The name people see on the flyer, the ticket and the link they
@@ -336,7 +322,7 @@ export default function CreateEventPage() {
             </div>
 
             {/* ── Price ──────────────────────────────────────── */}
-            <div className="mt-8 rounded-2xl border border-[var(--hairline)] bg-[var(--ground-deep)] p-5">
+            <div className="mt-8 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] p-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
                   <Tag className={rowIcon} />
@@ -355,9 +341,9 @@ export default function CreateEventPage() {
                           setIsFree(free);
                           if (free) setFormData((d) => ({ ...d, price: "0" }));
                         }}
-                        className={`rounded-full border px-4 py-2 text-[13.5px] font-bold transition-colors ${
+                        className={`rounded-[3px] border px-4 py-2 text-[13.5px] font-bold transition-colors ${
                           active
-                            ? "border-[var(--coral)] bg-[var(--coral)] text-white"
+                            ? "border-[var(--dl-line)] bg-[var(--dl-ink)] text-[var(--dl-paper)]"
                             : "border-[var(--hairline)] text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]"
                         }`}
                       >
@@ -370,7 +356,7 @@ export default function CreateEventPage() {
 
               {!isFree && (
                 <>
-                  <div className="mt-4 flex items-center gap-3.5 rounded-xl border border-[var(--hairline)] bg-[var(--ground)] px-4 py-3.5 focus-within:border-[var(--coral)]">
+                  <div className="mt-4 flex items-center gap-3.5 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 py-3.5 ">
                     <span className="text-[15px] font-bold text-[var(--on-ground-faint)]">₦</span>
                     <input
                       type="number"
@@ -396,9 +382,9 @@ export default function CreateEventPage() {
                       <button
                         type="button"
                         onClick={() => setPassFeeToBuyer(!passFeeToBuyer)}
-                        className={`shrink-0 rounded-full border px-4 py-2 text-[13.5px] font-bold transition-colors ${
+                        className={`shrink-0 rounded-[3px] border px-4 py-2 text-[13.5px] font-bold transition-colors ${
                           passFeeToBuyer
-                            ? "border-[var(--mint)] bg-[var(--mint)] text-white"
+                            ? "border-[var(--dl-line)] bg-[var(--dl-ink)] text-[var(--dl-paper)]"
                             : "border-[var(--hairline)] text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]"
                         }`}
                       >
@@ -436,7 +422,7 @@ export default function CreateEventPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="What should people know? Line-up, dress code, what time it really starts."
                 aria-label="Description"
-                className="w-full resize-none rounded-2xl border border-[var(--hairline)] bg-[var(--ground-deep)] p-4 text-[15px] leading-relaxed text-[var(--on-ground)] outline-none transition-colors placeholder:text-[var(--on-ground-faint)] focus:border-[var(--coral)]"
+                className="w-full resize-none rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] p-4 text-[15px] leading-relaxed text-[var(--on-ground)] outline-none transition-colors placeholder:text-[var(--on-ground-faint)] focus:border-[var(--dl-line)]"
               />
             </div>
           </div>
@@ -448,7 +434,7 @@ export default function CreateEventPage() {
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleImageDrop}
               onDragOver={(e) => e.preventDefault()}
-              className="group relative block aspect-[4/5] w-full overflow-hidden rounded-3xl border border-[var(--hairline)] bg-[var(--ground-raised)] text-left transition-colors hover:border-[var(--coral)]"
+              className="group relative block aspect-[4/5] w-full overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] text-left transition-colors hover:border-[var(--dl-line)]"
             >
               {imagePreview ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -467,7 +453,7 @@ export default function CreateEventPage() {
               )}
 
               {imagePreview && (
-                <span className="absolute bottom-3 right-3 rounded-full bg-[var(--ink)] px-4 py-2 text-[12.5px] font-bold text-[var(--paper)] opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="absolute bottom-3 right-3 rounded-[3px] bg-[var(--ink)] px-4 py-2 text-[12.5px] font-bold text-[var(--paper)] opacity-0 transition-opacity group-hover:opacity-100">
                   Change
                 </span>
               )}
@@ -480,7 +466,7 @@ export default function CreateEventPage() {
               className="hidden"
             />
 
-            <div className="mt-5 rounded-2xl border border-[var(--hairline)] bg-[var(--ground-deep)] p-4">
+            <div className="mt-5 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] p-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--on-ground-faint)]">
                 Shared as
               </p>
@@ -507,7 +493,7 @@ export default function CreateEventPage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="flex flex-1 items-center justify-center rounded-full bg-[var(--coral)] px-6 py-3.5 text-[15px] font-extrabold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="flex flex-1 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-ink)] px-6 py-3.5 text-[15px] font-extrabold text-[var(--dl-paper)] transition-transform hover:-translate-y-[1px] disabled:opacity-50"
               >
                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save draft"}
               </button>
@@ -515,7 +501,7 @@ export default function CreateEventPage() {
                 type="button"
                 disabled={isSaving}
                 onClick={() => router.push("/events")}
-                className="rounded-full px-4 py-3.5 text-[14px] font-bold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
+                className="rounded-[3px] px-4 py-3.5 text-[14px] font-bold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
               >
                 Discard
               </button>

@@ -155,11 +155,11 @@ export function MerchEditor({ eventId }: { eventId: string }) {
   const active = items.filter((i) => i.status === "active");
   const hidden = items.filter((i) => i.status === "hidden");
   const input =
-    "w-full rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-text placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none";
+    "w-full rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-3 py-2.5 text-sm text-text placeholder:text-subtle focus:border-[var(--dl-line)] focus:outline-none";
   const label = "mb-1 block text-xs font-medium text-subtle";
 
   const editor = (
-    <div className="rounded-xl border border-border bg-surface p-5">
+    <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-bold text-text">
           {editingId ? "Edit item" : "New item"}
@@ -174,7 +174,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted hover:border-[var(--coral)]"
+            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[3px] border border-dashed border-border bg-muted hover:border-[var(--dl-line)]"
           >
             {uploading ? (
               <Loader2 className="h-4 w-4 animate-spin text-subtle" />
@@ -275,7 +275,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
             onChange={(e) =>
               setForm({ ...form, requiresCollection: e.target.checked })
             }
-            className="mt-0.5 h-4 w-4 accent-[var(--coral)]"
+            className="mt-0.5 h-4 w-4 accent-[var(--dl-ink)]"
           />
           <span className="text-xs text-subtle">
             Collected at the door. Shows on the check-in screen so nobody walks
@@ -287,14 +287,14 @@ export function MerchEditor({ eventId }: { eventId: string }) {
           <button
             onClick={save}
             disabled={saving || uploading}
-            className="flex items-center gap-2 rounded-lg bg-[var(--coral)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--coral)] disabled:opacity-60"
+            className="flex items-center gap-2 rounded-[3px] bg-[var(--dl-ink)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--dl-ink)] disabled:opacity-60"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {editingId ? "Save changes" : "Add item"}
           </button>
           <button
             onClick={cancel}
-            className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-subtle hover:text-text"
+            className="rounded-[3px] border-2 border-[var(--dl-line)] px-4 py-2.5 text-sm font-semibold text-subtle hover:text-text"
           >
             Cancel
           </button>
@@ -318,7 +318,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
               setAdding(true);
               setForm(EMPTY_FORM);
             }}
-            className="rounded-lg bg-[var(--coral)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--coral)]"
+            className="rounded-[3px] bg-[var(--dl-ink)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--dl-ink)]"
           >
             Add item
           </button>
@@ -328,7 +328,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
       {(adding || editingId) && editor}
 
       {active.length === 0 && !adding && !editingId && (
-        <div className="rounded-xl border border-dashed border-border bg-surface p-10 text-center">
+        <div className="rounded-[3px] border border-dashed border-border bg-surface p-10 text-center">
           <Package className="mx-auto h-7 w-7 text-subtle" />
           <p className="mt-3 text-sm font-semibold text-text">
             Nothing on the stall yet
@@ -343,7 +343,7 @@ export function MerchEditor({ eventId }: { eventId: string }) {
               setAdding(true);
               setForm(EMPTY_FORM);
             }}
-            className="mt-4 rounded-lg bg-[var(--coral)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--coral)]"
+            className="mt-4 rounded-[3px] bg-[var(--dl-ink)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--dl-ink)]"
           >
             Add your first item
           </button>
@@ -392,11 +392,11 @@ function ItemRow({
 
   return (
     <div
-      className={`flex items-center gap-4 rounded-xl border border-border bg-surface p-4 ${
+      className={`flex items-center gap-4 rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-4 ${
         muted ? "opacity-60" : ""
       }`}
     >
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[3px] bg-muted">
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
@@ -409,7 +409,7 @@ function ItemRow({
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-sm font-bold text-text">{item.name}</p>
           {soldOut && !muted && (
-            <span className="rounded-full bg-[#FFDE5926] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--marker)]">
+            <span className="rounded-[3px] bg-[#FFDE5926] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--marker)]">
               Sold out
             </span>
           )}
@@ -431,7 +431,7 @@ function ItemRow({
           <button
             onClick={onEdit}
             aria-label={`Edit ${item.name}`}
-            className="rounded-lg p-2 text-subtle hover:bg-muted hover:text-text"
+            className="rounded-[3px] p-2 text-subtle hover:bg-muted hover:text-text"
           >
             <Pencil className="h-4 w-4" />
           </button>
@@ -440,7 +440,7 @@ function ItemRow({
           <button
             onClick={onRemove}
             aria-label={`Remove ${item.name}`}
-            className="rounded-lg p-2 text-subtle hover:bg-muted hover:text-[var(--danger)]"
+            className="rounded-[3px] p-2 text-subtle hover:bg-muted hover:text-[var(--danger)]"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -449,7 +449,7 @@ function ItemRow({
           <button
             onClick={onRestore}
             aria-label={`Put ${item.name} back on sale`}
-            className="rounded-lg p-2 text-subtle hover:bg-muted hover:text-text"
+            className="rounded-[3px] p-2 text-subtle hover:bg-muted hover:text-text"
           >
             <RotateCcw className="h-4 w-4" />
           </button>

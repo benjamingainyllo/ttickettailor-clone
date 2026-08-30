@@ -11,7 +11,7 @@ export function RevenueDonutChart() {
     <div className="flex h-full flex-col justify-between">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-text">Revenue Overview</h3>
-        <button className="text-[11px] text-subtle flex items-center bg-muted px-2 py-1 rounded-md">
+        <button className="text-[11px] text-subtle flex items-center bg-muted px-2 py-1 rounded-[3px]">
           This Month <span className="ml-1 text-[8px]">▼</span>
         </button>
       </div>
@@ -45,12 +45,12 @@ export function RevenueDonutChart() {
       
       <div className="mt-4 flex items-center justify-between text-[11px]">
         <div className="flex items-center gap-2 text-subtle">
-          <span className="h-2 w-2 rounded-full bg-[var(--coral)]"></span>
+          <span className="h-2 w-2 rounded-[3px] bg-[var(--dl-ink)]"></span>
           PAYMENT LINK
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-1 w-16 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-[var(--coral)] w-full"></div>
+          <div className="h-1 w-16 bg-muted rounded-[3px] overflow-hidden">
+            <div className="h-full bg-[var(--dl-ink)] w-full"></div>
           </div>
           <span className="text-subtle">100%</span>
         </div>

@@ -1,32 +1,39 @@
-import { LucideIcon } from "lucide-react";
-
+/**
+ * One figure in the ruled block at the top of a page.
+ *
+ * This used to be a standalone card: its own border, its own drop of white
+ * space, and a stock icon in a tinted rounded square in the corner. Four of
+ * them across the top of a page is the single most recognisable shape in
+ * generated software, and the icons carried no information — a wallet next
+ * to a number that already says what it is.
+ *
+ * Now it is a segment. The parent draws one panel with a 2px ink rule and
+ * these sit inside it divided by more of the same, which is how Overview
+ * reads and therefore how every page reads. The number leads, because the
+ * number is the reason anybody looked.
+ *
+ * `icon`, `iconColor` and `iconBgColor` are still accepted so callers do not
+ * all have to change at once, and are deliberately ignored.
+ */
 interface MetricCardProps {
   title: string;
   value: string;
   change: string;
-  icon: LucideIcon;
-  iconColor: string;
-  iconBgColor: string;
+  icon?: unknown;
+  iconColor?: string;
+  iconBgColor?: string;
 }
 
-export function MetricCard({ title, value, change, icon: Icon, iconColor, iconBgColor }: MetricCardProps) {
+export function MetricCard({ title, value, change }: MetricCardProps) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 flex flex-col justify-between h-[140px]">
-      <div className="flex items-start justify-between">
-        <p className="text-[13px] font-medium text-subtle">{title}</p>
-        <div 
-          className="flex h-8 w-8 items-center justify-center rounded-lg"
-          style={{ backgroundColor: iconBgColor }}
-        >
-          <Icon className="h-4 w-4" style={{ color: iconColor }} strokeWidth={2} />
-        </div>
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-text">{value}</p>
-        <p className="mt-1 flex items-center text-[12px] text-subtle">
-          {change} <span className="ml-1 text-subtle">→</span>
-        </p>
-      </div>
+    <div className="min-w-[152px] flex-1 border-l-2 border-[var(--dl-line)] px-5 py-4 first:border-l-0">
+      <p className="text-[27px] font-extrabold tracking-[-0.035em] [font-variant-numeric:tabular-nums]">
+        {value}
+      </p>
+      <p className="mt-1 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+        {title}
+      </p>
+      <p className="mt-1 text-[12px] text-[var(--dl-ink-soft)]">{change}</p>
     </div>
   );
 }

@@ -268,7 +268,7 @@ export function DoorScanner({
         <Link
           href="/events"
           aria-label="Back to events"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-subtle transition-colors hover:bg-muted hover:text-text"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] text-subtle transition-colors hover:bg-muted hover:text-text"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
@@ -276,7 +276,7 @@ export function DoorScanner({
           <p className="text-[10px] font-bold uppercase tracking-widest text-subtle">Door</p>
           <h1 className="truncate text-sm font-bold text-text">{eventTitle}</h1>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 rounded-lg bg-muted px-3 py-2">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-[3px] bg-[var(--dl-panel)] px-3 py-2">
           <Users className="h-3.5 w-3.5 text-subtle" />
           <span className="text-xs font-bold text-text">
             {stats.admitted}
@@ -300,7 +300,7 @@ export function DoorScanner({
           <button
             key={m}
             onClick={() => setMode(m)}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-xs font-bold transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-[3px] border py-2.5 text-xs font-bold transition-colors ${
               mode === m
                 ? "border-transparent bg-text text-background"
                 : "border-border text-subtle hover:bg-muted"
@@ -313,7 +313,7 @@ export function DoorScanner({
       </div>
 
       {mode === "camera" ? (
-        <div className="overflow-hidden rounded-2xl border border-border bg-black">
+        <div className="overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-black">
           <div className="relative aspect-square w-full">
             <video
               ref={videoRef}
@@ -325,7 +325,7 @@ export function DoorScanner({
 
             {cameraState === "live" && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="h-48 w-48 rounded-2xl border-4 border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+                <div className="h-48 w-48 rounded-[3px] border-4 border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
               </div>
             )}
 
@@ -358,14 +358,14 @@ export function DoorScanner({
                       {cameraState === "denied" && (
                         <button
                           onClick={startCamera}
-                          className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-black"
+                          className="rounded-[3px] bg-white px-3 py-2 text-xs font-bold text-black"
                         >
                           Try again
                         </button>
                       )}
                       <button
                         onClick={() => setMode("manual")}
-                        className="rounded-lg border border-[var(--hairline-firm)] px-3 py-2 text-xs font-bold text-white"
+                        className="rounded-[3px] border border-[var(--hairline-firm)] px-3 py-2 text-xs font-bold text-white"
                       >
                         Type it instead
                       </button>
@@ -389,12 +389,12 @@ export function DoorScanner({
             autoCapitalize="characters"
             autoComplete="off"
             spellCheck={false}
-            className="h-14 w-full rounded-xl border border-border bg-muted px-4 text-center font-mono text-lg font-bold uppercase tracking-[0.15em] text-text placeholder:font-sans placeholder:tracking-normal placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none"
+            className="h-14 w-full rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 text-center font-mono text-lg font-bold uppercase tracking-[0.15em] text-text placeholder:font-sans placeholder:tracking-normal placeholder:text-subtle focus:border-[var(--dl-line)] focus:outline-none"
           />
           <button
             type="submit"
             disabled={checking || !manualCode.trim()}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-text text-sm font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[3px] bg-text text-sm font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : "Check in"}
           </button>
@@ -447,7 +447,7 @@ function ResultBanner({
   const Icon = tone.icon;
 
   return (
-    <div className={`rounded-2xl ${tone.bg} ${tone.text} p-5`}>
+    <div className={`rounded-[3px] ${tone.bg} ${tone.text} p-5`}>
       <div className="flex items-start gap-3">
         <Icon className="mt-0.5 h-7 w-7 shrink-0" />
         <div className="min-w-0 flex-1">
@@ -469,7 +469,7 @@ function ResultBanner({
               loud: the door is dark, there is a queue, and a shirt somebody
               paid for and did not receive becomes a refund request. */}
           {result.collect && result.collect.length > 0 && (
-            <div className="mt-3 rounded-lg border-2 border-black/25 bg-black/15 p-3">
+            <div className="mt-3 rounded-[3px] border-2 border-black/25 bg-black/15 p-3">
               <p className="text-[11px] font-black uppercase tracking-wider">
                 Also hand over
               </p>
@@ -488,7 +488,7 @@ function ResultBanner({
                     <button
                       onClick={() => onCollect(line.id)}
                       disabled={collecting.includes(line.id)}
-                      className="shrink-0 rounded-md bg-black/25 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide transition-colors hover:bg-black/40 disabled:opacity-50"
+                      className="shrink-0 rounded-[3px] bg-black/25 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide transition-colors hover:bg-black/40 disabled:opacity-50"
                     >
                       {collecting.includes(line.id) ? "…" : "Given"}
                     </button>
@@ -503,14 +503,14 @@ function ResultBanner({
       <div className="mt-4 flex gap-2">
         <button
           onClick={onDismiss}
-          className="flex-1 rounded-lg bg-black/15 py-2.5 text-xs font-bold transition-colors hover:bg-black/25"
+          className="flex-1 rounded-[3px] bg-black/15 py-2.5 text-xs font-bold transition-colors hover:bg-black/25"
         >
           Next
         </button>
         {result.outcome === "admitted" && (
           <button
             onClick={onUndo}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-black/15 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-black/25"
+            className="flex items-center justify-center gap-1.5 rounded-[3px] bg-black/15 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-black/25"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Undo

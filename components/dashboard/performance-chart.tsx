@@ -16,15 +16,15 @@ export function PerformanceChart() {
         <h3 className="text-sm font-semibold text-text">Performance</h3>
         <div className="flex items-center gap-4 text-[10px] text-subtle">
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--coral)]"></span>
+            <span className="h-1.5 w-1.5 rounded-[3px] bg-[var(--dl-ink)]"></span>
             Revenue
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--coral)]"></span>
+            <span className="h-1.5 w-1.5 rounded-[3px] bg-[var(--dl-ink)]"></span>
             Visits
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--mint)]"></span>
+            <span className="h-1.5 w-1.5 rounded-[3px] bg-[var(--mint)]"></span>
             Leads
           </div>
         </div>

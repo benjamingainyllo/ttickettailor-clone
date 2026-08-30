@@ -155,11 +155,11 @@ export function TicketTypesEditor({ eventId }: { eventId: string }) {
 
   if (loadError) {
     return (
-      <div className="rounded-xl border border-border bg-surface p-6 text-center">
+      <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-6 text-center">
         <p className="text-sm text-subtle">{loadError}</p>
         <button
           onClick={fetchTiers}
-          className="mt-3 text-sm font-semibold text-[var(--coral)] hover:underline"
+          className="mt-3 text-sm font-semibold text-[var(--dl-ink)] hover:underline"
         >
           Try again
         </button>
@@ -182,7 +182,7 @@ export function TicketTypesEditor({ eventId }: { eventId: string }) {
         {!adding && !editingId && (
           <button
             onClick={startAdd}
-            className="flex items-center gap-1.5 rounded-lg bg-text px-3 py-2 text-xs font-bold text-background transition-opacity hover:opacity-90"
+            className="flex items-center gap-1.5 rounded-[3px] bg-text px-3 py-2 text-xs font-bold text-background transition-opacity hover:opacity-90"
           >
             <Plus className="h-3.5 w-3.5" />
             Add type
@@ -191,8 +191,8 @@ export function TicketTypesEditor({ eventId }: { eventId: string }) {
       </div>
 
       {active.length === 0 && !adding && (
-        <div className="rounded-xl border border-dashed border-border bg-surface p-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-subtle">
+        <div className="rounded-[3px] border border-dashed border-border bg-surface p-8 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[3px] bg-muted text-subtle">
             <Ticket className="h-5 w-5" />
           </div>
           <p className="text-sm font-semibold text-text">No ticket types yet</p>
@@ -202,7 +202,7 @@ export function TicketTypesEditor({ eventId }: { eventId: string }) {
           </p>
           <button
             onClick={startAdd}
-            className="mt-4 rounded-lg bg-text px-4 py-2 text-xs font-bold text-background"
+            className="mt-4 rounded-[3px] bg-text px-4 py-2 text-xs font-bold text-background"
           >
             Add the first one
           </button>
@@ -265,7 +265,7 @@ function TierRow({
 
   return (
     <div
-      className={`rounded-xl border border-border bg-surface p-4 ${
+      className={`rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-4 ${
         tier.status === "hidden" ? "opacity-60" : ""
       }`}
     >
@@ -274,12 +274,12 @@ function TierRow({
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-bold text-text">{tier.name}</span>
             {soldOut && (
-              <span className="rounded-full bg-[#FF54701a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--danger)]">
+              <span className="rounded-[3px] bg-[#FF54701a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--danger)]">
                 Sold out
               </span>
             )}
             {tier.status === "hidden" && (
-              <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-subtle">
+              <span className="flex items-center gap-1 rounded-[3px] bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-subtle">
                 <EyeOff className="h-2.5 w-2.5" />
                 Hidden
               </span>
@@ -302,10 +302,10 @@ function TierRow({
           </div>
 
           {cap !== null && (
-            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
+            <div className="mt-2 h-1 w-full overflow-hidden rounded-[3px] bg-muted">
               <div
-                className={`h-full rounded-full transition-all ${
-                  soldOut ? "bg-[var(--danger)]" : "bg-[var(--coral)]"
+                className={`h-full rounded-[3px] transition-all ${
+                  soldOut ? "bg-[var(--danger)]" : "bg-[var(--dl-ink)]"
                 }`}
                 style={{ width: `${pct}%` }}
               />
@@ -318,7 +318,7 @@ function TierRow({
             <button
               onClick={onEdit}
               aria-label={`Edit ${tier.name}`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-subtle transition-colors hover:bg-muted hover:text-text"
+              className="flex h-8 w-8 items-center justify-center rounded-[3px] text-subtle transition-colors hover:bg-muted hover:text-text"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
@@ -327,7 +327,7 @@ function TierRow({
             <button
               onClick={onRemove}
               aria-label={`Remove ${tier.name}`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-subtle transition-colors hover:bg-[#FF54701a] hover:text-[var(--danger)]"
+              className="flex h-8 w-8 items-center justify-center rounded-[3px] text-subtle transition-colors hover:bg-[#FF54701a] hover:text-[var(--danger)]"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -336,7 +336,7 @@ function TierRow({
             <button
               onClick={onRestore}
               aria-label={`Put ${tier.name} back on sale`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-subtle transition-colors hover:bg-muted hover:text-text"
+              className="flex h-8 w-8 items-center justify-center rounded-[3px] text-subtle transition-colors hover:bg-muted hover:text-text"
             >
               <RotateCcw className="h-3.5 w-3.5" />
             </button>
@@ -363,10 +363,10 @@ function TierForm({
   isEdit: boolean;
 }) {
   const field =
-    "h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-text placeholder:text-subtle focus:border-[var(--coral)] focus:outline-none";
+    "h-10 w-full rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-3 text-sm text-text placeholder:text-subtle focus:border-[var(--dl-line)] focus:outline-none";
 
   return (
-    <div className="rounded-xl border border-[#FF6A4566] bg-surface p-4">
+    <div className="rounded-[3px] border border-[#FF6A4566] bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-sm font-bold text-text">
           {isEdit ? "Edit ticket type" : "New ticket type"}
@@ -374,7 +374,7 @@ function TierForm({
         <button
           onClick={onCancel}
           aria-label="Cancel"
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-subtle hover:bg-muted hover:text-text"
+          className="flex h-7 w-7 items-center justify-center rounded-[3px] text-subtle hover:bg-muted hover:text-text"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -446,14 +446,14 @@ function TierForm({
         <button
           onClick={onSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-text px-4 py-2 text-xs font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-[3px] bg-text px-4 py-2 text-xs font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {isEdit ? "Save changes" : "Add ticket type"}
         </button>
         <button
           onClick={onCancel}
-          className="rounded-lg px-3 py-2 text-xs font-semibold text-subtle hover:text-text"
+          className="rounded-[3px] px-3 py-2 text-xs font-semibold text-subtle hover:text-text"
         >
           Cancel
         </button>

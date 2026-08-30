@@ -14,10 +14,10 @@ const activities = [
 
 export function RecentActivities() {
   return (
-    <div className="rounded-xl border border-[var(--hairline)] bg-[#0F0F12] overflow-hidden">
+    <div className="rounded-[3px] border border-[var(--hairline)] bg-[#0F0F12] overflow-hidden">
       <div className="flex items-center justify-between p-5 border-b border-[var(--hairline)]/50">
         <h3 className="text-sm font-semibold text-text">Recent Activities</h3>
-        <button className="flex items-center gap-2 rounded-lg border border-[var(--hairline)] bg-[var(--ground-deep)]/50 px-3 py-1.5 text-xs text-[var(--on-ground-soft)] hover:bg-[var(--ground-raised)]">
+        <button className="flex items-center gap-2 rounded-[3px] border border-[var(--hairline)] bg-[var(--ground-deep)]/50 px-3 py-1.5 text-xs text-[var(--on-ground-soft)] hover:bg-[var(--ground-raised)]">
           Filter <span className="text-[8px]">▼</span>
         </button>
       </div>
@@ -40,7 +40,7 @@ export function RecentActivities() {
               <tr key={activity.id} className="hover:bg-[var(--ground-raised)]/20 transition-colors">
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--ground-raised)]">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-[3px] bg-[var(--ground-raised)]">
                       <User className="h-3 w-3 text-[var(--on-ground-soft)]" />
                     </div>
                     <span className="font-medium text-zinc-200">{activity.customer}</span>
@@ -51,7 +51,7 @@ export function RecentActivities() {
                 <td className="px-5 py-4">{activity.product}</td>
                 <td className="px-5 py-4 text-[var(--on-ground-faint)]">{activity.date}</td>
                 <td className="px-5 py-4">
-                  <span className="inline-flex rounded-full bg-[#9BE3C01a] px-2 py-0.5 text-[10px] font-medium text-[var(--mint)] ring-1 ring-inset ring-[#9BE3C033]">
+                  <span className="inline-flex rounded-[3px] bg-[#9BE3C01a] px-2 py-0.5 text-[10px] font-medium text-[var(--mint)] ring-1 ring-inset ring-[#9BE3C033]">
                     {activity.status}
                   </span>
                 </td>

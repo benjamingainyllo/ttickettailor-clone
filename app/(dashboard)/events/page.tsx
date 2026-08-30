@@ -120,7 +120,7 @@ export default function EventsPage() {
   return (
     <section className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold text-text">Events</h1>
+        <h1 className="text-[32px] font-extrabold leading-[1] tracking-[-0.04em] sm:text-[40px]">Events</h1>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex items-center">
             <Search className="absolute left-3 h-4 w-4 text-subtle" />
@@ -129,12 +129,12 @@ export default function EventsPage() {
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-full rounded-lg border border-border bg-muted/50 pl-9 pr-4 text-xs text-text focus:border-[var(--coral)] focus:outline-none sm:w-64"
+              className="h-9 w-full rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/50 pl-9 pr-4 text-xs text-text focus:border-[var(--dl-line)] focus:outline-none sm:w-64"
             />
           </div>
           <button
             onClick={() => router.push("/events/create")}
-            className="flex h-9 items-center justify-center gap-2 rounded-lg bg-[var(--coral)] px-4 text-xs font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            className="flex h-9 items-center justify-center gap-2 rounded-[3px] bg-[var(--dl-ink)] px-4 text-xs font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="h-4 w-4" />
             Create Event
@@ -142,22 +142,22 @@ export default function EventsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="flex flex-wrap rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
         {metrics.map((metric) => (
           <MetricCard key={metric.title} {...metric} />
         ))}
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center rounded-2xl border border-border bg-surface py-20">
+        <div className="flex items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] bg-surface py-20">
           <Loader2 className="h-6 w-6 animate-spin text-subtle" />
         </div>
       ) : loadError ? (
-        <div className="rounded-2xl border border-border bg-surface py-16 text-center">
+        <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface py-16 text-center">
           <p className="text-sm text-text">{loadError}</p>
           <button
             onClick={fetchEvents}
-            className="mt-4 rounded-lg border border-border bg-muted px-4 py-2 text-xs font-medium text-text"
+            className="mt-4 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 py-2 text-xs font-medium text-text"
           >
             Retry
           </button>
@@ -172,7 +172,7 @@ export default function EventsPage() {
               <div
                 key={event.id}
                 onClick={() => setSelectedEvent(event)}
-                className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:border-[var(--hairline-firm)] hover:shadow-lg hover:shadow-black/20"
+                className="group cursor-pointer overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-surface transition-all hover:border-[var(--hairline-firm)] hover:shadow-lg hover:shadow-black/20"
               >
                 <div className="relative h-40 w-full overflow-hidden bg-muted">
                   {event.cover_image_url ? (
@@ -187,7 +187,7 @@ export default function EventsPage() {
                     </div>
                   )}
                   <div
-                    className={`absolute right-3 top-3 flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold backdrop-blur-md ${
+                    className={`absolute right-3 top-3 flex items-center gap-1 rounded-[3px] px-3 py-1 text-[10px] font-bold backdrop-blur-md ${
                       isPublished
                         ? "bg-[#9BE3C0e6] text-[var(--ink)]"
                         : "bg-black/60 text-white"
@@ -197,10 +197,10 @@ export default function EventsPage() {
                     {isPublished ? "Live" : "Draft"}
                   </div>
                   <div
-                    className={`absolute bottom-3 left-3 rounded-full px-3 py-1 text-[10px] font-bold shadow-lg ${
+                    className={`absolute bottom-3 left-3 rounded-[3px] px-3 py-1 text-[10px] font-bold shadow-lg ${
                       priceKobo === 0
                         ? "bg-[var(--mint)] text-white"
-                        : "bg-[var(--coral)] text-white"
+                        : "bg-[var(--dl-ink)] text-white"
                     }`}
                   >
                     {priceKobo === 0 ? "FREE" : `${formatKobo(priceKobo)} / ticket`}
@@ -233,7 +233,7 @@ export default function EventsPage() {
                   </div>
 
                   <div className="mt-6 flex items-center justify-between">
-                    <span className="rounded-lg border border-border bg-muted/50 px-4 py-2 text-xs font-medium text-text transition-colors group-hover:bg-muted">
+                    <span className="rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/50 px-4 py-2 text-xs font-medium text-text transition-colors group-hover:bg-muted">
                       View details
                     </span>
                     <div className="text-right">
@@ -250,9 +250,9 @@ export default function EventsPage() {
 
           <button
             onClick={() => router.push("/events/create")}
-            className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-transparent transition-all hover:border-[var(--hairline-firm)] hover:bg-muted/10"
+            className="flex min-h-[300px] flex-col items-center justify-center rounded-[3px] border-2 border-dashed border-border bg-transparent transition-all hover:border-[var(--hairline-firm)] hover:bg-muted/10"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-subtle">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[3px] bg-muted text-subtle">
               <Plus className="h-6 w-6" />
             </div>
             <p className="mt-4 text-sm font-medium text-text">Create new event</p>

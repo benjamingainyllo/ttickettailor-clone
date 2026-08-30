@@ -107,11 +107,11 @@ export default function RevenuePage() {
   return (
     <section className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold text-text">Revenue</h1>
+        <h1 className="text-[32px] font-extrabold leading-[1] tracking-[-0.04em] sm:text-[40px]">Revenue</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={() => window.location.href = "/payouts"}
-            className="flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-4 text-xs font-semibold text-text transition-colors hover:bg-muted"
+            className="flex h-9 items-center justify-center gap-2 rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/50 px-4 text-xs font-semibold text-text transition-colors hover:bg-muted"
           >
             <Wallet className="h-4 w-4" />
             Payouts
@@ -120,13 +120,13 @@ export default function RevenuePage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="flex flex-wrap rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
         {metrics.map((metric) => (
           <MetricCard key={metric.title} {...metric} />
         ))}
       </div>
 
-      <div className="rounded-xl border border-border bg-surface p-4 md:p-5">
+      <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-4 md:p-5">
         <h3 className="text-sm font-semibold text-text mb-4">Revenue breakdown</h3>
         {paidOrders.length > 0 ? (
           <div className="space-y-3 max-w-md">
@@ -158,14 +158,14 @@ export default function RevenuePage() {
       </div>
 
       {/* Order ledger — every paid order */}
-      <div className="rounded-xl border border-border bg-surface p-4 md:p-5">
+      <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-4 md:p-5">
         <h3 className="text-sm font-semibold text-text mb-4">Orders</h3>
         {orders.length > 0 ? (
           <div className="space-y-3">
             {orders.slice(0, 20).map((order) => (
               <div
                 key={order.id}
-                className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3"
+                className="flex items-center justify-between rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/30 p-3"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-text truncate">
