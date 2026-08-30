@@ -158,7 +158,7 @@ export default function OverviewPage() {
     const nextIndex = steps.findIndex((s) => !s.done);
 
     return (
-      <section className="mx-auto max-w-4xl">
+      <section>
         <h1 className="text-[38px] font-extrabold leading-[1] tracking-[-0.04em] sm:text-[46px]">
           Welcome,{" "}
           <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic tracking-[-0.01em]">
@@ -247,7 +247,7 @@ export default function OverviewPage() {
   ];
 
   return (
-    <section className="mx-auto max-w-5xl">
+    <section>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-[38px] font-extrabold leading-[1] tracking-[-0.04em] sm:text-[46px]">
