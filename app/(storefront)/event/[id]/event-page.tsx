@@ -128,19 +128,32 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
     });
   };
 
+  /* ── Daylight, in the shape of an invitation ─────────────────────
+     The title is the biggest thing on the page and the flyer sits beside
+     it, because this is what a promoter shares into a group chat and what
+     a buyer decides from. What it replaces was a 448px dark card with the
+     title at 24px and the artwork squashed into a 176px strip on top.
+     ─────────────────────────────────────────────────────────────── */
+  const panel = "rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]";
+  const label = "text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]";
+  const field =
+    "w-full rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 py-3 text-[15px] outline-none placeholder:text-[var(--dl-ink-faint)]";
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
-        <Loader2 className="w-8 h-8 animate-spin text-white/60" />
+      <div className="dl flex min-h-screen items-center justify-center">
+        <Loader2 className="h-7 w-7 animate-spin text-[var(--dl-ink-faint)]" />
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-[#0a0a0a] text-white">
-        <p className="font-semibold">Event not found</p>
-        <p className="text-sm text-zinc-500">This event may have been removed or unpublished.</p>
+      <div className="dl flex min-h-screen flex-col items-center justify-center gap-2 px-6 text-center font-[family-name:var(--font-bricolage-grotesque)]">
+        <p className="text-[24px] font-extrabold tracking-[-0.03em]">Event not found</p>
+        <p className="text-[15px] text-[var(--dl-ink-soft)]">
+          This event may have been removed, or it isn&apos;t published yet.
+        </p>
       </div>
     );
   }
@@ -158,92 +171,120 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
     [host?.first_name, host?.last_name].filter(Boolean).join(" ") || host?.handle || null;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-md space-y-6">
-        <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/50 shadow-xl">
-          <div className="relative h-44 w-full bg-zinc-800">
-            {event.cover_image_url ? (
-              <img src={event.cover_image_url} alt={event.title} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-zinc-600">
-                <Calendar className="h-10 w-10 opacity-30" />
-              </div>
-            )}
-          </div>
+    <div className="dl min-h-screen font-[family-name:var(--font-bricolage-grotesque)]">
+      <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 lg:py-16">
+        <a href="/" className="mb-10 inline-block text-[17px] font-extrabold tracking-[-0.03em]">
+          Paylance
+        </a>
 
-          <div className="p-7">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-white">{event.title}</h1>
-              {event.description && (
-                <p className="mt-2 text-sm text-zinc-400">{event.description}</p>
-              )}
-            </div>
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_390px] lg:gap-16">
+          {/* ── What it is ─────────────────────────────────── */}
+          <div className="min-w-0">
+            <h1 className="text-[40px] font-extrabold leading-[0.98] tracking-[-0.045em] sm:text-[56px]">
+              {event.title}
+            </h1>
 
-            {/* The guest is trusting a person, not a platform — so say who. */}
+            <p className="mt-6 text-[19px] font-bold leading-[1.35] sm:text-[22px]">
+              {formattedDate}
+              {event.time ? (
+                <>
+                  <br />
+                  <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic tracking-[-0.01em]">
+                    Doors {event.time}
+                  </span>
+                </>
+              ) : null}
+            </p>
+
             {hostName && (
-              <div className="mt-5 flex items-center justify-center gap-3 rounded-xl border border-zinc-800 bg-zinc-800/40 px-4 py-3">
+              <div className="mt-8 flex items-center gap-3">
                 {host?.avatar_url ? (
-                  <img src={host.avatar_url} alt={hostName} className="h-9 w-9 rounded-full object-cover" />
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={host.avatar_url}
+                    alt=""
+                    className="h-10 w-10 rounded-[3px] border-2 border-[var(--dl-line)] object-cover"
+                  />
                 ) : (
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] text-[14px] font-extrabold">
                     {hostName.charAt(0).toUpperCase()}
-                  </div>
+                  </span>
                 )}
-                <div className="text-left">
-                  <p className="text-[10px] uppercase tracking-wider text-zinc-500">Hosted by</p>
+                <div>
+                  <p className={label}>Hosted by</p>
                   {host?.handle ? (
-                    <a href={`/${host.handle}`} className="text-sm font-semibold text-white hover:underline">
+                    <a href={`/${host.handle}`} className="text-[15px] font-extrabold hover:underline">
                       {hostName}
                     </a>
                   ) : (
-                    <p className="text-sm font-semibold text-white">{hostName}</p>
+                    <p className="text-[15px] font-extrabold">{hostName}</p>
                   )}
                 </div>
               </div>
             )}
 
-            <div className="mt-5 space-y-3 rounded-xl border border-zinc-800 bg-zinc-800/40 p-4">
-              <div className="flex items-center gap-2 text-sm text-zinc-200">
-                <Calendar className="h-4 w-4 shrink-0 text-zinc-500" />
-                {formattedDate}
-                {event.time ? ` • ${event.time}` : ""}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-200">
-                <MapPin className="h-4 w-4 shrink-0 text-zinc-500" />
-                <span className="truncate">{event.location || "Online"}</span>
+            <div className="mt-8 flex items-start gap-3">
+              <MapPin className="mt-[3px] h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+              <div className="min-w-0">
+                <p className="text-[15px] font-extrabold">{event.location || "Online"}</p>
                 {event.map_link && (
                   <a
                     href={event.map_link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center gap-1 text-xs text-blue-400 hover:underline"
+                    className="inline-flex items-center gap-1 text-[13.5px] font-bold underline underline-offset-2"
                   >
-                    Map <ExternalLink className="h-3 w-3" />
+                    Open the map <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-200">
-                <Users className="h-4 w-4 shrink-0 text-zinc-500" />
+            </div>
+
+            {event.description && (
+              <p className="mt-8 max-w-[62ch] whitespace-pre-line text-[16px] leading-[1.65] text-[var(--dl-ink-soft)]">
+                {event.description}
+              </p>
+            )}
+
+            <div className="mt-8 flex items-center gap-2.5 border-t-2 border-[var(--dl-line)] pt-5">
+              <Users className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+              <p className="text-[15px] font-bold">
                 {event.attendees_count || 0} going
-              </div>
+              </p>
+            </div>
+          </div>
+
+          {/* ── The flyer, and getting in ───────────────────── */}
+          <div className="lg:sticky lg:top-8 lg:self-start">
+            <div className={`${panel} aspect-[4/5] w-full overflow-hidden`}>
+              {event.cover_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={event.cover_image_url}
+                  alt={event.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <Calendar className="h-10 w-10 text-[var(--dl-ink-faint)]" />
+                </div>
+              )}
             </div>
 
             {registered ? (
-              <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-6 text-center">
-                <CheckCircle2 className="h-8 w-8 text-emerald-500" />
-                <p className="text-sm font-semibold text-white">You&apos;re in</p>
-                <p className="text-xs text-zinc-400">
+              <div className={`${panel} mt-5 p-6 text-center`}>
+                <CheckCircle2 className="mx-auto h-8 w-8" strokeWidth={2} />
+                <p className="mt-3 text-[18px] font-extrabold tracking-[-0.02em]">You&apos;re in</p>
+                <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--dl-ink-soft)]">
                   We sent {quantity > 1 ? `${quantity} tickets` : "your ticket"} to {email}.
                 </p>
               </div>
             ) : (
-              <div className="mt-6 space-y-4">
+              <div className="mt-5 space-y-4">
                 {nothingOnSale ? (
-                  <div className="rounded-xl border border-zinc-700 bg-zinc-800/50 p-5 text-center">
-                    <p className="text-sm font-semibold text-white">
-                      Nothing on sale right now
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-400">
+                  <div className={`${panel} p-5 text-center`}>
+                    <p className="text-[15px] font-extrabold">Nothing on sale right now</p>
+                    <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--dl-ink-soft)]">
                       {ticketTypes.some((t) => t.soldOut)
                         ? "Every ticket for this event has gone."
                         : "The organiser hasn't opened sales yet."}
@@ -254,9 +295,7 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                     {/* Only worth choosing between when there's a choice. */}
                     {ticketTypes.length > 1 && (
                       <div className="space-y-2">
-                        <label className="mb-1 block text-sm font-medium text-zinc-400">
-                          Ticket
-                        </label>
+                        <p className={label}>Ticket</p>
                         {ticketTypes.map((tier) => {
                           const selected = tier.id === selectedTierId;
                           return (
@@ -265,40 +304,40 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                               type="button"
                               disabled={!tier.available}
                               onClick={() => setSelectedTierId(tier.id)}
-                              className={`flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition-colors ${
+                              className={`flex w-full items-center justify-between gap-3 rounded-[3px] border-2 p-4 text-left transition-colors ${
                                 selected
-                                  ? "border-blue-500 bg-blue-500/10"
-                                  : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
-                              } ${tier.available ? "" : "cursor-not-allowed opacity-50"}`}
+                                  ? "border-[var(--dl-line)] bg-[var(--dl-ink)] text-[var(--dl-paper)]"
+                                  : "border-[var(--dl-line)] bg-[var(--dl-panel)]"
+                              } ${tier.available ? "" : "cursor-not-allowed opacity-45"}`}
                             >
                               <span className="min-w-0">
-                                <span className="block truncate text-sm font-semibold text-white">
+                                <span className="block truncate text-[14.5px] font-extrabold">
                                   {tier.name}
                                 </span>
                                 {tier.description && (
-                                  <span className="mt-0.5 block truncate text-xs text-zinc-400">
+                                  <span
+                                    className={`mt-0.5 block truncate text-[12.5px] ${
+                                      selected ? "opacity-75" : "text-[var(--dl-ink-soft)]"
+                                    }`}
+                                  >
                                     {tier.description}
                                   </span>
                                 )}
                                 {tier.soldOut ? (
-                                  <span className="mt-1 block text-xs font-semibold text-red-400">
+                                  <span className="mt-1 block text-[12px] font-extrabold uppercase tracking-[0.1em]">
                                     Sold out
                                   </span>
                                 ) : tier.notYetOpen ? (
-                                  <span className="mt-1 block text-xs text-zinc-500">
-                                    Not on sale yet
-                                  </span>
+                                  <span className="mt-1 block text-[12px]">Not on sale yet</span>
                                 ) : tier.closed ? (
-                                  <span className="mt-1 block text-xs text-zinc-500">
-                                    Sales closed
-                                  </span>
+                                  <span className="mt-1 block text-[12px]">Sales closed</span>
                                 ) : tier.remaining !== null && tier.remaining <= 10 ? (
-                                  <span className="mt-1 block text-xs font-semibold text-amber-400">
+                                  <span className="mt-1 block text-[12px] font-extrabold uppercase tracking-[0.1em]">
                                     Only {tier.remaining} left
                                   </span>
                                 ) : null}
                               </span>
-                              <span className="shrink-0 text-sm font-bold text-white">
+                              <span className="shrink-0 text-[14.5px] font-extrabold [font-variant-numeric:tabular-nums]">
                                 {tier.priceKobo === 0 ? "Free" : formatKobo(tier.priceKobo)}
                               </span>
                             </button>
@@ -309,20 +348,18 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
 
                     {maxQuantity > 1 && (
                       <div>
-                        <label className="mb-1 block text-sm font-medium text-zinc-400">
-                          How many
-                        </label>
-                        <div className="flex items-center gap-3">
+                        <p className={label}>How many</p>
+                        <div className="mt-2 flex items-center gap-3">
                           <button
                             type="button"
                             aria-label="One fewer"
                             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                             disabled={quantity <= 1}
-                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-white transition-colors hover:bg-zinc-700 disabled:opacity-40"
+                            className="flex h-11 w-11 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] disabled:opacity-40"
                           >
-                            <Minus className="h-4 w-4" />
+                            <Minus className="h-4 w-4" strokeWidth={2.5} />
                           </button>
-                          <span className="min-w-[3ch] text-center text-lg font-bold text-white">
+                          <span className="min-w-[3ch] text-center text-[19px] font-extrabold [font-variant-numeric:tabular-nums]">
                             {quantity}
                           </span>
                           <button
@@ -330,12 +367,12 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                             aria-label="One more"
                             onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
                             disabled={quantity >= maxQuantity}
-                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-white transition-colors hover:bg-zinc-700 disabled:opacity-40"
+                            className="flex h-11 w-11 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] disabled:opacity-40"
                           >
-                            <Plus className="h-4 w-4" />
+                            <Plus className="h-4 w-4" strokeWidth={2.5} />
                           </button>
                           {quantity >= maxQuantity && (
-                            <span className="text-xs text-zinc-500">
+                            <span className="text-[12.5px] text-[var(--dl-ink-soft)]">
                               {selectedTier?.remaining === maxQuantity
                                 ? "That's all that's left"
                                 : `Max ${maxQuantity} per order`}
@@ -347,45 +384,37 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                   </>
                 )}
 
-                <MerchPicker
-                  products={products}
-                  basket={basket}
-                  onChange={setBasket}
-                />
+                <MerchPicker products={products} basket={basket} onChange={setBasket} />
 
                 <div>
-                  <label htmlFor="name" className="mb-1 block text-sm font-medium text-zinc-400">
-                    Your name
-                  </label>
+                  <label htmlFor="name" className={label}>Your name</label>
                   <input
                     id="name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Chidi Okonkwo"
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none transition-colors focus:border-blue-500"
+                    className={`${field} mt-2`}
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="mb-1 block text-sm font-medium text-zinc-400">
-                    Email
-                  </label>
+                  <label htmlFor="email" className={label}>Email</label>
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none transition-colors focus:border-blue-500"
+                    className={`${field} mt-2`}
                     required
                   />
                 </div>
 
                 {(feeKobo > 0 || merchKobo > 0) && (
-                  <div className="space-y-1.5 rounded-lg border border-zinc-800 bg-zinc-800/40 px-4 py-3 text-sm">
-                    <div className="flex justify-between text-zinc-400">
+                  <div className={`${panel} space-y-1.5 px-4 py-3 text-[13.5px]`}>
+                    <div className="flex justify-between text-[var(--dl-ink-soft)]">
                       <span>{quantity > 1 ? `${quantity} tickets` : "Ticket"}</span>
-                      <span className="tabular-nums">
+                      <span className="[font-variant-numeric:tabular-nums]">
                         {subtotalKobo === 0 ? "Free" : formatKobo(subtotalKobo)}
                       </span>
                     </div>
@@ -394,13 +423,13 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                       const picked = basket[product.id];
                       if (!picked) return null;
                       return (
-                        <div key={product.id} className="flex justify-between text-zinc-400">
+                        <div key={product.id} className="flex justify-between text-[var(--dl-ink-soft)]">
                           <span className="truncate pr-3">
                             {picked.quantity > 1 ? `${picked.quantity} × ` : ""}
                             {product.name}
                             {picked.variant ? ` (${picked.variant})` : ""}
                           </span>
-                          <span className="shrink-0 tabular-nums">
+                          <span className="shrink-0 [font-variant-numeric:tabular-nums]">
                             {formatKobo(product.priceKobo * picked.quantity)}
                           </span>
                         </div>
@@ -408,29 +437,31 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                     })}
 
                     {feeKobo > 0 && (
-                      <div className="flex justify-between text-zinc-400">
+                      <div className="flex justify-between text-[var(--dl-ink-soft)]">
                         <span>Booking fee</span>
-                        <span className="tabular-nums">{formatKobo(feeKobo)}</span>
+                        <span className="[font-variant-numeric:tabular-nums]">{formatKobo(feeKobo)}</span>
                       </div>
                     )}
 
-                    <div className="flex justify-between border-t border-zinc-700 pt-1.5 font-semibold text-white">
+                    <div className="flex justify-between border-t-2 border-[var(--dl-line)] pt-1.5 font-extrabold">
                       <span>Total</span>
-                      <span className="tabular-nums">{formatKobo(totalKobo)}</span>
+                      <span className="[font-variant-numeric:tabular-nums]">{formatKobo(totalKobo)}</span>
                     </div>
                   </div>
                 )}
 
-                {checkoutError && <p className="text-xs text-red-400">{checkoutError}</p>}
+                {checkoutError && (
+                  <p className="text-[13px] font-bold text-[var(--dl-danger)]">{checkoutError}</p>
+                )}
 
                 <button
                   onClick={handleCheckout}
                   disabled={isPending || nothingOnSale}
-                  className="flex w-full items-center justify-center rounded-xl bg-blue-600 py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-blue-500 disabled:opacity-70"
+                  className="flex w-full items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-ink)] py-4 text-[15px] font-extrabold text-[var(--dl-paper)] transition-transform hover:-translate-y-[1px] disabled:opacity-60"
                 >
                   {isPending ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing…
                     </>
                   ) : nothingOnSale ? (
                     "Sold out"
@@ -441,7 +472,7 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                   )}
                 </button>
 
-                <p className="text-center text-xs text-zinc-500">
+                <p className="text-center text-[12.5px] leading-relaxed text-[var(--dl-ink-soft)]">
                   {isFree
                     ? "No account needed. Your tickets arrive by email."
                     : "No account needed. Card or bank transfer. Tickets arrive by email."}
