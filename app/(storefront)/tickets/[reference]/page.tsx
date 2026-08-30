@@ -21,14 +21,14 @@ export default async function OrderTicketsPage({
 
   if (!result) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-6">
+      <main className="dl flex min-h-screen items-center justify-center px-6 font-[family-name:var(--font-bricolage-grotesque)]">
         <div className="w-full max-w-sm text-center">
-          <TicketTwoTone className="mx-auto h-12 w-12 text-zinc-700" />
-          <h1 className="mt-4 text-lg font-bold text-white">We can&apos;t find that order</h1>
-          <p className="mt-2 text-sm text-zinc-400">
+          <TicketTwoTone className="mx-auto h-12 w-12 text-[var(--dl-ink-faint)]" />
+          <h1 className="mt-4 text-[22px] font-extrabold tracking-[-0.025em]">We can&apos;t find that order</h1>
+          <p className="mt-2 text-sm text-[var(--dl-ink-soft)]">
             Use the link in your confirmation email.
           </p>
-          <Link href="/" className="mt-6 inline-block text-sm font-semibold text-blue-400 hover:underline">
+          <Link href="/" className="mt-6 inline-block text-[14px] font-extrabold underline underline-offset-2">
             Go to Paylance
           </Link>
         </div>
@@ -38,11 +38,11 @@ export default async function OrderTicketsPage({
 
   if (result.tickets.length === 0) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-6">
+      <main className="dl flex min-h-screen items-center justify-center px-6 font-[family-name:var(--font-bricolage-grotesque)]">
         <div className="w-full max-w-sm text-center">
-          <TicketTwoTone className="mx-auto h-12 w-12 text-zinc-700" />
-          <h1 className="mt-4 text-lg font-bold text-white">Nothing issued yet</h1>
-          <p className="mt-2 text-sm text-zinc-400">
+          <TicketTwoTone className="mx-auto h-12 w-12 text-[var(--dl-ink-faint)]" />
+          <h1 className="mt-4 text-[22px] font-extrabold tracking-[-0.025em]">Nothing issued yet</h1>
+          <p className="mt-2 text-sm text-[var(--dl-ink-soft)]">
             This order hasn&apos;t been paid, so there are no tickets on it. If
             you&apos;ve just paid, give it a moment and refresh.
           </p>
@@ -59,10 +59,10 @@ export default async function OrderTicketsPage({
   );
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] px-4 py-8">
+    <main className="dl min-h-screen px-4 py-10 font-[family-name:var(--font-bricolage-grotesque)]">
       <div className="mx-auto w-full max-w-sm space-y-5">
         <header className="text-center">
-          <h1 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500">
+          <h1 className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--dl-ink-faint)]">
             {withQr.length} {withQr.length === 1 ? "ticket" : "tickets"}
           </h1>
         </header>
@@ -71,7 +71,7 @@ export default async function OrderTicketsPage({
           <TicketCard key={ticket.code} ticket={ticket} qrSvg={qrSvg} />
         ))}
 
-        <p className="px-4 text-center text-xs leading-relaxed text-zinc-600">
+        <p className="px-4 text-center text-xs leading-relaxed text-[var(--dl-ink-soft)]">
           Each person needs their own QR code. Scroll between them at the door,
           or forward this link to whoever is coming with you.
         </p>

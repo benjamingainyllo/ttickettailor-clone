@@ -17,8 +17,8 @@ export default function DemoCheckoutPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
-          <Loader2 className="h-8 w-8 animate-spin text-white/60" />
+        <div className="dl flex min-h-screen items-center justify-center font-[family-name:var(--font-bricolage-grotesque)]">
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--dl-ink)]/60" />
         </div>
       }
     >
@@ -73,17 +73,17 @@ function DemoCheckoutContent() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
-        <Loader2 className="h-8 w-8 animate-spin text-white/60" />
+      <div className="dl flex min-h-screen items-center justify-center font-[family-name:var(--font-bricolage-grotesque)]">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--dl-ink)]/60" />
       </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-[#0a0a0a] px-4 text-center text-white">
+      <div className="dl flex min-h-screen flex-col items-center justify-center gap-2 px-4 text-center font-[family-name:var(--font-bricolage-grotesque)]">
         <p className="font-semibold">Can&apos;t open this checkout</p>
-        <p className="max-w-md text-sm leading-relaxed text-zinc-500">
+        <p className="max-w-md text-sm leading-relaxed text-[var(--dl-ink-faint)]">
           {error ?? "Order not found."}
         </p>
       </div>
@@ -91,10 +91,10 @@ function DemoCheckoutContent() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4 py-12">
+    <div className="dl flex min-h-screen items-center justify-center px-4 py-12 font-[family-name:var(--font-bricolage-grotesque)]">
       <div className="w-full max-w-md">
         {/* Unmissable: nothing here is real. */}
-        <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+        <div className="mb-4 flex items-start gap-3 rounded-[3px] border border-amber-500/30 bg-amber-500/10 px-4 py-3">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
           <div>
             <p className="text-sm font-bold text-amber-400">Simulated checkout</p>
@@ -105,41 +105,41 @@ function DemoCheckoutContent() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-7 shadow-xl">
-          <div className="flex items-center gap-3 border-b border-zinc-800 pb-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-              <CreditCard className="h-5 w-5 text-blue-500" />
+        <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] p-7 shadow-xl">
+          <div className="flex items-center gap-3 border-b-2 border-[var(--dl-line)] pb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-[var(--dl-panel)]">
+              <CreditCard className="h-5 w-5 text-[var(--dl-ink)]" />
             </div>
             <div>
-              <p className="text-sm font-bold text-white">{order.item_title || "Your order"}</p>
-              <p className="text-xs text-zinc-500">{order.buyer_email}</p>
+              <p className="text-sm font-bold text-[var(--dl-ink)]">{order.item_title || "Your order"}</p>
+              <p className="text-xs text-[var(--dl-ink-faint)]">{order.buyer_email}</p>
             </div>
           </div>
 
           <div className="flex items-baseline justify-between py-6">
-            <span className="text-sm text-zinc-400">Amount due</span>
-            <span className="text-3xl font-bold text-white">
+            <span className="text-sm text-[var(--dl-ink-soft)]">Amount due</span>
+            <span className="text-3xl font-bold text-[var(--dl-ink)]">
               {formatKobo(Number(order.gross_kobo))}
             </span>
           </div>
 
           {order.status !== "pending" ? (
-            <p className="rounded-lg border border-zinc-800 bg-zinc-800/40 px-4 py-3 text-center text-sm text-zinc-400">
-              This order is already marked <strong className="text-white">{order.status}</strong>.
+            <p className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]/40 px-4 py-3 text-center text-sm text-[var(--dl-ink-soft)]">
+              This order is already marked <strong className="text-[var(--dl-ink)]">{order.status}</strong>.
             </p>
           ) : (
             <div className="space-y-3">
               <button
                 onClick={() => finish("paid")}
                 disabled={isPending}
-                className="flex w-full items-center justify-center rounded-xl bg-emerald-600 py-4 text-sm font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-60"
+                className="flex w-full items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-ink)] py-4 text-[15px] font-extrabold text-[var(--dl-paper)] disabled:opacity-60"
               >
                 {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Simulate successful payment"}
               </button>
               <button
                 onClick={() => finish("failed")}
                 disabled={isPending}
-                className="flex w-full items-center justify-center rounded-xl border border-zinc-700 py-3 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800 disabled:opacity-60"
+                className="flex w-full items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] py-3 text-sm font-medium text-[var(--dl-ink-soft)] transition-colors hover:bg-[var(--dl-panel)] disabled:opacity-60"
               >
                 Simulate a failed payment
               </button>

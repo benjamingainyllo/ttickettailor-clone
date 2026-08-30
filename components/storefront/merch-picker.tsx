@@ -57,7 +57,7 @@ export function MerchPicker({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-white">Add to your order</p>
+      <p className="text-sm font-semibold text-[var(--dl-ink)]">Add to your order</p>
 
       {products.map((product) => {
         const picked = basket[product.id];
@@ -73,8 +73,8 @@ export function MerchPicker({
         return (
           <div
             key={product.id}
-            className={`rounded-lg border p-3 transition-colors ${
-              picked ? "border-blue-500 bg-blue-500/5" : "border-zinc-800 bg-zinc-900/40"
+            className={`rounded-[3px] border p-3 transition-colors ${
+              picked ? "border-[var(--dl-line)] bg-[var(--dl-ink)] text-[var(--dl-paper)]" : "border-[var(--dl-line)] bg-[var(--dl-panel)]"
             } ${product.soldOut ? "opacity-50" : ""}`}
           >
             <div className="flex items-center gap-3">
@@ -83,16 +83,16 @@ export function MerchPicker({
                 <img
                   src={product.imageUrl}
                   alt=""
-                  className="h-11 w-11 shrink-0 rounded-md object-cover"
+                  className="h-11 w-11 shrink-0 rounded-[3px] object-cover"
                 />
               )}
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">{product.name}</p>
+                <p className="truncate text-sm font-semibold text-[var(--dl-ink)]">{product.name}</p>
                 {product.description && (
-                  <p className="truncate text-xs text-zinc-500">{product.description}</p>
+                  <p className="truncate text-xs text-[var(--dl-ink-faint)]">{product.description}</p>
                 )}
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-[var(--dl-ink-soft)]">
                   {product.priceKobo === 0 ? "Free" : formatKobo(product.priceKobo)}
                   {product.soldOut && " · Sold out"}
                 </p>
@@ -104,18 +104,18 @@ export function MerchPicker({
                     <button
                       onClick={() => setQuantity(product, picked.quantity - 1)}
                       aria-label={`One fewer ${product.name}`}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-700 text-zinc-300 hover:text-white"
+                      className="flex h-7 w-7 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] "
                     >
                       <Minus className="h-3 w-3" />
                     </button>
-                    <span className="w-5 text-center text-sm font-semibold tabular-nums text-white">
+                    <span className="w-5 text-center text-sm font-semibold tabular-nums text-[var(--dl-ink)]">
                       {picked.quantity}
                     </span>
                     <button
                       disabled={picked.quantity >= ceiling}
                       onClick={() => setQuantity(product, picked.quantity + 1)}
                       aria-label={`One more ${product.name}`}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-700 text-zinc-300 hover:text-white disabled:opacity-40"
+                      className="flex h-7 w-7 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)]  disabled:opacity-40"
                     >
                       <Plus className="h-3 w-3" />
                     </button>
@@ -123,7 +123,7 @@ export function MerchPicker({
                 ) : (
                   <button
                     onClick={() => add(product)}
-                    className="shrink-0 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:border-blue-500 hover:text-white"
+                    className="shrink-0 rounded-[3px] border-2 border-[var(--dl-line)] px-3 py-1.5 text-xs font-bold"
                   >
                     Add
                   </button>
@@ -136,10 +136,10 @@ export function MerchPicker({
                   <button
                     key={option}
                     onClick={() => setVariant(product, option)}
-                    className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    className={`rounded-[3px] border px-2.5 py-1 text-xs font-semibold transition-colors ${
                       picked.variant === option
-                        ? "border-blue-500 bg-blue-500/15 text-white"
-                        : "border-zinc-700 text-zinc-400 hover:text-white"
+                        ? "border-[var(--dl-line)] bg-[var(--dl-ink)] text-[var(--dl-paper)]"
+                        : "border-[var(--dl-line)] text-[var(--dl-ink-soft)]"
                     }`}
                   >
                     {option}

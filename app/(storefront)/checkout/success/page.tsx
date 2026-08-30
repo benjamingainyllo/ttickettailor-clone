@@ -12,7 +12,7 @@ export default function CheckoutSuccessPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="dl flex min-h-screen items-center justify-center font-[family-name:var(--font-bricolage-grotesque)]">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
       }
@@ -62,8 +62,8 @@ function CheckoutSuccessContent() {
   }, [reference]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
-      <div className="w-full max-w-md rounded-2xl border border-[#3a3a3a] bg-surface p-8 text-center shadow-xl">
+    <div className="dl flex min-h-screen items-center justify-center px-4 font-[family-name:var(--font-bricolage-grotesque)]">
+      <div className="w-full max-w-md rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] p-8 text-center shadow-xl">
         {status === "loading" && (
           <>
             <Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" />
@@ -73,8 +73,8 @@ function CheckoutSuccessContent() {
 
         {status === "success" && (
           <>
-            <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
-            <h1 className="mt-4 text-xl font-bold text-white">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-[var(--mint)]" />
+            <h1 className="mt-4 text-[24px] font-extrabold tracking-[-0.03em]">
               {isEvent ? "You're going" : "Payment confirmed"}
             </h1>
             <p className="mt-2 text-sm text-subtle">
@@ -89,7 +89,7 @@ function CheckoutSuccessContent() {
             {isEvent && reference && (
               <Link
                 href={`/tickets/${reference}`}
-                className="mt-6 block rounded-xl bg-white py-3 text-sm font-bold text-black transition-opacity hover:opacity-90"
+                className="mt-6 block rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-ink)] py-3 text-[14px] font-extrabold text-[var(--dl-paper)]"
               >
                 Show my tickets
               </Link>
@@ -100,7 +100,7 @@ function CheckoutSuccessContent() {
         {status === "pending" && (
           <>
             <Clock className="mx-auto h-12 w-12 text-amber-500" />
-            <h1 className="mt-4 text-xl font-bold text-white">Payment processing</h1>
+            <h1 className="mt-4 text-[24px] font-extrabold tracking-[-0.03em]">Payment processing</h1>
             <p className="mt-2 text-sm text-subtle">
               We&apos;re still confirming your payment with Paystack. This page will update automatically — you can also refresh in a moment.
             </p>
@@ -110,7 +110,7 @@ function CheckoutSuccessContent() {
         {status === "failed" && (
           <>
             <XCircle className="mx-auto h-12 w-12 text-red-500" />
-            <h1 className="mt-4 text-xl font-bold text-white">Payment not completed</h1>
+            <h1 className="mt-4 text-[24px] font-extrabold tracking-[-0.03em]">Payment not completed</h1>
             <p className="mt-2 text-sm text-subtle">{errorMessage || "Your payment could not be confirmed."}</p>
           </>
         )}
