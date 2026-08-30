@@ -172,7 +172,7 @@ export default function EventsPage() {
               <div
                 key={event.id}
                 onClick={() => setSelectedEvent(event)}
-                className="group cursor-pointer overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-surface transition-all hover:border-[var(--hairline-firm)] hover:shadow-lg hover:shadow-black/20"
+                className="group cursor-pointer overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-surface transition-all hover:border-[var(--dl-line)] hover:shadow-lg hover:shadow-black/20"
               >
                 <div className="relative h-40 w-full overflow-hidden bg-muted">
                   {event.cover_image_url ? (
@@ -250,7 +250,7 @@ export default function EventsPage() {
 
           <button
             onClick={() => router.push("/events/create")}
-            className="flex min-h-[300px] flex-col items-center justify-center rounded-[3px] border-2 border-dashed border-border bg-transparent transition-all hover:border-[var(--hairline-firm)] hover:bg-muted/10"
+            className="flex min-h-[300px] flex-col items-center justify-center rounded-[3px] border-2 border-dashed border-border bg-transparent transition-all hover:border-[var(--dl-line)] hover:bg-muted/10"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-[3px] bg-muted text-subtle">
               <Plus className="h-6 w-6" />

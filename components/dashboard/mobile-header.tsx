@@ -10,9 +10,9 @@ export function MobileHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[var(--hairline)] bg-[var(--ground)] px-4 lg:hidden">
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b-2 border-[var(--dl-line)] bg-[var(--dl-paper)] px-4 lg:hidden">
         <Link href="/overview" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 rotate-[-4deg] items-center justify-center rounded-[3px] border-2 border-[var(--ink)] bg-[var(--dl-ink)] text-[13px] font-black text-white">
+          <span className="flex h-8 w-8 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-acid)] text-[13px] font-black text-[var(--dl-ink)]">
             P
           </span>
           <span className="text-[17px] font-extrabold tracking-tight">Paylance</span>
@@ -21,7 +21,7 @@ export function MobileHeader() {
         <button
           onClick={() => setIsOpen(true)}
           aria-label="Open the menu"
-          className="flex h-10 w-10 items-center justify-center rounded-[3px] text-[var(--on-ground-soft)] transition-colors hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)]"
+          className="flex h-10 w-10 items-center justify-center rounded-[3px] text-[var(--dl-ink-soft)] transition-colors hover:bg-[rgba(20,16,24,0.06)] hover:text-[var(--dl-ink)]"
         >
           <Menu className="h-6 w-6" />
         </button>

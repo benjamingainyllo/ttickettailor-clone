@@ -337,19 +337,19 @@ export function DoorScanner({
             )}
 
             {cameraState !== "live" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--ground-deep)] px-6 text-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--dl-panel)] px-6 text-center">
                 {cameraState === "starting" ? (
                   <>
-                    <Loader2 className="h-6 w-6 animate-spin text-[var(--on-ground-faint)]" />
-                    <p className="text-xs text-[var(--on-ground-soft)]">Starting the camera…</p>
+                    <Loader2 className="h-6 w-6 animate-spin text-[var(--dl-ink-faint)]" />
+                    <p className="text-xs text-[var(--dl-ink-soft)]">Starting the camera…</p>
                   </>
                 ) : (
                   <>
-                    <CameraOff className="h-8 w-8 text-[var(--on-ground-faint)]" />
+                    <CameraOff className="h-8 w-8 text-[var(--dl-ink-faint)]" />
                     <p className="text-sm font-semibold text-white">
                       {cameraState === "denied" ? "No camera access" : "Camera unavailable"}
                     </p>
-                    <p className="text-xs text-[var(--on-ground-soft)]">
+                    <p className="text-xs text-[var(--dl-ink-soft)]">
                       {cameraState === "denied"
                         ? "Allow camera access in your browser, or type codes in instead."
                         : "This browser won't give us a camera. Type codes in instead."}
@@ -365,7 +365,7 @@ export function DoorScanner({
                       )}
                       <button
                         onClick={() => setMode("manual")}
-                        className="rounded-[3px] border border-[var(--hairline-firm)] px-3 py-2 text-xs font-bold text-white"
+                        className="rounded-[3px] border border-[var(--dl-line)] px-3 py-2 text-xs font-bold text-white"
                       >
                         Type it instead
                       </button>

@@ -197,11 +197,11 @@ export default function CreateEventPage() {
      is the label, which is what keeps the page short enough to scan. */
   const row =
     "flex items-center gap-3.5 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 py-3.5";
-  const rowIcon = "h-[18px] w-[18px] shrink-0 text-[var(--on-ground-faint)]";
+  const rowIcon = "h-[18px] w-[18px] shrink-0 text-[var(--dl-ink-faint)]";
   const rowInput =
-    "w-full bg-transparent text-[15px] text-[var(--on-ground)] placeholder-[var(--on-ground-faint)] outline-none [color-scheme:dark]";
+    "w-full bg-transparent text-[15px] text-[var(--dl-ink)] placeholder-[var(--dl-ink-faint)] outline-none [color-scheme:light]";
   const addChip =
-    "inline-flex items-center gap-1.5 rounded-[3px] border-2 border-[var(--dl-line)] px-3.5 py-2 text-[13px] font-bold text-[var(--on-ground-soft)] transition-colors hover:border-[var(--dl-line)] hover:text-[var(--on-ground)]";
+    "inline-flex items-center gap-1.5 rounded-[3px] border-2 border-[var(--dl-line)] px-3.5 py-2 text-[13px] font-bold text-[var(--dl-ink-soft)] transition-colors hover:border-[var(--dl-line)] hover:text-[var(--dl-ink)]";
 
   return (
     <div className="relative">
@@ -209,13 +209,13 @@ export default function CreateEventPage() {
         <div className="mb-8 flex items-center justify-between gap-4">
           <Link
             href="/events"
-            className="inline-flex items-center gap-2 text-[13.5px] font-bold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
+            className="inline-flex items-center gap-2 text-[13.5px] font-bold text-[var(--dl-ink-soft)] transition-colors hover:text-[var(--dl-ink)]"
           >
             <ArrowLeft className="h-4 w-4" />
             Events
           </Link>
 
-          <span className="rounded-[3px] border-2 border-[var(--dl-line)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--on-ground-faint)]">
+          <span className="rounded-[3px] border-2 border-[var(--dl-line)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--dl-ink-faint)]">
             Draft
           </span>
         </div>
@@ -232,7 +232,7 @@ export default function CreateEventPage() {
               aria-label="Event name"
               className="w-full bg-transparent text-[32px] font-extrabold leading-[1] tracking-[-0.04em] outline-none placeholder:text-[var(--dl-ink-faint)] sm:text-[40px]"
             />
-            <p className="mt-3 text-[14.5px] text-[var(--on-ground-soft)]">
+            <p className="mt-3 text-[14.5px] text-[var(--dl-ink-soft)]">
               The name people see on the flyer, the ticket and the link they
               share.
             </p>
@@ -344,7 +344,7 @@ export default function CreateEventPage() {
                         className={`rounded-[3px] border px-4 py-2 text-[13.5px] font-bold transition-colors ${
                           active
                             ? "border-[var(--dl-line)] bg-[var(--dl-ink)] text-[var(--dl-paper)]"
-                            : "border-[var(--hairline)] text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]"
+                            : "border-[var(--dl-line)] text-[var(--dl-ink-soft)] hover:text-[var(--dl-ink)]"
                         }`}
                       >
                         {option}
@@ -357,7 +357,7 @@ export default function CreateEventPage() {
               {!isFree && (
                 <>
                   <div className="mt-4 flex items-center gap-3.5 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 py-3.5 ">
-                    <span className="text-[15px] font-bold text-[var(--on-ground-faint)]">₦</span>
+                    <span className="text-[15px] font-bold text-[var(--dl-ink-faint)]">₦</span>
                     <input
                       type="number"
                       required
@@ -370,11 +370,11 @@ export default function CreateEventPage() {
                     />
                   </div>
 
-                  <div className="mt-4 border-t border-[var(--hairline)] pt-4">
+                  <div className="mt-4 border-t border-[var(--dl-line)] pt-4">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="max-w-sm">
                         <p className="text-[14px] font-bold">Who pays our fee?</p>
-                        <p className="mt-1 text-[13px] leading-relaxed text-[var(--on-ground-soft)]">
+                        <p className="mt-1 text-[13px] leading-relaxed text-[var(--dl-ink-soft)]">
                           Add it on and you keep the full ticket price. Absorb it
                           and the buyer sees a round number.
                         </p>
@@ -385,7 +385,7 @@ export default function CreateEventPage() {
                         className={`shrink-0 rounded-[3px] border px-4 py-2 text-[13.5px] font-bold transition-colors ${
                           passFeeToBuyer
                             ? "border-[var(--dl-line)] bg-[var(--dl-ink)] text-[var(--dl-paper)]"
-                            : "border-[var(--hairline)] text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]"
+                            : "border-[var(--dl-line)] text-[var(--dl-ink-soft)] hover:text-[var(--dl-ink)]"
                         }`}
                       >
                         {passFeeToBuyer ? "Buyer pays it" : "I'll absorb it"}
@@ -393,16 +393,16 @@ export default function CreateEventPage() {
                     </div>
 
                     {feePreview && (
-                      <p className="mt-3 text-[13px] text-[var(--on-ground-soft)]">
+                      <p className="mt-3 text-[13px] text-[var(--dl-ink-soft)]">
                         Buyer pays{" "}
-                        <span className="font-bold text-[var(--on-ground)]">
+                        <span className="font-bold text-[var(--dl-ink)]">
                           {feePreview.buyerPays}
                         </span>
                         {" · "}you receive{" "}
                         <span className="font-bold text-[var(--mint)]">
                           {feePreview.youGet}
                         </span>
-                        <span className="text-[var(--on-ground-faint)]">
+                        <span className="text-[var(--dl-ink-faint)]">
                           {" "}
                           (before your bank&apos;s card charges)
                         </span>
@@ -422,7 +422,7 @@ export default function CreateEventPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="What should people know? Line-up, dress code, what time it really starts."
                 aria-label="Description"
-                className="w-full resize-none rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] p-4 text-[15px] leading-relaxed text-[var(--on-ground)] outline-none transition-colors placeholder:text-[var(--on-ground-faint)] focus:border-[var(--dl-line)]"
+                className="w-full resize-none rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] p-4 text-[15px] leading-relaxed text-[var(--dl-ink)] outline-none transition-colors placeholder:text-[var(--dl-ink-faint)] focus:border-[var(--dl-line)]"
               />
             </div>
           </div>
@@ -441,11 +441,11 @@ export default function CreateEventPage() {
                 <img src={imagePreview} alt="" className="h-full w-full object-cover" />
               ) : (
                 <span className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                  <ImagePlus className="h-8 w-8 text-[var(--on-ground-faint)]" />
-                  <span className="text-[14px] font-bold text-[var(--on-ground-soft)]">
+                  <ImagePlus className="h-8 w-8 text-[var(--dl-ink-faint)]" />
+                  <span className="text-[14px] font-bold text-[var(--dl-ink-soft)]">
                     Add your flyer
                   </span>
-                  <span className="text-[12.5px] leading-relaxed text-[var(--on-ground-faint)]">
+                  <span className="text-[12.5px] leading-relaxed text-[var(--dl-ink-faint)]">
                     This is the picture people see when your link lands in a
                     group chat.
                   </span>
@@ -467,13 +467,13 @@ export default function CreateEventPage() {
             />
 
             <div className="mt-5 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] p-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--on-ground-faint)]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--dl-ink-faint)]">
                 Shared as
               </p>
               <p className="mt-2 text-[15px] font-extrabold leading-snug">
                 {formData.title || "Untitled event"}
               </p>
-              <p className="mt-1 text-[13px] leading-relaxed text-[var(--on-ground-soft)]">
+              <p className="mt-1 text-[13px] leading-relaxed text-[var(--dl-ink-soft)]">
                 {[
                   prettyDate,
                   formData.time,
@@ -501,13 +501,13 @@ export default function CreateEventPage() {
                 type="button"
                 disabled={isSaving}
                 onClick={() => router.push("/events")}
-                className="rounded-[3px] px-4 py-3.5 text-[14px] font-bold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
+                className="rounded-[3px] px-4 py-3.5 text-[14px] font-bold text-[var(--dl-ink-soft)] transition-colors hover:text-[var(--dl-ink)]"
               >
                 Discard
               </button>
             </div>
 
-            <p className="mt-3 text-center text-[12.5px] leading-relaxed text-[var(--on-ground-faint)]">
+            <p className="mt-3 text-center text-[12.5px] leading-relaxed text-[var(--dl-ink-faint)]">
               Saved as a draft. Nothing is live until you publish it.
             </p>
           </div>

@@ -150,9 +150,9 @@ export default function RevenuePage() {
           </div>
         ) : (
           <div className="text-center py-8">
-            <ShoppingBag className="h-10 w-10 text-[var(--on-ground-faint)] mx-auto mb-3" />
+            <ShoppingBag className="h-10 w-10 text-[var(--dl-ink-faint)] mx-auto mb-3" />
             <p className="text-sm text-subtle">No revenue yet</p>
-            <p className="text-xs text-[var(--on-ground-faint)] mt-1">Your first sale will show up here</p>
+            <p className="text-xs text-[var(--dl-ink-faint)] mt-1">Your first sale will show up here</p>
           </div>
         )}
       </div>
@@ -191,7 +191,7 @@ export default function RevenuePage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <Banknote className="h-12 w-12 text-[var(--on-ground-faint)] mx-auto mb-3" />
+            <Banknote className="h-12 w-12 text-[var(--dl-ink-faint)] mx-auto mb-3" />
             <p className="text-sm font-medium text-text">No orders yet</p>
             <p className="text-xs text-subtle mt-1">
               When someone buys a ticket, it appears here
