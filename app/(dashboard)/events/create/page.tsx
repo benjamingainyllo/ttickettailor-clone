@@ -2,12 +2,42 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarIcon, ImagePlus, Loader2, MapPin } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Clock,
+  ImagePlus,
+  Link2,
+  Loader2,
+  MapPin,
+  Plus,
+  Tag,
+  Users,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/auth-provider";
 import { bandFeeKobo, formatKobo, parseNairaInput } from "@/lib/money";
 import { toast } from "sonner";
 
+/**
+ * Making an event.
+ *
+ * Shaped after the invite apps rather than the ticketing ones. A promoter
+ * putting a night up is doing something closer to designing a flyer than
+ * filling in a form, and the reference this follows treats it that way: the
+ * title is the biggest thing on the page and typed straight in, the details
+ * are short rows rather than labelled fields, and the artwork sits beside it
+ * all, updating as you go.
+ *
+ * The version this replaces was a stack of grey cards with headings like
+ * "Overview" and "Ticketing", a second sidebar inside the dashboard's own
+ * sidebar, and blue links on zinc — none of which is the brand. It also
+ * asked for the same event twice: once in the form, once in a preview card
+ * that showed almost nothing.
+ *
+ * Everything it did, this still does. Only the shape changed.
+ */
 export default function CreateEventPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -18,6 +48,9 @@ export default function CreateEventPage() {
   const [isFree, setIsFree] = useState(false);
   const [passFeeToBuyer, setPassFeeToBuyer] = useState(false);
 
+  /** Optional rows stay hidden until asked for, so the page opens short. */
+  const [showMapLink, setShowMapLink] = useState(false);
+  const [showCapacity, setShowCapacity] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -27,16 +60,22 @@ export default function CreateEventPage() {
     mapLink: "",
     description: "",
     price: "0",
+    capacity: "",
   });
+
   // Shows the organiser the actual consequence of the switch, at the price
   // they have typed. An abstract explanation of a fee never lands; a number does.
-  const previewPriceKobo = isFree ? 0 : (parseNairaInput(formData.price) ?? 0);
+  const previewPriceKobo = isFree ? 0 : parseNairaInput(formData.price) ?? 0;
   const previewFeeKobo = previewPriceKobo > 0 ? bandFeeKobo(previewPriceKobo) : 0;
   const feePreview =
     previewPriceKobo > 0
       ? {
-          buyerPays: formatKobo(passFeeToBuyer ? previewPriceKobo + previewFeeKobo : previewPriceKobo),
-          youGet: formatKobo(passFeeToBuyer ? previewPriceKobo : previewPriceKobo - previewFeeKobo),
+          buyerPays: formatKobo(
+            passFeeToBuyer ? previewPriceKobo + previewFeeKobo : previewPriceKobo
+          ),
+          youGet: formatKobo(
+            passFeeToBuyer ? previewPriceKobo : previewPriceKobo - previewFeeKobo
+          ),
         }
       : null;
 
@@ -44,18 +83,16 @@ export default function CreateEventPage() {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
   const handleImageDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file && file.type.startsWith("image/")) {
       setImageFile(file);
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -126,6 +163,9 @@ export default function CreateEventPage() {
         name: "General Admission",
         price_kobo: priceKobo,
         sort_order: 0,
+        ...(formData.capacity.trim()
+          ? { quantity: Number(formData.capacity.trim()) || null }
+          : {}),
       });
 
       if (tierError) throw tierError;
@@ -136,277 +176,357 @@ export default function CreateEventPage() {
     } catch (error) {
       console.error("Error creating event:", error);
       toast.error(
-        error instanceof Error ? error.message : "Could not create the event. Please try again."
+        error instanceof Error
+          ? error.message
+          : "Could not create the event. Please try again."
       );
     } finally {
       setIsSaving(false);
     }
   };
 
+  const prettyDate = formData.date
+    ? new Date(`${formData.date}T00:00:00`).toLocaleDateString("en-NG", {
+        weekday: "short",
+        day: "numeric",
+        month: "long",
+      })
+    : null;
+
+  /* A row: an icon, then whatever goes in it. No labels — the placeholder
+     is the label, which is what keeps the page short enough to scan. */
+  const row =
+    "flex items-center gap-3.5 rounded-2xl border border-[var(--hairline)] bg-[var(--ground-deep)] px-4 py-3.5 transition-colors focus-within:border-[var(--coral)]";
+  const rowIcon = "h-[18px] w-[18px] shrink-0 text-[var(--on-ground-faint)]";
+  const rowInput =
+    "w-full bg-transparent text-[15px] text-[var(--on-ground)] placeholder-[var(--on-ground-faint)] outline-none [color-scheme:dark]";
+  const addChip =
+    "inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] px-3.5 py-2 text-[13px] font-bold text-[var(--on-ground-soft)] transition-colors hover:border-[var(--coral)] hover:text-[var(--on-ground)]";
+
   return (
-      <div className="flex h-screen w-full bg-[#0c0c0e] overflow-hidden text-white">
-        {/* Left Sidebar */}
-        <div className="w-[300px] border-r border-zinc-800 bg-zinc-900/50 flex-col hidden lg:flex">
-          <div className="p-6">
-            <button 
-              onClick={() => router.push('/events')}
-              className="flex items-center gap-2 text-sm font-medium text-blue-500 hover:text-blue-400 mb-8 transition-colors"
-            >
-              <span className="text-xl leading-none">&lsaquo;</span> Back to events
-            </button>
+    <div className="lp relative -m-4 min-h-full overflow-hidden bg-[var(--ground)] px-5 py-6 font-[family-name:var(--font-bricolage-grotesque)] text-[var(--on-ground)] md:-m-6 md:px-8 md:py-8">
+      {/*
+        A wash of colour behind the page, because making a flyer on a grey
+        form feels like filing a tax return. Two soft pools of the brand's
+        own accents rather than the reference's full rainbow — loud enough
+        to feel like an occasion, quiet enough that white text stays
+        readable over it. Purely decorative, so it is hidden from
+        screen readers and sits behind everything.
+      */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-40 -top-48 h-[560px] w-[560px] rounded-full bg-[#FF6A45] opacity-30 blur-[120px]" />
+        <div className="absolute -right-32 top-10 h-[520px] w-[520px] rounded-full bg-[#DDBBF5] opacity-25 blur-[120px]" />
+        <div className="absolute -bottom-32 left-1/4 h-[420px] w-[420px] rounded-full bg-[#9BE3C0] opacity-[0.18] blur-[120px]" />
+      </div>
 
-            {/* Event Preview Card */}
-            <div className="rounded-xl border border-zinc-800 bg-[#0c0c0e] overflow-hidden shadow-lg mb-8">
-              <div className="h-20 w-full bg-gradient-to-r from-orange-500 to-rose-500 relative">
-                {imagePreview && <img src={imagePreview} className="w-full h-full object-cover mix-blend-overlay opacity-50" />}
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-white text-base truncate">{formData.title || "Untitled Event"}</h3>
-                <div className="flex items-center gap-2 mt-2 text-xs text-zinc-400">
-                  <CalendarIcon className="h-3 w-3" />
-                  {formData.date ? new Date(formData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBD'}
-                </div>
-                <div className="mt-4 flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800 px-3 py-1 w-fit text-xs text-zinc-300">
-                  Draft <span className="opacity-50">▾</span>
-                </div>
-              </div>
-            </div>
+      <form onSubmit={handleCreateEvent} className="relative mx-auto max-w-6xl">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <Link
+            href="/events"
+            className="inline-flex items-center gap-2 text-[13.5px] font-bold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Events
+          </Link>
 
-            {/* Steps */}
-            <div className="space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 px-2">Steps</p>
-              <div className="flex items-start gap-3 rounded-lg bg-blue-500/10 px-3 py-2">
-                <div className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border-[4px] border-blue-500 bg-[#0c0c0e]"></div>
-                <div>
-                  <p className="text-sm font-semibold text-blue-500">Build event page</p>
-                  <p className="text-xs text-zinc-500 mt-1">Add all of your event details and let attendees know what to expect</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 px-3 py-2 opacity-50">
-                <div className="mt-0.5 flex h-4 w-4 rounded-full border border-zinc-600"></div>
-                <p className="text-sm font-medium text-zinc-400">Add tickets</p>
-              </div>
-              <div className="flex items-start gap-3 px-3 py-2 opacity-50">
-                <div className="mt-0.5 flex h-4 w-4 rounded-full border border-zinc-600"></div>
-                <p className="text-sm font-medium text-zinc-400">Publish</p>
-              </div>
-            </div>
-          </div>
+          <span className="rounded-full border border-[var(--hairline)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--on-ground-faint)]">
+            Draft
+          </span>
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex flex-1 flex-col h-full bg-[#0c0c0e] overflow-hidden relative">
-          {/* Mobile Header (Hidden on Desktop) */}
-          <div className="flex items-center justify-between border-b border-zinc-800 p-4 lg:hidden">
-            <button onClick={() => router.push('/events')} className="text-sm text-zinc-400">&lsaquo; Back</button>
-            <span className="text-sm font-bold text-white">Create Event</span>
-            <div className="w-10"></div>
-          </div>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12">
+          {/* ── The event itself ──────────────────────────────── */}
+          <div className="min-w-0">
+            <input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Untitled event"
+              aria-label="Event name"
+              className="w-full bg-transparent text-[38px] font-extrabold leading-[1.02] tracking-[-0.03em] text-[var(--on-ground)] outline-none placeholder:text-[var(--on-ground-faint)] sm:text-[52px]"
+            />
+            <p className="mt-3 text-[14.5px] text-[var(--on-ground-soft)]">
+              The name people see on the flyer, the ticket and the link they
+              share.
+            </p>
 
-          <form className="flex-1 overflow-y-auto pb-32" onSubmit={handleCreateEvent}>
-            <div className="max-w-3xl mx-auto p-4 sm:p-8 space-y-6">
-              
-              {/* Hero Image Upload */}
-              <div className="relative w-full rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900/50 aspect-video group cursor-pointer" onClick={() => fileInputRef.current?.click()} onDrop={handleImageDrop} onDragOver={(e) => e.preventDefault()}>
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Cover" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-zinc-700">
-                     <ImagePlus className="w-16 h-16 opacity-20" />
-                  </div>
-                )}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="flex flex-col items-center justify-center rounded-xl bg-white px-6 py-4 shadow-xl hover:bg-zinc-100 transition-colors">
-                     <ImagePlus className="h-6 w-6 text-blue-600 mb-2" />
-                     <span className="text-sm font-bold text-blue-600">Upload photo</span>
-                  </div>
+            <div className="mt-8 space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className={row}>
+                  <CalendarDays className={rowIcon} />
+                  <input
+                    type="date"
+                    required
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    aria-label="Date"
+                    className={rowInput}
+                  />
                 </div>
-                {/* Floating Action Button (Always visible on empty state) */}
-                {!imagePreview && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="flex flex-col items-center justify-center rounded-xl bg-white px-6 py-4 shadow-xl hover:bg-zinc-100 transition-colors">
-                       <ImagePlus className="h-6 w-6 text-blue-600 mb-2" />
-                       <span className="text-sm font-bold text-blue-600">Upload photo</span>
-                    </div>
-                  </div>
-                )}
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-              </div>
-
-              {/* Event Title Block */}
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
-                <input 
-                  type="text" 
-                  required
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Event Title" 
-                  className="w-full bg-transparent text-3xl font-bold text-white placeholder:text-zinc-600 focus:outline-none mb-2"
-                />
-                <p className="text-sm text-zinc-500">A short and sweet sentence about your event.</p>
-              </div>
-
-              {/* Date & Location Block */}
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
-                <div className="grid sm:grid-cols-2 gap-8">
-                  {/* Date and Time */}
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-6">Date and time</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-xs text-zinc-500 mb-1 block">Start Date & Time</label>
-                        <div className="flex gap-2">
-                          <input 
-                            type="date" 
-                            required
-                            value={formData.date}
-                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                            className="flex-1 rounded-lg bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50 [color-scheme:dark]"
-                          />
-                          <input 
-                            type="time" 
-                            required
-                            value={formData.time}
-                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                            className="w-28 rounded-lg bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50 [color-scheme:dark]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Location */}
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-6">Location</h3>
-                    <div className="flex gap-3">
-                      <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800">
-                        <MapPin className="h-4 w-4 text-zinc-400" />
-                      </div>
-                      <div className="flex-1">
-                        <input 
-                          type="text" 
-                          required
-                          value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                          placeholder="Enter a location" 
-                          className="w-full bg-transparent text-sm font-semibold text-white placeholder:text-zinc-500 focus:outline-none mb-1"
-                        />
-                        <input 
-                          type="url" 
-                          value={formData.mapLink}
-                          onChange={(e) => setFormData({ ...formData, mapLink: e.target.value })}
-                          placeholder="Virtual link (optional)" 
-                          className="w-full bg-transparent text-xs text-blue-500 placeholder:text-blue-500/50 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <div className={row}>
+                  <Clock className={rowIcon} />
+                  <input
+                    type="time"
+                    required
+                    value={formData.time}
+                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    aria-label="Doors open"
+                    className={rowInput}
+                  />
                 </div>
               </div>
 
-              {/* Overview Block */}
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
-                <h3 className="text-xl font-bold text-white mb-4">Overview</h3>
-                <p className="text-sm text-zinc-400 mb-4">
-                  Use this section to provide more details about your event. You can include things to know, venue information, accessibility options—anything that will help people know what to expect.
-                </p>
-                <textarea 
-                  rows={5}
+              <div className={row}>
+                <MapPin className={rowIcon} />
+                <input
+                  type="text"
                   required
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Add Description" 
-                  className="w-full resize-none rounded-xl bg-zinc-800 p-4 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Where is it?"
+                  aria-label="Location"
+                  className={rowInput}
                 />
               </div>
 
-              {/* Pricing Block */}
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
-                <h3 className="text-xl font-bold text-white mb-6">Ticketing</h3>
-                <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between p-4 rounded-xl border border-zinc-800 bg-zinc-800/30">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Event Price</p>
-                    <p className="text-xs text-zinc-500 mt-1">Is this event free or paid?</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => { setIsFree(!isFree); if (!isFree) setFormData({ ...formData, price: "0" }); }}
-                      className={`text-sm font-semibold px-3 py-1.5 rounded-lg border transition-colors ${isFree ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white'}`}
-                    >
-                      {isFree ? 'Free Event' : 'Paid'}
-                    </button>
-                    {!isFree && (
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">₦</span>
-                        <input 
-                          type="number" 
-                          required
-                          value={formData.price}
-                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                          placeholder="0"
-                          className="w-32 rounded-lg border border-zinc-700 bg-zinc-900 py-1.5 pl-8 pr-3 text-sm text-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                    )}
-                  </div>
+              {showMapLink && (
+                <div className={row}>
+                  <Link2 className={rowIcon} />
+                  <input
+                    type="url"
+                    value={formData.mapLink}
+                    onChange={(e) => setFormData({ ...formData, mapLink: e.target.value })}
+                    placeholder="Map or venue link"
+                    aria-label="Map or venue link"
+                    className={rowInput}
+                  />
                 </div>
+              )}
 
-                {!isFree && (
-                  <div className="mt-4 flex flex-col gap-4 rounded-xl border border-zinc-800 bg-zinc-800/30 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="max-w-md">
-                      <p className="text-sm font-semibold text-white">Who pays our fee?</p>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        Add it to the buyer&apos;s total and you keep the full ticket
-                        price. Absorb it and the buyer sees a round number.
-                      </p>
-                      {feePreview && (
-                        <p className="mt-2 text-xs font-medium text-zinc-300">
-                          Buyer pays{" "}
-                          <span className="text-white">{feePreview.buyerPays}</span>
-                          {" · "}you receive{" "}
-                          <span className="text-emerald-400">{feePreview.youGet}</span>
-                          <span className="text-zinc-500"> (before your bank&apos;s card charges)</span>
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setPassFeeToBuyer(!passFeeToBuyer)}
-                      className={`shrink-0 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
-                        passFeeToBuyer
-                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                          : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:text-white"
-                      }`}
-                    >
-                      {passFeeToBuyer ? "Buyer pays it" : "I'll absorb it"}
+              {showCapacity && (
+                <div className={row}>
+                  <Users className={rowIcon} />
+                  <input
+                    type="number"
+                    min={1}
+                    value={formData.capacity}
+                    onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                    placeholder="How many can come in?"
+                    aria-label="Capacity"
+                    className={rowInput}
+                  />
+                </div>
+              )}
+
+              {(!showMapLink || !showCapacity) && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {!showMapLink && (
+                    <button type="button" onClick={() => setShowMapLink(true)} className={addChip}>
+                      <Plus className="h-3.5 w-3.5" /> Map link
                     </button>
-                  </div>
-                )}
-              </div>
-
+                  )}
+                  {!showCapacity && (
+                    <button type="button" onClick={() => setShowCapacity(true)} className={addChip}>
+                      <Plus className="h-3.5 w-3.5" /> Capacity
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Bottom Sticky Action Bar */}
-            <div className="absolute bottom-0 left-0 right-0 border-t border-zinc-800 bg-[#0c0c0e] p-4 flex justify-end gap-4 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-              <button 
+            {/* ── Price ──────────────────────────────────────── */}
+            <div className="mt-8 rounded-2xl border border-[var(--hairline)] bg-[var(--ground-deep)] p-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <Tag className={rowIcon} />
+                  <span className="text-[15px] font-bold">Tickets</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {(["Free", "Paid"] as const).map((option) => {
+                    const active = (option === "Free") === isFree;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => {
+                          const free = option === "Free";
+                          setIsFree(free);
+                          if (free) setFormData((d) => ({ ...d, price: "0" }));
+                        }}
+                        className={`rounded-full border px-4 py-2 text-[13.5px] font-bold transition-colors ${
+                          active
+                            ? "border-[var(--coral)] bg-[var(--coral)] text-white"
+                            : "border-[var(--hairline)] text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {!isFree && (
+                <>
+                  <div className="mt-4 flex items-center gap-3.5 rounded-xl border border-[var(--hairline)] bg-[var(--ground)] px-4 py-3.5 focus-within:border-[var(--coral)]">
+                    <span className="text-[15px] font-bold text-[var(--on-ground-faint)]">₦</span>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      placeholder="0"
+                      aria-label="Ticket price in naira"
+                      className={rowInput}
+                    />
+                  </div>
+
+                  <div className="mt-4 border-t border-[var(--hairline)] pt-4">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="max-w-sm">
+                        <p className="text-[14px] font-bold">Who pays our fee?</p>
+                        <p className="mt-1 text-[13px] leading-relaxed text-[var(--on-ground-soft)]">
+                          Add it on and you keep the full ticket price. Absorb it
+                          and the buyer sees a round number.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPassFeeToBuyer(!passFeeToBuyer)}
+                        className={`shrink-0 rounded-full border px-4 py-2 text-[13.5px] font-bold transition-colors ${
+                          passFeeToBuyer
+                            ? "border-[var(--mint)] bg-[var(--mint)] text-[var(--ink)]"
+                            : "border-[var(--hairline)] text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]"
+                        }`}
+                      >
+                        {passFeeToBuyer ? "Buyer pays it" : "I'll absorb it"}
+                      </button>
+                    </div>
+
+                    {feePreview && (
+                      <p className="mt-3 text-[13px] text-[var(--on-ground-soft)]">
+                        Buyer pays{" "}
+                        <span className="font-bold text-[var(--on-ground)]">
+                          {feePreview.buyerPays}
+                        </span>
+                        {" · "}you receive{" "}
+                        <span className="font-bold text-[var(--mint)]">
+                          {feePreview.youGet}
+                        </span>
+                        <span className="text-[var(--on-ground-faint)]">
+                          {" "}
+                          (before your bank&apos;s card charges)
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* ── Description ────────────────────────────────── */}
+            <div className="mt-8">
+              <textarea
+                rows={5}
+                required
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="What should people know? Line-up, dress code, what time it really starts."
+                aria-label="Description"
+                className="w-full resize-none rounded-2xl border border-[var(--hairline)] bg-[var(--ground-deep)] p-4 text-[15px] leading-relaxed text-[var(--on-ground)] outline-none transition-colors placeholder:text-[var(--on-ground-faint)] focus:border-[var(--coral)]"
+              />
+            </div>
+          </div>
+
+          {/* ── The flyer, and what it will look like ─────────── */}
+          <div className="lg:sticky lg:top-6 lg:self-start">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              onDrop={handleImageDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className="group relative block aspect-[4/5] w-full overflow-hidden rounded-3xl border border-[var(--hairline)] bg-[var(--ground-raised)] text-left transition-colors hover:border-[var(--coral)]"
+            >
+              {imagePreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={imagePreview} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                  <ImagePlus className="h-8 w-8 text-[var(--on-ground-faint)]" />
+                  <span className="text-[14px] font-bold text-[var(--on-ground-soft)]">
+                    Add your flyer
+                  </span>
+                  <span className="text-[12.5px] leading-relaxed text-[var(--on-ground-faint)]">
+                    This is the picture people see when your link lands in a
+                    group chat.
+                  </span>
+                </span>
+              )}
+
+              {imagePreview && (
+                <span className="absolute bottom-3 right-3 rounded-full bg-[var(--ink)] px-4 py-2 text-[12.5px] font-bold text-[var(--paper)] opacity-0 transition-opacity group-hover:opacity-100">
+                  Change
+                </span>
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+
+            <div className="mt-5 rounded-2xl border border-[var(--hairline)] bg-[var(--ground-deep)] p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--on-ground-faint)]">
+                Shared as
+              </p>
+              <p className="mt-2 text-[15px] font-extrabold leading-snug">
+                {formData.title || "Untitled event"}
+              </p>
+              <p className="mt-1 text-[13px] leading-relaxed text-[var(--on-ground-soft)]">
+                {[
+                  prettyDate,
+                  formData.time,
+                  formData.location,
+                  isFree
+                    ? "Free entry"
+                    : previewPriceKobo > 0
+                      ? `Tickets from ${formatKobo(previewPriceKobo)}`
+                      : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "Fill it in and this fills in with it."}
+              </p>
+            </div>
+
+            <div className="mt-5 flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="flex flex-1 items-center justify-center rounded-full bg-[var(--coral)] px-6 py-3.5 text-[15px] font-extrabold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save draft"}
+              </button>
+              <button
                 type="button"
                 disabled={isSaving}
-                onClick={() => router.push('/events')}
-                className="px-6 py-2.5 text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+                onClick={() => router.push("/events")}
+                className="rounded-full px-4 py-3.5 text-[14px] font-bold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
               >
                 Discard
               </button>
-              <button 
-                type="submit"
-                disabled={isSaving}
-                className="flex items-center justify-center min-w-[160px] rounded-lg bg-[#d94826] px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-[#c13d1d] active:scale-[0.98] disabled:opacity-70 disabled:hover:scale-100"
-              >
-                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save draft"}
-              </button>
             </div>
-          </form>
+
+            <p className="mt-3 text-center text-[12.5px] leading-relaxed text-[var(--on-ground-faint)]">
+              Saved as a draft. Nothing is live until you publish it.
+            </p>
+          </div>
         </div>
-      </div>
+      </form>
+    </div>
   );
 }
