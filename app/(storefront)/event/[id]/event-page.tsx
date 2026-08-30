@@ -5,6 +5,7 @@ import { getEventById, type PublicProduct, type PublicTicketType } from "@/app/a
 import { MerchPicker, type Basket } from "@/components/storefront/merch-picker";
 import { createCheckoutSession } from "@/app/actions/checkout";
 import { bandFeeKobo, formatKobo } from "@/lib/money";
+import { formatE164, toE164 } from "@/lib/whatsapp/phone";
 import { Loader2, Calendar, MapPin, Users, ExternalLink, CheckCircle2, Minus, Plus } from "lucide-react";
 
 export function EventCheckoutPage({ params }: { params: { id: string } }) {
@@ -95,7 +96,14 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
     setQuantity((current) => Math.min(current, maxQuantity));
   }, [maxQuantity]);
 
+  /** Normalised now, so a typo is caught before money moves, not after. */
+  const phoneE164 = toE164(phone);
+
   const handleCheckout = () => {
+    if (!phoneE164) {
+      setCheckoutError("Check the WhatsApp number — that doesn't look right.");
+      return;
+    }
     if (!email) {
       setCheckoutError("Please enter your email.");
       return;
@@ -108,7 +116,7 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
         itemId: event.id,
         buyerEmail: email,
         buyerName: name || undefined,
-        buyerPhone: phone || undefined,
+        buyerPhone: phoneE164,
         ticketTypeId: selectedTierId ?? undefined,
         quantity,
         products: Object.entries(basket)
@@ -409,13 +417,19 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="0803 123 4567"
                     className={`${field} mt-2`}
+                    required
                   />
+                  {/* Read the number back. WhatsApp fails silently on a
+                      malformed number, so the only safe moment to catch a
+                      typo is before paying, while somebody is looking. */}
                   <p className="mt-1.5 text-[12px] text-[var(--dl-ink-soft)]">
-                    Where your ticket goes. Leave it out and we&apos;ll only email it.
+                    {phoneE164
+                      ? `Your ticket goes to ${formatE164(phoneE164)} on WhatsApp.`
+                      : "Your ticket arrives here on WhatsApp, the moment you pay."}
                   </p>
                 </div>
                 <div>
-                  <label htmlFor="email" className={label}>Email</label>
+                  <label htmlFor="email" className={label}>Email (backup copy)</label>
                   <input
                     id="email"
                     type="email"
@@ -491,8 +505,8 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
 
                 <p className="text-center text-[12.5px] leading-relaxed text-[var(--dl-ink-soft)]">
                   {isFree
-                    ? "No account needed. Your tickets arrive by email."
-                    : "No account needed. Card or bank transfer. Tickets arrive by email."}
+                    ? "No account needed. Your ticket arrives on WhatsApp, and by email as a backup."
+                    : "No account needed. Card or bank transfer. Your ticket arrives on WhatsApp, and by email as a backup."}
                 </p>
               </div>
             )}
