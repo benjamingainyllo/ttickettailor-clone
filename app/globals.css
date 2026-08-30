@@ -144,6 +144,64 @@ html:has(.lp) body {
    Connect button, and the eye had nowhere to land.
    ============================================================ */
 .dl {
+  /*
+   * The older token names, pointed at Daylight.
+   *
+   * THIS IS LOAD-BEARING. Every dashboard screen not yet converted is
+   * written against bg-surface / text-text / border-border, which Tailwind
+   * resolves through these six variables. When the shell moved from .lp to
+   * .dl they lost their overrides and fell back to the :root defaults —
+   * which are jet black and pure white. The result was black cards and
+   * invisible white headings sitting on a pale pink page, live, on every
+   * screen except the one I had converted.
+   *
+   * So they are defined here too. An unconverted page now comes out as
+   * white panels and ink text on the wash: not yet the finished direction,
+   * but legible and coherent while the rest is done.
+   *
+   * Space-separated RGB triples, because the Tailwind config wraps them in
+   * rgb(... / <alpha-value>) so opacity modifiers keep working.
+   */
+  --background: 244 241 250;  /* the paper */
+  --surface: 255 255 255;     /* panels */
+  --muted: 234 230 241;       /* a tint below the panel */
+  --border: 179 172 192;      /* softer than the 2px ink rule, for 1px use */
+  --text: 20 16 24;
+  --subtle: 108 100 120;
+
+  /*
+   * The dark world's token names, answered in Daylight.
+   *
+   * Dashboard code makes 236 references to --coral, --mint, --on-ground,
+   * --hairline and the rest, all of which were defined only under .lp.
+   * Inside .dl they resolved to nothing, so those declarations were simply
+   * dropped — colours vanishing rather than changing, which is the hardest
+   * kind of breakage to spot.
+   *
+   * The semantic ones are NOT the same hex as their dark counterparts, and
+   * that is the point: --mint and --marker are pale, and pale text on a pale
+   * page is invisible. On light they become the dark end of the same hue, so
+   * "this went well" still reads green and still reads at all.
+   */
+  --coral: #DD4A1E;         /* deepened: the dark-world coral fails on light */
+  --mint: #17714A;          /* pale mint is invisible on light */
+  --marker: #8A6A00;        /* yellow is unreadable as text on light */
+  --danger: #C9294A;
+  --lilac: #7B4FA8;
+  --peri: #4257C4;
+
+  --ink: #141018;
+  --paper: #FFFFFF;
+  --ground: #F4F1FA;
+  --ground-deep: #FFFFFF;
+  --ground-raised: #EAE6F1;
+
+  --on-ground: #141018;
+  --on-ground-soft: #5A5268;
+  --on-ground-faint: #6C6478;
+  --hairline: rgba(20, 16, 24, 0.14);
+  --hairline-firm: rgba(20, 16, 24, 0.30);
+
   --dl-paper: #F4F1FA;      /* the base under the wash */
   --dl-panel: #FFFFFF;      /* anything that holds content */
   --dl-ink: #141018;        /* near-black, violet-biased to sit with the wash */

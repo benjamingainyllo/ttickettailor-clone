@@ -398,7 +398,7 @@ export default function CreateEventPage() {
                         onClick={() => setPassFeeToBuyer(!passFeeToBuyer)}
                         className={`shrink-0 rounded-full border px-4 py-2 text-[13.5px] font-bold transition-colors ${
                           passFeeToBuyer
-                            ? "border-[var(--mint)] bg-[var(--mint)] text-[var(--ink)]"
+                            ? "border-[var(--mint)] bg-[var(--mint)] text-white"
                             : "border-[var(--hairline)] text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]"
                         }`}
                       >

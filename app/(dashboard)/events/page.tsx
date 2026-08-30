@@ -199,7 +199,7 @@ export default function EventsPage() {
                   <div
                     className={`absolute bottom-3 left-3 rounded-full px-3 py-1 text-[10px] font-bold shadow-lg ${
                       priceKobo === 0
-                        ? "bg-[var(--mint)] text-[var(--ink)]"
+                        ? "bg-[var(--mint)] text-white"
                         : "bg-[var(--coral)] text-white"
                     }`}
                   >

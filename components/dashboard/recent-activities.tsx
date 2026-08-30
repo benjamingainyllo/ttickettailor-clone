@@ -16,7 +16,7 @@ export function RecentActivities() {
   return (
     <div className="rounded-xl border border-[var(--hairline)] bg-[#0F0F12] overflow-hidden">
       <div className="flex items-center justify-between p-5 border-b border-[var(--hairline)]/50">
-        <h3 className="text-sm font-semibold text-white">Recent Activities</h3>
+        <h3 className="text-sm font-semibold text-text">Recent Activities</h3>
         <button className="flex items-center gap-2 rounded-lg border border-[var(--hairline)] bg-[var(--ground-deep)]/50 px-3 py-1.5 text-xs text-[var(--on-ground-soft)] hover:bg-[var(--ground-raised)]">
           Filter <span className="text-[8px]">▼</span>
         </button>
