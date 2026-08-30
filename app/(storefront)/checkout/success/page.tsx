@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { getDeliveryChannels } from "@/app/actions/delivery";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { verifyCheckout } from "@/app/actions/checkout";
@@ -30,6 +31,11 @@ function CheckoutSuccessContent() {
   const [itemTitle, setItemTitle] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isEvent, setIsEvent] = useState(false);
+  const [emailLive, setEmailLive] = useState(false);
+
+  useEffect(() => {
+    getDeliveryChannels().then((c) => setEmailLive(c.email)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!reference) {
@@ -80,12 +86,10 @@ function CheckoutSuccessContent() {
             <p className="mt-2 text-sm text-subtle">
               {itemTitle
                 ? `Your payment for "${itemTitle}" was successful.`
-                : "Your payment was successful."}{" "}
-              {isEvent
-                ? "Your tickets are on their way to your email."
-                : "A receipt has been sent to your email."}
+                : "Your payment was successful."}
             </p>
 
+            {/* The ticket itself comes before any promise about email. */}
             {isEvent && reference && (
               <Link
                 href={`/tickets/${reference}`}
@@ -94,6 +98,14 @@ function CheckoutSuccessContent() {
                 Show my tickets
               </Link>
             )}
+
+            <p className="mt-3 text-xs text-subtle">
+              {emailLive
+                ? isEvent
+                  ? "A copy is on its way to your email."
+                  : "A receipt is on its way to your email."
+                : "Screenshot this or keep the link — it's your way in."}
+            </p>
           </>
         )}
 

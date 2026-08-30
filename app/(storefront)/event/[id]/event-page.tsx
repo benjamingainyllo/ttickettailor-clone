@@ -23,13 +23,21 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
   const [phone, setPhone] = useState("");
   /** WhatsApp only leads once it can actually send. */
   const [whatsappLive, setWhatsappLive] = useState(false);
+  const [emailLive, setEmailLive] = useState(false);
+  /** Kept so the buyer can open their ticket straight away. */
+  const [reference, setReference] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [registered, setRegistered] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
-    getDeliveryChannels().then((c) => setWhatsappLive(c.whatsapp)).catch(() => {});
+    getDeliveryChannels()
+      .then((c) => {
+        setWhatsappLive(c.whatsapp);
+        setEmailLive(c.email);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -145,6 +153,7 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
       });
 
       if (res.success && res.completedWithoutPayment) {
+        setReference(res.reference ?? null);
         setRegistered(true);
       } else if (res.success && res.authorizationUrl) {
         window.location.href = res.authorizationUrl;
@@ -301,8 +310,27 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
               <div className={`${panel} mt-5 p-6 text-center`}>
                 <CheckCircle2 className="mx-auto h-8 w-8" strokeWidth={2} />
                 <p className="mt-3 text-[18px] font-extrabold tracking-[-0.02em]">You&apos;re in</p>
-                <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--dl-ink-soft)]">
-                  We sent {quantity > 1 ? `${quantity} tickets` : "your ticket"} to {email}.
+
+                {/*
+                  The ticket first, the message second. This used to say "we
+                  sent your ticket to <email>" and nothing else, which is a
+                  promise about someone else's mail server — and a flat lie
+                  whenever no email service is configured, which is exactly
+                  the state a new install is in. The link always works.
+                */}
+                {reference && (
+                  <a
+                    href={`/tickets/${reference}`}
+                    className="mt-4 block rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-ink)] py-3 text-[14px] font-extrabold text-[var(--dl-paper)]"
+                  >
+                    {quantity > 1 ? `Open your ${quantity} tickets` : "Open your ticket"}
+                  </a>
+                )}
+
+                <p className="mt-3 text-[13px] leading-relaxed text-[var(--dl-ink-soft)]">
+                  {emailLive
+                    ? `A copy is on its way to ${email}.`
+                    : "Screenshot this or keep the link — it's your way in."}
                 </p>
               </div>
             ) : (

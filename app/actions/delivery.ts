@@ -1,6 +1,7 @@
 "use server";
 
 import { isDemoWhatsAppMode } from "@/lib/whatsapp";
+import { isDemoEmailMode } from "@/lib/email";
 
 /**
  * Which channels can actually deliver a ticket right now.
@@ -16,5 +17,8 @@ import { isDemoWhatsAppMode } from "@/lib/whatsapp";
  * ends up lying.
  */
 export async function getDeliveryChannels() {
-  return { whatsapp: !isDemoWhatsAppMode() };
+  return {
+    whatsapp: !isDemoWhatsAppMode(),
+    email: !isDemoEmailMode(),
+  };
 }
