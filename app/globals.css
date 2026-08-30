@@ -117,6 +117,61 @@ html:has(.lp) body {
   background: #12080F;
 }
 
+/* ============================================================
+   DAYLIGHT — the signed-in world.
+   ============================================================
+
+   The dashboard is LIGHT and the marketing site is dark, and that is
+   deliberate rather than an oversight. The site sells at night; the
+   dashboard is where somebody works at 1am on their phone, and every app
+   this was designed against — Partiful, Luma, Tix — is light.
+
+   The character of it is the EDGE, not the colour. Colour lives in the
+   paper: a wash of lilac, sky and pink that never appears in a control.
+   Everything drawn on top of that is black rules and 2px corners. That
+   combination — soft ground, hard structure — is the whole idea, and it is
+   what stops a light dashboard drifting back into a generic pastel default.
+
+   --dl-acid is the one loud thing, and the rule for it is exact because
+   "use it sparingly" is not a rule anybody can follow:
+
+     Acid belongs to "New event" in the sidebar, and to nothing else.
+
+   It is in the same place on every screen, so it becomes the thing your eye
+   goes to without reading. Every other primary action — Connect, Publish,
+   Save — is a solid ink fill, which still outranks the outlined buttons
+   around it. The first draft of this screen had acid on New event AND on a
+   Connect button, and the eye had nowhere to land.
+   ============================================================ */
+.dl {
+  --dl-paper: #F4F1FA;      /* the base under the wash */
+  --dl-panel: #FFFFFF;      /* anything that holds content */
+  --dl-ink: #141018;        /* near-black, violet-biased to sit with the wash */
+  --dl-ink-soft: #5A5268;   /* body copy */
+  --dl-ink-faint: #6C6478;  /* labels, captions */
+  --dl-line: #141018;       /* structural rules are FULL ink, 2px. The edge. */
+  --dl-line-soft: #B3ACC0;  /* only where a hairline genuinely reads better */
+
+  --dl-acid: #D8FF3E;       /* the single action colour */
+  --dl-danger: #FF4B63;     /* refunds, failures, destructive things */
+
+  background:
+    radial-gradient(58% 62% at 8% 4%, #E6DBFF 0%, rgba(230, 219, 255, 0) 60%),
+    radial-gradient(52% 58% at 94% 8%, #CDEAFF 0%, rgba(205, 234, 255, 0) 60%),
+    radial-gradient(56% 56% at 76% 99%, #FFDBE8 0%, rgba(255, 219, 232, 0) 62%),
+    var(--dl-paper);
+  background-attachment: fixed;
+  color: var(--dl-ink);
+  color-scheme: light;
+}
+
+/* The wash is painted by .dl itself, so the page behind it must not fight
+   it with the dark world's ground. */
+html:has(.dl),
+html:has(.dl) body {
+  background: #F4F1FA;
+}
+
 /* A highlighter stroke behind a word. Irregular on purpose — a flat
    rectangle reads as a UI chip, not a marker. */
 .lp-mark {

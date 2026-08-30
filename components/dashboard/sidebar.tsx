@@ -24,11 +24,6 @@ import {
  *
  * SELLING is the daily work: put an event up, watch it sell, see who is
  * coming. MONEY is the weekly check. Everything else is settings.
- *
- * Gone from the old creator product: Offers (digital downloads — merch now
- * lives on the event that sells it), Automations and Experiments, which were
- * both empty placeholder screens. A nav item that leads to "coming soon"
- * costs trust every time somebody clicks it hoping for something.
  */
 const navGroups = [
   {
@@ -49,26 +44,16 @@ const navGroups = [
 ];
 
 /**
- * The sidebar.
+ * The sidebar, in Daylight.
  *
- * Repainted onto the brand — it was black-and-zinc with no brand colour in
- * it at all, which is what made the dashboard read as a different product
- * from the site that sells it.
+ * A full-ink 2px rule divides it from the page rather than a faint hairline,
+ * and the active item is a solid ink block rather than a tinted pill. Those
+ * two choices carry most of the direction: the ground is soft, everything
+ * structural is hard.
  *
- * Three controls came out, all of which were decoration:
- *
- *   A SEARCH BOX with no state and no handler. It looked like the way to
- *   find an event and did nothing when you typed in it.
- *
- *   A DARK/LIGHT TOGGLE. The dashboard now renders inside .lp, which is a
- *   single dark world by design, so the switch had no effect on anything —
- *   a control that visibly does nothing is worse than no control.
- *
- *   A GREEN PRESENCE DOT on the avatar, which implied an online status
- *   this product does not have and never checks.
- *
- * What replaced them is the one button an organiser actually wants at hand:
- * make an event.
+ * "New event" is the one acid control in the whole shell. Nothing else in
+ * here may take that colour — the moment a second thing is acid, neither is
+ * pointing at anything.
  */
 export function Sidebar() {
   const pathname = usePathname();
@@ -81,62 +66,59 @@ export function Sidebar() {
   const userPhoto = profile?.avatar_url || null;
 
   const item = (active: boolean) =>
-    `group flex h-10 items-center rounded-xl text-[14px] transition-colors ${
+    `group flex h-10 items-center rounded-[3px] text-[14.5px] transition-colors ${
       active
-        ? "bg-[var(--ground-raised)] font-bold text-[var(--on-ground)]"
-        : "font-semibold text-[var(--on-ground-soft)] hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)]"
+        ? "bg-[var(--dl-ink)] font-extrabold text-[var(--dl-paper)]"
+        : "font-semibold text-[var(--dl-ink-soft)] hover:bg-[rgba(20,16,24,0.06)] hover:text-[var(--dl-ink)]"
     } ${isCollapsed ? "justify-center px-0" : "gap-3 px-3"}`;
 
-  const icon = `shrink-0 ${isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]"}`;
+  const icon = `shrink-0 ${isCollapsed ? "h-5 w-5" : "h-[17px] w-[17px]"}`;
   const label = `truncate transition-all duration-300 ${
     isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
   }`;
+  const groupLabel =
+    "mb-2 px-2 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]";
 
   return (
     <aside
-      className={`relative hidden h-screen shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-[var(--hairline)] bg-[var(--ground)] transition-[width] duration-300 ease-in-out lg:flex ${
-        isCollapsed ? "w-[80px]" : "w-[260px]"
+      className={`relative hidden h-screen shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r-2 border-[var(--dl-line)] transition-[width] duration-300 ease-in-out lg:flex ${
+        isCollapsed ? "w-[84px]" : "w-[248px]"
       }`}
     >
-      <div className="flex h-[72px] shrink-0 items-center justify-between px-5">
+      <div className="flex h-[68px] shrink-0 items-center justify-between px-4">
         <Link
           href="/overview"
-          className={`flex items-center gap-2.5 overflow-hidden transition-all duration-300 ${
+          className={`overflow-hidden text-[19px] font-extrabold tracking-[-0.03em] transition-all duration-300 ${
             isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
           }`}
         >
-          <span className="flex h-8 w-8 shrink-0 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[13px] font-black text-white">
-            P
-          </span>
-          <span className="truncate text-[17px] font-extrabold tracking-tight">
-            Paylance
-          </span>
+          Paylance
         </Link>
 
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           aria-label={isCollapsed ? "Expand the menu" : "Collapse the menu"}
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--on-ground-faint)] transition-colors hover:bg-[var(--ground-deep)] hover:text-[var(--on-ground)] ${
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] text-[var(--dl-ink-faint)] transition-colors hover:bg-[rgba(20,16,24,0.06)] hover:text-[var(--dl-ink)] ${
             isCollapsed ? "mx-auto" : ""
           }`}
         >
           {isCollapsed ? (
-            <ChevronsRight strokeWidth={1.75} className="h-5 w-5" />
+            <ChevronsRight strokeWidth={2} className="h-[18px] w-[18px]" />
           ) : (
-            <ChevronsLeft strokeWidth={1.75} className="h-5 w-5" />
+            <ChevronsLeft strokeWidth={2} className="h-[18px] w-[18px]" />
           )}
         </button>
       </div>
 
-      <div className="px-3 pb-5 pt-1">
+      <div className="px-3 pb-6">
         <Link
           href="/events/create"
           title={isCollapsed ? "New event" : undefined}
-          className={`flex h-10 items-center rounded-xl bg-[var(--coral)] text-[14px] font-extrabold text-white transition-opacity hover:opacity-90 ${
+          className={`flex h-10 items-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-acid)] text-[13.5px] font-extrabold uppercase tracking-[0.04em] text-[var(--dl-ink)] transition-transform hover:-translate-y-[1px] ${
             isCollapsed ? "justify-center px-0" : "gap-2 px-3"
           }`}
         >
-          <Plus strokeWidth={2.5} className="h-[18px] w-[18px] shrink-0" />
+          <Plus strokeWidth={2.75} className="h-[17px] w-[17px] shrink-0" />
           <span className={label}>New event</span>
         </Link>
       </div>
@@ -145,7 +127,7 @@ export function Sidebar() {
         {navGroups.map((group, index) => (
           <div key={group.title} className={index !== 0 ? "mt-7" : ""}>
             <p
-              className={`mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-ground-faint)] transition-all duration-300 ${
+              className={`${groupLabel} transition-all duration-300 ${
                 isCollapsed ? "h-0 overflow-hidden opacity-0" : "opacity-100"
               }`}
             >
@@ -153,7 +135,7 @@ export function Sidebar() {
             </p>
 
             {isCollapsed && index !== 0 && (
-              <div className="mx-auto mb-4 mt-2 h-px w-8 bg-[var(--hairline)]" />
+              <div className="mx-auto mb-4 mt-2 h-[2px] w-7 bg-[var(--dl-line)]" />
             )}
 
             <nav className="space-y-1">
@@ -167,10 +149,7 @@ export function Sidebar() {
                     aria-current={active ? "page" : undefined}
                     className={item(active)}
                   >
-                    <entry.icon
-                      strokeWidth={1.75}
-                      className={`${icon} ${active ? "text-[var(--coral)]" : ""}`}
-                    />
+                    <entry.icon strokeWidth={2} className={icon} />
                     <span className={label}>{entry.label}</span>
                   </Link>
                 );
@@ -180,9 +159,9 @@ export function Sidebar() {
         ))}
       </div>
 
-      <div className="mt-auto border-t border-[var(--hairline)] p-3">
+      <div className="mt-auto border-t-2 border-[var(--dl-line)] p-3">
         <Link href="/settings" className={item(pathname === "/settings")}>
-          <Settings2 strokeWidth={1.75} className={icon} />
+          <Settings2 strokeWidth={2} className={icon} />
           <span className={label}>Settings</span>
         </Link>
 
@@ -193,23 +172,23 @@ export function Sidebar() {
             title={isCollapsed ? "Your public page" : undefined}
             className={item(false)}
           >
-            <ExternalLink strokeWidth={1.75} className={icon} />
+            <ExternalLink strokeWidth={2} className={icon} />
             <span className={label}>Your public page</span>
           </Link>
         )}
 
         <button
           onClick={() => signOut()}
-          className={`flex h-10 w-full items-center rounded-xl text-[14px] font-semibold text-[var(--on-ground-soft)] transition-colors hover:bg-[#FF6A451a] hover:text-[var(--coral)] ${
+          className={`flex h-10 w-full items-center rounded-[3px] text-[14.5px] font-semibold text-[var(--dl-ink-soft)] transition-colors hover:bg-[rgba(255,75,99,0.12)] hover:text-[var(--dl-danger)] ${
             isCollapsed ? "justify-center px-0" : "gap-3 px-3"
           }`}
         >
-          <LogOut strokeWidth={1.75} className={icon} />
+          <LogOut strokeWidth={2} className={icon} />
           <span className={label}>Log out</span>
         </button>
 
         <div
-          className={`mt-3 flex w-full items-center border-t border-[var(--hairline)] pt-3 ${
+          className={`mt-3 flex w-full items-center border-t-2 border-[var(--dl-line)] pt-3 ${
             isCollapsed ? "justify-center" : "gap-3 text-left"
           }`}
         >
@@ -217,12 +196,12 @@ export function Sidebar() {
             <Image
               src={userPhoto}
               alt=""
-              width={36}
-              height={36}
-              className="h-9 w-9 shrink-0 rounded-full object-cover"
+              width={34}
+              height={34}
+              className="h-[34px] w-[34px] shrink-0 rounded-[3px] border-2 border-[var(--dl-line)] object-cover"
             />
           ) : (
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ground-raised)] text-[13px] font-extrabold text-[var(--on-ground-soft)]">
+            <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] text-[13px] font-extrabold">
               {(userName[0] || "P").toUpperCase()}
             </span>
           )}
@@ -232,8 +211,8 @@ export function Sidebar() {
               isCollapsed ? "hidden opacity-0" : "opacity-100"
             }`}
           >
-            <span className="truncate text-[13.5px] font-bold">{userName}</span>
-            <span className="truncate text-[12px] text-[var(--on-ground-faint)]">
+            <span className="truncate text-[13.5px] font-extrabold">{userName}</span>
+            <span className="truncate text-[11.5px] text-[var(--dl-ink-faint)]">
               {userEmail}
             </span>
           </div>
