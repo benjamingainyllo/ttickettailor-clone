@@ -116,6 +116,48 @@ WHERE u.id = p.id
   AND (p.first_name IS NULL OR p.last_name IS NULL OR p.avatar_url IS NULL);
 
 
+
+-- ============================================================
+-- WHO OWNS THE PLATFORM
+-- ============================================================
+--
+-- One table listing the accounts allowed to see across every organiser.
+-- It is data rather than a constant in the code for two reasons: adding or
+-- removing somebody must not need a deploy, and a hard-coded check is one
+-- careless edit away from being wrong in production.
+--
+-- Nothing reads this from a browser. The policy below lets an admin confirm
+-- their own membership and nothing else; the dashboard's real reads run on
+-- the server with the service key, and only after that check has passed.
+-- See lib/admin.ts.
+--
+-- To add somebody: repeat the insert below with their email.
+-- To remove somebody: delete their row. Both take effect immediately.
+
+CREATE TABLE IF NOT EXISTS public.platform_admins (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  added_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  note TEXT
+);
+
+ALTER TABLE public.platform_admins ENABLE ROW LEVEL SECURITY;
+
+-- An admin may see their own row. Nobody sees anybody else's, and nothing
+-- writes here through the API at all — membership is a deliberate act in
+-- the SQL editor, never something the app can do to itself.
+DROP POLICY IF EXISTS "Admins can see their own membership" ON public.platform_admins;
+CREATE POLICY "Admins can see their own membership" ON public.platform_admins
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Seed the owner. Guarded on the email, so re-running setup.sql is a no-op
+-- and it stays silent if that account does not exist yet.
+INSERT INTO public.platform_admins (user_id, note)
+SELECT id, 'Platform owner'
+FROM auth.users
+WHERE email = 'benjamingainyllo@gmail.com'
+ON CONFLICT (user_id) DO NOTHING;
+
+
 -- ============================================================
 -- PART 2 — The things a creator sells
 -- Money lives in integer kobo (100 kobo = ₦1). Never naira, never
