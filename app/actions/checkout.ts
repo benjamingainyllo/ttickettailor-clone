@@ -78,6 +78,7 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
       quantity,
       passFeeToBuyer,
       feeWaived,
+      isDemo,
     } = item;
     const reference = uuidv4();
     const ticketsKobo: Kobo = unitPriceKobo * quantity;
@@ -208,6 +209,9 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
       buyer_email: payload.buyerEmail,
       buyer_name: payload.buyerName ?? null,
       buyer_phone: payload.buyerPhone ?? null,
+      // Only ever set when the column exists: eventFlags answers false on
+      // a database that hasn't been migrated, so this key stays absent.
+      ...(isDemo ? { is_demo: true } : {}),
     };
 
     // ---- Free: record the order, no money moves, tickets issue on settle. ----
@@ -550,6 +554,8 @@ type LoadedItem =
       /** True when the organiser has chosen to add our fee to the buyer's total. */
       passFeeToBuyer: boolean;
       feeWaived: boolean;
+      /** A test sale, kept out of every revenue figure. */
+      isDemo: boolean;
       quantity: number;
     }
   | { ok: false; error: string };
@@ -629,37 +635,41 @@ async function loadSellableItem(payload: CheckoutPayload): Promise<LoadedItem> {
     ticketTypeId: tier.id,
     quantity: requested,
     passFeeToBuyer: Boolean(event.pass_fee_to_buyer),
-    feeWaived: await isFeeWaived(event.id),
+    ...(await eventFlags(event.id)),
   };
 }
 
 /**
- * Has a referral credit been spent on this event?
+ * The two flags that live on newer columns: is this event's fee waived by
+ * a referral credit, and is it a test event?
  *
- * Asked in its own query, and answered "no" on ANY failure, because
- * events.fee_waived only exists once setup.sql has been run. Folding the
- * column into the select above would mean that on a database that has not
- * had the migration applied yet, PostgREST rejects the whole row — and
- * every paid checkout on the site starts reporting "this event is no
- * longer available". A growth feature must not be able to take payments
- * down while it is being rolled out.
+ * Asked in their own query, and answered "no" on ANY failure, because
+ * events.fee_waived and events.is_demo only exist once setup.sql has been
+ * run. Folding them into the select above would mean that on a database
+ * without the migration, PostgREST rejects the whole row — and every paid
+ * checkout on the site starts reporting "this event is no longer
+ * available". A growth feature must not be able to take payments down
+ * while it is being rolled out.
  *
- * The failure direction is the safe one: we charge the normal fee. An
- * organiser owed a free event notices and can be made whole; a checkout
- * that refuses money cannot.
+ * The failure direction is the safe one in both cases: we charge the
+ * normal fee, and we treat the sale as real. An organiser owed a free
+ * event notices and can be made whole, and a test sale counted as real can
+ * be deleted — a checkout that refuses money can do neither.
  */
-async function isFeeWaived(eventId: string): Promise<boolean> {
+async function eventFlags(
+  eventId: string
+): Promise<{ feeWaived: boolean; isDemo: boolean }> {
   try {
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("events")
-      .select("fee_waived")
+      .select("fee_waived, is_demo")
       .eq("id", eventId)
       .maybeSingle();
 
-    if (error) return false;
-    return Boolean(data?.fee_waived);
+    if (error) return { feeWaived: false, isDemo: false };
+    return { feeWaived: Boolean(data?.fee_waived), isDemo: Boolean(data?.is_demo) };
   } catch {
-    return false;
+    return { feeWaived: false, isDemo: false };
   }
 }

@@ -1245,5 +1245,32 @@ ALTER TABLE public.events
 
 
 -- ============================================================
+-- PART 8 — Test sales, kept out of the real numbers
+-- ============================================================
+--
+-- The demo payment provider already lets a whole sale be walked through
+-- without a gateway. The problem was what it left behind: a test sale is
+-- a real row in orders, so it landed in revenue, in the owner dashboard,
+-- and in the fee totals, right beside actual money.
+--
+-- So anything created by the "run a test sale" walkthrough is flagged
+-- here, and lib/platform-stats.ts drops it. A test sale you can't tell
+-- apart from a real one is worse than no test sale at all.
+--
+-- Both default to false, so every row that already exists — and every row
+-- written by any code that doesn't know about this — is real.
+
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+
+-- Partial indexes: demo rows are a handful among all the real ones, so
+-- there is no reason to index the false side.
+CREATE INDEX IF NOT EXISTS events_demo_idx
+  ON public.events (creator_id) WHERE is_demo;
+CREATE INDEX IF NOT EXISTS orders_demo_idx
+  ON public.orders (creator_id) WHERE is_demo;
+
+
+-- ============================================================
 -- Done. You should see "Success. No rows returned".
 -- ============================================================

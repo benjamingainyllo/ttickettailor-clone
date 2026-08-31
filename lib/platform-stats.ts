@@ -95,7 +95,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     await Promise.all([
       admin
         .from("orders")
-        .select("creator_id, event_id, gross_kobo, platform_fee_kobo, paid_at, created_at")
+        .select("id, creator_id, event_id, gross_kobo, platform_fee_kobo, paid_at, created_at")
         .eq("status", "paid"),
       admin.from("profiles").select("id, first_name, last_name, handle, box_office_name"),
       admin.from("events").select("id, creator_id, title, publish_status, price_kobo, date"),
@@ -110,7 +110,27 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       admin.from("ticket_types").select("event_id, price_kobo"),
     ]);
 
-  const settledRows = paid.data ?? [];
+  /**
+   * Test sales are dropped before anything is counted.
+   *
+   * Asked as their own queries rather than selected alongside everything
+   * else, because events.is_demo and orders.is_demo only exist once
+   * setup.sql has been run — and folding the column into the main selects
+   * would make this entire dashboard read zero on a database that hasn't
+   * caught up yet. On failure both sets come back empty, nothing is
+   * excluded, and the numbers are exactly what they were before test
+   * sales existed.
+   */
+  const [demoEvents, demoOrders] = await Promise.all([
+    admin.from("events").select("id").eq("is_demo", true),
+    admin.from("orders").select("id").eq("is_demo", true),
+  ]);
+  const demoEventIds = new Set((demoEvents.data ?? []).map((e) => e.id));
+  const demoOrderIds = new Set((demoOrders.data ?? []).map((o) => o.id));
+
+  const settledRows = (paid.data ?? []).filter(
+    (o) => !demoOrderIds.has((o as { id?: string }).id ?? "")
+  );
 
   // The split the whole screen depends on. A settled order with nothing on
   // it is a registration, not a sale, and it is kept out of every revenue
@@ -119,8 +139,10 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   const freeRows = settledRows.filter((o) => Number(o.gross_kobo ?? 0) === 0);
 
   const profileRows = profiles.data ?? [];
-  const eventRows = events.data ?? [];
-  const tickets = ticketRows.data ?? [];
+  const eventRows = (events.data ?? []).filter((e) => !demoEventIds.has(e.id));
+  const tickets = (ticketRows.data ?? []).filter(
+    (t) => !demoEventIds.has(t.event_id)
+  );
   const banked = new Set((payoutAccounts.data ?? []).map((a) => a.creator_id));
 
   /**

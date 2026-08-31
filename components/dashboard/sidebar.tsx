@@ -11,6 +11,7 @@ import {
   ChevronsRight,
   CreditCard,
   ExternalLink,
+  FlaskConical,
   Gift,
   LayoutGrid,
   LogOut,
@@ -162,6 +163,14 @@ export function Sidebar() {
       </div>
 
       <div className="mt-auto border-t-2 border-[var(--dl-line)] p-3">
+        {/* Down here with Settings rather than up in the daily work: a test
+            sale is something you run once to see how the thing behaves, not
+            a place you go every morning. */}
+        <Link href="/demo" className={item(pathname === "/demo")}>
+          <FlaskConical strokeWidth={2} className={icon} />
+          <span className={label}>Test sale</span>
+        </Link>
+
         <Link href="/settings" className={item(pathname === "/settings")}>
           <Settings2 strokeWidth={2} className={icon} />
           <span className={label}>Settings</span>
