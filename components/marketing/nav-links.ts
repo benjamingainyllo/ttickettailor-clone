@@ -9,7 +9,6 @@
 export const MARKETING_NAV = [
   ["/features", "Features"],
   ["/pricing", "Pricing"],
-  ["/sell", "Calculator"],
   ["/event-types", "Event types"],
 ] as const;
 
