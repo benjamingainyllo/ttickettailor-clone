@@ -3,6 +3,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { siteUrl } from "@/lib/site";
 import {
   calculateOrderPlatformFeeKobo,
   DEFAULT_PLATFORM_FEE_TYPE,
@@ -36,11 +37,24 @@ interface CheckoutResult {
   completedWithoutPayment?: boolean;
 }
 
+/**
+ * Where the payment provider should send the buyer back to.
+ *
+ * Prefers the host this very request arrived on, because that is the one
+ * address the buyer is demonstrably able to reach — they are on it. The
+ * configured value is only used when there is no request to read, and it
+ * goes through siteUrl(), which ignores placeholders like the
+ * `https://placeholder.com` an old version of the setup guide told people
+ * to type in. Sending a buyer back to a parked domain after they have paid
+ * is about the worst moment for this to be wrong.
+ */
 function siteOrigin() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
   const host = headers().get("host");
-  const protocol = host?.startsWith("localhost") ? "http" : "https";
-  return `${protocol}://${host}`;
+  if (host) {
+    const protocol = host.startsWith("localhost") ? "http" : "https";
+    return `${protocol}://${host}`;
+  }
+  return siteUrl();
 }
 
 /**

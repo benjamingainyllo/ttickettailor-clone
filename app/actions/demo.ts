@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPaymentProvider, isDemoPaymentMode } from "@/lib/payments";
-import { siteUrl } from "@/lib/site";
+import { siteUrl, siteUrlIsMisconfigured } from "@/lib/site";
 
 /**
  * The test sale.
@@ -37,15 +37,18 @@ export interface DemoState {
   event: {
     id: string;
     title: string;
-    /** Where a guest would buy it. */
-    publicUrl: string;
-    doorUrl: string;
   } | null;
   paidOrders: number;
   ticketsIssued: number;
   ticketsScanned: number;
   /** True when setup.sql hasn't been run yet, so is_demo doesn't exist. */
   needsMigration: boolean;
+  /**
+   * NEXT_PUBLIC_SITE_URL is set to something unusable and is being
+   * ignored. Worth saying out loud here, because the same setting decides
+   * where every ticket link in every email points.
+   */
+  siteUrlMisconfigured: boolean;
 }
 
 export async function getDemoState(): Promise<
@@ -104,18 +107,15 @@ export async function getDemoState(): Promise<
       available: isDemoPaymentMode(),
       bankConnected:
         account?.status === "active" && Boolean(account?.provider_subaccount_id),
-      event: event
-        ? {
-            id: event.id,
-            title: event.title,
-            publicUrl: `${siteUrl()}/event/${event.id}`,
-            doorUrl: `${siteUrl()}/events/${event.id}/door`,
-          }
-        : null,
+      // Only the id and the title. The page builds its own links from
+      // window.location.origin, because the browser is standing on the
+      // real address and cannot be misconfigured about what it is.
+      event: event ? { id: event.id, title: event.title } : null,
       paidOrders,
       ticketsIssued,
       ticketsScanned,
       needsMigration,
+      siteUrlMisconfigured: siteUrlIsMisconfigured(),
     },
   };
 }
@@ -232,11 +232,7 @@ export async function startDemoSale() {
     revalidatePath("/demo");
     revalidatePath("/events");
 
-    return {
-      success: true as const,
-      eventId: event.id,
-      publicUrl: `${siteUrl()}/event/${event.id}`,
-    };
+    return { success: true as const, eventId: event.id };
   } catch (error) {
     console.error("Could not start the demo sale", error);
     return { success: false as const, error: "Something went wrong setting the test up." };
