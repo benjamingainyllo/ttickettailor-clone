@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { REFERRAL_COOKIE, recordReferral } from "@/lib/referrals";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 /**
@@ -65,6 +67,34 @@ function safeNext(raw: string | null): string {
   return raw;
 }
 
+/**
+ * Spend the referral cookie, if there is one.
+ *
+ * Never allowed to break a sign-in. recordReferral swallows everything it
+ * can, and this clears the cookie either way — a code that cannot be
+ * attributed on the one occasion it could be is not worth carrying around
+ * for another ninety days, and leaving it would mean retrying a doomed
+ * lookup on every subsequent login.
+ */
+async function attributeReferral(response: NextResponse) {
+  try {
+    const store = await cookies();
+    const code = store.get(REFERRAL_COOKIE)?.value ?? null;
+    if (!code) return;
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) await recordReferral(user.id, code);
+  } catch (error) {
+    console.error("Referral attribution failed", error);
+  } finally {
+    response.cookies.delete(REFERRAL_COOKIE);
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const next = safeNext(searchParams.get("next"));
@@ -88,7 +118,17 @@ export async function GET(request: NextRequest) {
       // A recovery link means they are here to set a new password, and they
       // are now signed in well enough to do it.
       const destination = type === "recovery" ? "/reset-password" : next;
-      return NextResponse.redirect(`${origin}${destination}`);
+      const response = NextResponse.redirect(`${origin}${destination}`);
+
+      // Now there is finally an account to attribute the referral to.
+      // Deliberately skipped on a recovery link: somebody resetting their
+      // password is not a new organiser, and crediting a referral there
+      // would pay out for an account that already existed.
+      if (type !== "recovery") {
+        await attributeReferral(response);
+      }
+
+      return response;
     }
 
     return NextResponse.redirect(

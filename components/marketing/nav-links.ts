@@ -9,6 +9,7 @@
 export const MARKETING_NAV = [
   ["/features", "Features"],
   ["/pricing", "Pricing"],
+  ["/sell", "Calculator"],
   ["/event-types", "Event types"],
 ] as const;
 
@@ -32,6 +33,7 @@ export const FOOTER_COLUMNS = [
     links: [
       ["/features", "Features"],
       ["/pricing", "Pricing"],
+      ["/sell", "What you'd keep"],
       ["/event-types", "Event types"],
     ],
   },

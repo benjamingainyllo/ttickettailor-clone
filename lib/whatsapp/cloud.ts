@@ -22,8 +22,20 @@ import type { SendResult, TicketMessage, WhatsAppProvider } from "./types";
  *   Your ticket: {{4}}
  *   Show the QR at the door.
  *
+ *   Running your own event? See what you'd keep:
+ *   https://benjamin-ticket.vercel.app/sell
+ *
  * Change the template and this must change with it, which is why the
  * ordering is written down here as well as in the dashboard.
+ *
+ * THAT LAST LINE IS DELIBERATELY STATIC, not a fifth parameter. Meta
+ * approves the body text once; a static line needs no parameter, so it
+ * cannot fall out of step with the {{1}}–{{4}} ordering above, and a
+ * future edit to it cannot silently shift the ticket link into the wrong
+ * slot. The cost is that the URL is literal here and in the Meta
+ * dashboard: if the site ever moves, the template has to be resubmitted.
+ * lib/growth.ts holds the same line for the demo provider and the email,
+ * where it IS built from the live site URL — keep the two in agreement.
  */
 export class CloudWhatsAppProvider implements WhatsAppProvider {
   readonly name = "whatsapp-cloud";

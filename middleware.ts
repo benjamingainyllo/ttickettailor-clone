@@ -1,7 +1,42 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  REFERRAL_COOKIE,
+  REFERRAL_COOKIE_MAX_AGE,
+  normaliseReferralCode,
+} from "@/lib/referral-code";
 
 export async function middleware(request: NextRequest) {
+  /**
+   * Catch a referral code off any page, not just the one it points at.
+   *
+   * A shared link lands on /sell, but people paste links into places that
+   * rewrite them and forward them on. Reading ?ref= wherever it appears
+   * costs one query-string lookup, and the code is only trusted after
+   * normaliseReferralCode has confirmed its exact shape.
+   *
+   * It is parked in a cookie rather than acted on here, because the
+   * person following the link has no account yet — there is nobody to
+   * attribute. app/auth/callback/route.ts spends it once they do.
+   */
+  const referralCode = normaliseReferralCode(
+    request.nextUrl.searchParams.get("ref")
+  );
+
+  /** Stamp the code onto whichever response we end up returning. */
+  const withReferral = (response: NextResponse) => {
+    if (referralCode) {
+      response.cookies.set(REFERRAL_COOKIE, referralCode, {
+        maxAge: REFERRAL_COOKIE_MAX_AGE,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+      });
+    }
+    return response;
+  };
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -41,6 +76,7 @@ export async function middleware(request: NextRequest) {
     "/revenue",
     "/payouts",
     "/events",
+    "/refer",
     "/integrations",
     "/settings",
     "/onboarding",
@@ -53,7 +89,7 @@ export async function middleware(request: NextRequest) {
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return withReferral(NextResponse.redirect(url));
   }
 
   // An account made by clicking a link in an email has no password until
@@ -73,7 +109,7 @@ export async function middleware(request: NextRequest) {
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/onboarding";
-    return NextResponse.redirect(url);
+    return withReferral(NextResponse.redirect(url));
   }
 
   // If user is authenticated and on the login page, redirect to dashboard.
@@ -81,10 +117,10 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname === "/login" && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/overview";
-    return NextResponse.redirect(url);
+    return withReferral(NextResponse.redirect(url));
   }
 
-  return supabaseResponse;
+  return withReferral(supabaseResponse);
 }
 
 export const config = {

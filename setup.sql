@@ -1099,5 +1099,151 @@ CREATE POLICY "Paylance authenticated update" ON storage.objects
 
 
 -- ============================================================
+-- PART 7 — Referrals: an organiser's next event, free
+-- ============================================================
+--
+-- THE OFFER. An organiser who brings another organiser gets their next
+-- event free, and so does the one they brought.
+--
+-- WHY IT IS AFFORDABLE HERE AND NOT ELSEWHERE. On a flat fee per ticket,
+-- a free event costs a fixed number of ticket fees. A percentage
+-- competitor giving away the same thing hands over a slice of however big
+-- that night turns out to be, so they can't offer it. Promoters all know
+-- each other, which is the way this industry actually spreads, and this
+-- is the cheapest place we have to spend.
+--
+-- WHEN IT IS EARNED — the decision this schema encodes. NOT at signup.
+-- A credit is granted only once the referred organiser has sold their
+-- first PAID ticket. Paying on signup would pay for empty accounts, and
+-- an offer that can be farmed stops being a growth mechanic and turns
+-- into a cost centre. The cost of that choice is that a genuine referral
+-- who takes two months to run their first event waits two months to be
+-- thanked.
+--
+-- Four pieces:
+--   profiles.referral_code   what an organiser shares
+--   referrals                who brought whom, and whether it has paid out
+--   referral_credits         one free event each, until it is spent
+--   events.fee_waived        the event a credit was actually spent on
+
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_code TEXT;
+
+-- No O/0 and no I/1: these codes get read off one phone screen and typed
+-- into another, and a code nobody can transcribe is a code nobody uses.
+CREATE OR REPLACE FUNCTION public.generate_referral_code()
+RETURNS TEXT AS $$
+DECLARE
+  alphabet CONSTANT TEXT := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  candidate TEXT;
+  i INT;
+BEGIN
+  LOOP
+    candidate := '';
+    FOR i IN 1..6 LOOP
+      candidate := candidate ||
+        SUBSTR(alphabet, 1 + FLOOR(RANDOM() * LENGTH(alphabet))::INT, 1);
+    END LOOP;
+    EXIT WHEN NOT EXISTS (
+      SELECT 1 FROM public.profiles WHERE referral_code = candidate
+    );
+  END LOOP;
+  RETURN candidate;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Backfill before the unique index goes on, or every existing row collides
+-- on NULL... which it wouldn't, but the index would then be built while
+-- half the table is empty and the first signup after it would race.
+UPDATE public.profiles
+SET referral_code = public.generate_referral_code()
+WHERE referral_code IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_referral_code_key
+  ON public.profiles (referral_code);
+
+CREATE OR REPLACE FUNCTION public.set_referral_code()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.referral_code IS NULL THEN
+    NEW.referral_code := public.generate_referral_code();
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- On profiles rather than on auth.users, so every path that creates a
+-- profile gets a code — handle_new_user today, anything else later.
+DROP TRIGGER IF EXISTS profiles_set_referral_code ON public.profiles;
+CREATE TRIGGER profiles_set_referral_code
+  BEFORE INSERT ON public.profiles
+  FOR EACH ROW EXECUTE PROCEDURE public.set_referral_code();
+
+
+CREATE TABLE IF NOT EXISTS public.referrals (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  referrer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- One referrer per person, permanently. The row IS the record of who
+  -- brought them; a second one would pay the offer out twice.
+  referred_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  code_used TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'earned')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  earned_at TIMESTAMPTZ,
+  CONSTRAINT referrals_no_self CHECK (referrer_id <> referred_id)
+);
+
+ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
+
+-- Read-only to the two people involved. Nothing here has an INSERT or
+-- UPDATE policy on purpose: referrals are written by the server with the
+-- service key, at the two moments the rules allow, and never by a client
+-- asking nicely.
+DROP POLICY IF EXISTS "See referrals you are part of" ON public.referrals;
+CREATE POLICY "See referrals you are part of" ON public.referrals
+  FOR SELECT USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
+
+CREATE INDEX IF NOT EXISTS referrals_referrer_idx
+  ON public.referrals (referrer_id);
+
+
+CREATE TABLE IF NOT EXISTS public.referral_credits (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  creator_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  referral_id UUID REFERENCES public.referrals(id) ON DELETE SET NULL,
+  reason TEXT NOT NULL CHECK (reason IN ('referred_someone', 'was_referred')),
+  status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'applied')),
+  -- The event this credit was spent on. Kept in step with
+  -- events.fee_waived by app/actions/referrals.ts, which is the only
+  -- thing allowed to write either.
+  event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  applied_at TIMESTAMPTZ
+);
+
+ALTER TABLE public.referral_credits ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "See your own credits" ON public.referral_credits;
+CREATE POLICY "See your own credits" ON public.referral_credits
+  FOR SELECT USING (auth.uid() = creator_id);
+
+-- The idempotency guarantee. Awarding runs on every settled order, so it
+-- will be attempted many times for the same referral; this index is what
+-- makes the second attempt a no-op instead of a second free event.
+CREATE UNIQUE INDEX IF NOT EXISTS referral_credits_once
+  ON public.referral_credits (referral_id, reason)
+  WHERE referral_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS referral_credits_available_idx
+  ON public.referral_credits (creator_id, status);
+
+
+-- What checkout reads. A boolean on the event rather than a join to
+-- referral_credits, because it is read on the hot path of every single
+-- purchase and the answer must not depend on another table being healthy.
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS fee_waived BOOLEAN NOT NULL DEFAULT false;
+
+
+-- ============================================================
 -- Done. You should see "Success. No rows returned".
 -- ============================================================

@@ -1,5 +1,6 @@
 import type { SendResult, TicketMessage, WhatsAppProvider } from "./types";
 import { formatE164 } from "./phone";
+import { ticketFooterLine } from "@/lib/growth";
 
 /**
  * Demo WhatsApp provider.
@@ -26,6 +27,11 @@ export class MockWhatsAppProvider implements WhatsAppProvider {
       `Order:   ${message.orderReference}`,
       `Tickets: ${message.ticketsUrl}`,
       ...message.tickets.map((t) => `         ${t.code}  ${t.url}`),
+      "",
+      // Printed here because on the live provider it is baked into the
+      // Meta-approved template body, and this is the only place it can be
+      // read back and checked before that template is submitted.
+      ticketFooterLine(),
       "────────────────────────────────────────────────",
       "",
     ].filter(Boolean);

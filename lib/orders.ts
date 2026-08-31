@@ -5,6 +5,7 @@ import { issueTicketsForOrder, type IssuedTicket } from "@/lib/tickets";
 import { getEmailProvider } from "@/lib/email";
 import { getWhatsAppProvider, toE164 } from "@/lib/whatsapp";
 import { orderTicketsUrl, ticketUrl } from "@/lib/site";
+import { awardReferralCredits } from "@/lib/referrals";
 import { ticketConfirmationEmail } from "@/lib/email/templates";
 
 /**
@@ -78,6 +79,16 @@ export async function settleOrder(input: SettleOrderInput) {
   }
 
   await upsertAudienceMember(updated);
+
+  // A referral pays out when the organiser it brought in sells their first
+  // PAID ticket — never on a free registration, which anyone could create
+  // for themselves in a minute. Awarding is idempotent and does nothing at
+  // all once the referral has been settled, so calling it on every order
+  // is cheaper than remembering which order was the first.
+  if (Number(updated.gross_kobo ?? 0) > 0 && updated.creator_id) {
+    await awardReferralCredits(updated.creator_id);
+  }
+
   await fulfillOrder(updated);
 
   return { ok: true as const, order: updated };

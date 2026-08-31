@@ -11,6 +11,7 @@ import {
   ChevronsRight,
   CreditCard,
   ExternalLink,
+  Gift,
   LayoutGrid,
   LogOut,
   Plus,
@@ -39,6 +40,7 @@ const navGroups = [
     items: [
       { label: "Sales", icon: CreditCard, href: "/revenue" },
       { label: "Payouts", icon: Wallet, href: "/payouts" },
+      { label: "Refer", icon: Gift, href: "/refer" },
     ],
   },
 ];

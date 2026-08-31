@@ -77,7 +77,8 @@ export default async function AdminPage() {
           </h1>
           <p className="mt-3 text-[15px] text-[var(--dl-ink-soft)]">
             {month} · {s.organisers} {s.organisers === 1 ? "organiser" : "organisers"} ·{" "}
-            {s.eventsPublished} on sale, {s.eventsDraft} in draft
+            {s.eventsPublishedPaid} selling, {s.eventsPublishedFree} free,{" "}
+            {s.eventsDraft} in draft
           </p>
         </div>
         <Link
@@ -98,9 +99,30 @@ export default async function AdminPage() {
         />
         <Figure n={takeRate} l="Effective take" x="fees ÷ gross, all time" />
         <Figure
-          n={String(s.ticketsSold)}
+          n={String(s.ticketsPaid)}
           l="Tickets sold"
-          x={`${s.ticketsSold - s.ticketsFree} paid, ${s.ticketsFree} free`}
+          x={`${s.paidOrders} paid ${s.paidOrders === 1 ? "order" : "orders"}`}
+        />
+      </div>
+
+      {/* Free, kept on its own row and out of every number above it. Worth
+          watching — free events are how a lot of organisers arrive — but
+          reading them beside the money is how you fool yourself. */}
+      <div className={`${panel} mt-3 flex flex-wrap`}>
+        <Figure
+          n={String(s.ticketsFree)}
+          l="Free tickets"
+          x="no fee charged, no revenue"
+        />
+        <Figure
+          n={String(s.freeRegistrations)}
+          l="Free registrations"
+          x="settled orders with nothing on them"
+        />
+        <Figure
+          n={String(s.eventsPublishedFree)}
+          l="Free events"
+          x="on sale at ₦0"
         />
       </div>
 

@@ -1,5 +1,6 @@
 import { formatKobo, type Kobo } from "@/lib/money";
 import { orderTicketsUrl, ticketUrl } from "@/lib/site";
+import { ticketFooterHtml, ticketFooterLine } from "@/lib/growth";
 import type { EmailMessage } from "./types";
 
 /**
@@ -63,6 +64,10 @@ export function ticketConfirmationEmail(input: TicketEmailInput): EmailMessage {
     input.organiserName ? `See you there,\n${input.organiserName}` : "See you there.",
     "",
     `Order reference: ${input.orderReference}`,
+    "",
+    // Last line of the whole email, below the order reference: a buyer
+    // hunting for their ticket never has to read past it.
+    ticketFooterLine(),
   ].join("\n");
 
   const ticketRows = input.tickets
@@ -132,6 +137,9 @@ export function ticketConfirmationEmail(input: TicketEmailInput): EmailMessage {
                 <p style="margin:0;font-size:12px;color:#a1a1aa;">
                   ${count} ${noun} · ${input.totalKobo === 0 ? "Free" : escapeHtml(formatKobo(input.totalKobo))}
                   · Order ${escapeHtml(input.orderReference)}
+                </p>
+                <p style="margin:10px 0 0;font-size:12px;color:#a1a1aa;">
+                  ${ticketFooterHtml()}
                 </p>
               </td>
             </tr>

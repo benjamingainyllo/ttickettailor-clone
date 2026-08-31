@@ -24,12 +24,29 @@ export interface PlatformStats {
   /** Everything that moved through the platform — a bigger, different number. */
   grossKobo: number;
   grossThisMonthKobo: number;
+
+  /**
+   * FREE IS COUNTED SEPARATELY, EVERYWHERE ON THIS SCREEN.
+   *
+   * A free registration settles to status 'paid' like any other order —
+   * that is how a ticket gets issued for it. So "orders where status =
+   * paid" silently mixes money with no money, and every count built on it
+   * flatters itself: 40 free RSVPs read as 40 paid orders and the take
+   * rate looks like a rounding error.
+   *
+   * Free events are worth having. They spin the loop, they cost the
+   * organiser nothing, and they are how a lot of people meet the product.
+   * They are not revenue and must never be added to it, so the split is
+   * made here once rather than left for each caller to remember.
+   */
   paidOrders: number;
-  ticketsSold: number;
+  freeRegistrations: number;
+  ticketsPaid: number;
   ticketsFree: number;
 
   organisers: number;
-  eventsPublished: number;
+  eventsPublishedPaid: number;
+  eventsPublishedFree: number;
   eventsDraft: number;
 
   /** Paid, but never settled: somebody's money with no ticket behind it. */
@@ -74,7 +91,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   const stuckBefore = new Date(Date.now() - STUCK_AFTER_MINUTES * 60_000).toISOString();
   const today = new Date().toISOString().slice(0, 10);
 
-  const [paid, profiles, events, stuck, failed, ticketRows, payoutAccounts] =
+  const [paid, profiles, events, stuck, failed, ticketRows, payoutAccounts, tierRows] =
     await Promise.all([
       admin
         .from("orders")
@@ -90,13 +107,39 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       admin.from("orders").select("id", { count: "exact", head: true }).eq("status", "failed"),
       admin.from("tickets").select("event_id, checked_in_at, price_kobo"),
       admin.from("payout_accounts").select("creator_id").eq("status", "active"),
+      admin.from("ticket_types").select("event_id, price_kobo"),
     ]);
 
-  const paidRows = paid.data ?? [];
+  const settledRows = paid.data ?? [];
+
+  // The split the whole screen depends on. A settled order with nothing on
+  // it is a registration, not a sale, and it is kept out of every revenue
+  // figure below by never entering this array in the first place.
+  const paidRows = settledRows.filter((o) => Number(o.gross_kobo ?? 0) > 0);
+  const freeRows = settledRows.filter((o) => Number(o.gross_kobo ?? 0) === 0);
+
   const profileRows = profiles.data ?? [];
   const eventRows = events.data ?? [];
   const tickets = ticketRows.data ?? [];
   const banked = new Set((payoutAccounts.data ?? []).map((a) => a.creator_id));
+
+  /**
+   * Which events actually charge for something.
+   *
+   * An event sells ticket TYPES; events.price_kobo is only the headline
+   * price captured when it was created, and it does not follow a tier
+   * that is added or repriced afterwards. Classifying off it alone files
+   * a ₦20,000 conference under "free" the moment its price moved. So the
+   * tiers decide, and the headline price is the fallback for an event
+   * that somehow has none.
+   */
+  const paidEventIds = new Set(
+    (tierRows.data ?? [])
+      .filter((t) => Number(t.price_kobo ?? 0) > 0)
+      .map((t) => t.event_id)
+  );
+  const chargesMoney = (e: { id: string; price_kobo?: unknown }) =>
+    paidEventIds.has(e.id) || Number(e.price_kobo ?? 0) > 0;
 
   const sum = (rows: { [k: string]: unknown }[], key: string) =>
     rows.reduce((total, r) => total + Number(r[key] ?? 0), 0);
@@ -135,12 +178,13 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     .slice(0, 10);
 
   const published = eventRows.filter((e) => e.publish_status === "published");
+  const publishedPaid = published.filter(chargesMoney);
 
   const grossForEvent = (eventId: string) =>
     paidRows.filter((o) => o.event_id === eventId).reduce((t, o) => t + Number(o.gross_kobo ?? 0), 0);
 
-  const paidEventsWithoutBank: RiskEvent[] = published
-    .filter((e) => Number(e.price_kobo ?? 0) > 0 && !banked.has(e.creator_id))
+  const paidEventsWithoutBank: RiskEvent[] = publishedPaid
+    .filter((e) => !banked.has(e.creator_id))
     .map((e) => ({
       title: e.title,
       organiser: nameFor(e.creator_id),
@@ -149,7 +193,10 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     }))
     .sort((a, b) => b.grossKobo - a.grossKobo);
 
-  const soldButNobodyCameIn: RiskEvent[] = published
+  // Paid events only. An empty door at a free event is a no-show, not a
+  // fraud signal — nobody's money is missing, so flagging it would only
+  // train the eye to scroll past this list.
+  const soldButNobodyCameIn: RiskEvent[] = publishedPaid
     .filter((e) => e.date && e.date < today)
     .map((e) => {
       const forEvent = tickets.filter((t) => t.event_id === e.id);
@@ -171,11 +218,13 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     grossKobo: sum(paidRows, "gross_kobo"),
     grossThisMonthKobo: sum(thisMonth, "gross_kobo"),
     paidOrders: paidRows.length,
-    ticketsSold: tickets.length,
+    freeRegistrations: freeRows.length,
+    ticketsPaid: tickets.filter((t) => Number(t.price_kobo ?? 0) > 0).length,
     ticketsFree: tickets.filter((t) => Number(t.price_kobo ?? 0) === 0).length,
 
     organisers: profileRows.length,
-    eventsPublished: published.length,
+    eventsPublishedPaid: publishedPaid.length,
+    eventsPublishedFree: published.length - publishedPaid.length,
     eventsDraft: eventRows.length - published.length,
 
     stuckOrders: stuck.count ?? 0,

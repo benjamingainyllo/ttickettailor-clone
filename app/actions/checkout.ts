@@ -69,7 +69,16 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
 
     if (!item.ok) return { success: false, error: item.error };
 
-    const { creatorId, id: itemId, title, unitPriceKobo, ticketTypeId, quantity, passFeeToBuyer } = item;
+    const {
+      creatorId,
+      id: itemId,
+      title,
+      unitPriceKobo,
+      ticketTypeId,
+      quantity,
+      passFeeToBuyer,
+      feeWaived,
+    } = item;
     const reference = uuidv4();
     const ticketsKobo: Kobo = unitPriceKobo * quantity;
 
@@ -263,12 +272,24 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
     }
 
     // Priced per ticket, not per order — a flat fee has to see the quantity.
-    const platformFeeKobo = calculateOrderPlatformFeeKobo(
-      unitPriceKobo,
-      quantity,
-      (payoutAccount.platform_fee_type ?? DEFAULT_PLATFORM_FEE_TYPE) as PlatformFeeType,
-      payoutAccount.platform_fee_value ?? DEFAULT_PLATFORM_FEE_VALUE
-    );
+    //
+    // An event carrying a referral credit is free to sell: fee_waived means
+    // the organiser spent their "next event free" on this one, so Paylance
+    // takes nothing on every ticket of it. Read straight off the event row
+    // rather than joined from referral_credits, because this is the hot
+    // path of every purchase and it must not depend on another table.
+    //
+    // A zero transaction_charge is safe with the split: the subaccount's
+    // standing percentage is 0 on the flat and banded models, so nothing
+    // silently falls back to taking a cut.
+    const platformFeeKobo = feeWaived
+      ? 0
+      : calculateOrderPlatformFeeKobo(
+          unitPriceKobo,
+          quantity,
+          (payoutAccount.platform_fee_type ?? DEFAULT_PLATFORM_FEE_TYPE) as PlatformFeeType,
+          payoutAccount.platform_fee_value ?? DEFAULT_PLATFORM_FEE_VALUE
+        );
 
     // When the organiser has chosen to pass the fee on, the buyer is charged
     // the ticket price PLUS the fee, and the organiser receives the full face
@@ -528,6 +549,7 @@ type LoadedItem =
       ticketTypeId: string | null;
       /** True when the organiser has chosen to add our fee to the buyer's total. */
       passFeeToBuyer: boolean;
+      feeWaived: boolean;
       quantity: number;
     }
   | { ok: false; error: string };
@@ -544,7 +566,9 @@ async function loadSellableItem(payload: CheckoutPayload): Promise<LoadedItem> {
 
   const { data: event } = await admin
     .from("events")
-    .select("id, creator_id, title, publish_status, capacity, attendees_count, pass_fee_to_buyer")
+    .select(
+      "id, creator_id, title, publish_status, capacity, attendees_count, pass_fee_to_buyer, fee_waived"
+    )
     .eq("id", payload.itemId)
     .maybeSingle();
 
@@ -607,5 +631,6 @@ async function loadSellableItem(payload: CheckoutPayload): Promise<LoadedItem> {
     ticketTypeId: tier.id,
     quantity: requested,
     passFeeToBuyer: Boolean(event.pass_fee_to_buyer),
+    feeWaived: Boolean(event.fee_waived),
   };
 }
