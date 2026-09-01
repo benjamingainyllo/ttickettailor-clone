@@ -8,6 +8,16 @@ import {
 import { useAuth } from "@/components/auth/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
+import { SalesChart } from "@/components/dashboard/sales-chart";
+import type { SalesOrderRow } from "@/lib/sales-series";
+
+/**
+ * The chart's longest range is 90 days, but the fetch reaches back further.
+ * A sale is bucketed by when it was PAID, and a checkout begun before the
+ * window and paid inside it would otherwise be missing from a day it
+ * genuinely belongs to.
+ */
+const CHART_FETCH_DAYS = 100;
 
 /**
  * Overview has two jobs depending on where the creator is.
@@ -29,6 +39,7 @@ export default function OverviewPage() {
   const [publishedCount, setPublishedCount] = useState(0);
   const [draftCount, setDraftCount] = useState(0);
   const [orders, setOrders] = useState<any[]>([]);
+  const [chartOrders, setChartOrders] = useState<SalesOrderRow[]>([]);
   const [audienceCount, setAudienceCount] = useState(0);
 
   const load = useCallback(async () => {
@@ -37,7 +48,10 @@ export default function OverviewPage() {
     setLoadError(null);
 
     try {
-      const [payout, events, orderRows, audience] = await Promise.all([
+      const since = new Date();
+      since.setDate(since.getDate() - CHART_FETCH_DAYS);
+
+      const [payout, events, orderRows, chartRows, audience] = await Promise.all([
         supabase
           .from("payout_accounts")
           .select("status, provider_subaccount_id")
@@ -50,6 +64,17 @@ export default function OverviewPage() {
           .eq("creator_id", user.id)
           .order("created_at", { ascending: false })
           .limit(50),
+        // Its own query, and a narrow one. The list above is capped at 50
+        // rows for the activity feed; a busy month is thousands of orders,
+        // and a chart drawn off the most recent fifty would quietly show a
+        // fraction of the month and look like a collapse in sales.
+        supabase
+          .from("orders")
+          .select("status, quantity, gross_kobo, net_kobo, paid_at, created_at")
+          .eq("creator_id", user.id)
+          .eq("status", "paid")
+          .gte("created_at", since.toISOString())
+          .limit(20000),
         supabase
           .from("audience")
           .select("id", { count: "exact", head: true })
@@ -64,6 +89,7 @@ export default function OverviewPage() {
       setPublishedCount(items.filter((i: any) => i.publish_status === "published").length);
       setDraftCount(items.filter((i: any) => i.publish_status !== "published").length);
       setOrders(orderRows.data ?? []);
+      setChartOrders((chartRows.data ?? []) as SalesOrderRow[]);
       setAudienceCount(audience.count ?? 0);
     } catch (error) {
       console.error("Overview load failed:", error);
@@ -305,6 +331,10 @@ export default function OverviewPage() {
             <p className="mt-1 text-[12px] text-[var(--dl-ink-soft)]">{f.note}</p>
           </div>
         ))}
+      </div>
+
+      <div className="mt-7">
+        <SalesChart orders={chartOrders} />
       </div>
 
       <div className="mt-9 flex items-baseline justify-between">
