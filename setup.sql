@@ -378,17 +378,22 @@ CREATE TABLE IF NOT EXISTS public.payout_accounts (
     CHECK (status IN ('pending', 'active', 'disabled')),
 
   -- Fee model per creator, so it can change without a migration.
+  --   capped     -> basis points, then capped. THE CURRENT MODEL.
   --   percentage -> basis points (900 = 9.00%)
   --   flat       -> kobo PER TICKET
   --   banded     -> kobo PER TICKET, chosen by the ticket's own price
   --
-  -- Paylance charges a flat fee per paid ticket and no percentage of
-  -- revenue. 'banded' is still a flat fee per ticket; there are simply
-  -- four of them. platform_fee_value is unused for 'banded' -- the band
-  -- table lives in lib/money.ts, so the boundaries stay in one place.
-  platform_fee_type TEXT NOT NULL DEFAULT 'banded'
-    CHECK (platform_fee_type IN ('percentage', 'flat', 'banded')),
-  platform_fee_value INTEGER NOT NULL DEFAULT 20000,
+  -- Paylance takes 4% of a ticket and never more than N3,000, with
+  -- anything under N2,000 free. For 'capped', platform_fee_value is the
+  -- rate in basis points (400 = 4.00%); the cap and the free floor live
+  -- in lib/money.ts so there is one place to change them.
+  --
+  -- The CHECK and DEFAULT below are restated further down this file, so
+  -- an existing database that predates 'capped' is brought forward too.
+  -- Both spellings have to agree; change them together.
+  platform_fee_type TEXT NOT NULL DEFAULT 'capped'
+    CHECK (platform_fee_type IN ('percentage', 'flat', 'banded', 'capped')),
+  platform_fee_value INTEGER NOT NULL DEFAULT 400,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -401,19 +406,31 @@ ALTER TABLE public.payout_accounts
   DROP CONSTRAINT IF EXISTS payout_accounts_platform_fee_type_check;
 ALTER TABLE public.payout_accounts
   ADD CONSTRAINT payout_accounts_platform_fee_type_check
-  CHECK (platform_fee_type IN ('percentage', 'flat', 'banded'));
+  CHECK (platform_fee_type IN ('percentage', 'flat', 'banded', 'capped'));
 
 -- Then move the column defaults, then move any account still sitting on a
 -- superseded default. A rate that still reads exactly ('percentage', 900)
 -- or ('flat', 20000) has never been set by hand, so nothing an operator
 -- chose deliberately is overwritten here.
-ALTER TABLE public.payout_accounts ALTER COLUMN platform_fee_type SET DEFAULT 'banded';
-ALTER TABLE public.payout_accounts ALTER COLUMN platform_fee_value SET DEFAULT 20000;
+ALTER TABLE public.payout_accounts ALTER COLUMN platform_fee_type SET DEFAULT 'capped';
+ALTER TABLE public.payout_accounts ALTER COLUMN platform_fee_value SET DEFAULT 400;
 
+-- Move every account still sitting on a superseded DEFAULT onto the
+-- current one: 4% of the ticket, capped at ₦3,000 (the cap and the free
+-- floor live in lib/money.ts so there is one place to change them).
+--
+-- The banded model it replaces jumped at each boundary — a ₦29,999
+-- ticket cost ₦450 and a ₦30,000 one cost ₦1,500 — so an organiser could
+-- be charged three times as much for pricing a night ₦1 higher.
+--
+-- Each clause below matches a rate that has never been touched by hand,
+-- so nothing an operator chose deliberately is overwritten. A creator on
+-- a negotiated rate keeps it.
 UPDATE public.payout_accounts
-SET platform_fee_type = 'banded'
+SET platform_fee_type = 'capped', platform_fee_value = 400
 WHERE (platform_fee_type = 'percentage' AND platform_fee_value = 900)
-   OR (platform_fee_type = 'flat' AND platform_fee_value = 20000);
+   OR (platform_fee_type = 'flat' AND platform_fee_value = 20000)
+   OR (platform_fee_type = 'banded' AND platform_fee_value = 20000);
 
 
 ALTER TABLE public.payout_accounts ENABLE ROW LEVEL SECURITY;

@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import {
-  PLATFORM_FEE_BANDS,
+  DEFAULT_PLATFORM_FEE_TYPE,
+  DEFAULT_PLATFORM_FEE_VALUE,
+  PLATFORM_FEE_FREE_BELOW_KOBO,
   calculateOrderPlatformFeeKobo,
   formatKobo,
   parseNairaInput,
@@ -13,26 +15,32 @@ import {
  * The savings calculator.
  *
  * EVERY FEE HERE COMES OUT OF THE REAL ENGINE. It calls the same
- * calculateOrderPlatformFeeKobo() that checkout calls, with the same
- * banded fee type, so the number on this page is the number an organiser
- * will actually be charged — including the cap that stops a flat fee ever
- * exceeding the ticket price. Retyping the bands here to save an import
- * is how a marketing page ends up quoting a price the product doesn't
- * honour.
+ * calculateOrderPlatformFeeKobo() that checkout calls, with the same rate
+ * a new account gets, so the number on this page is the number an
+ * organiser will actually be charged — cap and free floor included.
+ * Retyping the rate here to save an import is how a marketing page ends
+ * up quoting a price the product doesn't honour.
  */
 
-/** The comparison: the free plan most Nigerian organisers are already on. */
-const TYPICAL_RATE = 0.05;
+/**
+ * The comparison: the free plan most Nigerian organisers are already on.
+ *
+ * 8% + ₦100, verified 1 September 2026 against nine live ticket types on
+ * Tix's own checkout. This page said 5% for weeks on no evidence, which
+ * understated our own advantage by roughly half — check a live checkout
+ * before changing it.
+ */
+const TYPICAL_RATE = 0.08;
 const TYPICAL_FLAT_KOBO = 10_000; // ₦100
 
 /** Quantity is a person's estimate, not a fact — keep it in sane territory. */
 const MAX_QUANTITY = 100_000;
 
 /**
- * Where the free band stops, read off the band table rather than typed in.
- * Move the boundary in lib/money.ts and this sentence follows it.
+ * Where free selling stops, read off the engine rather than typed in.
+ * Move it in lib/money.ts and this sentence follows.
  */
-const FREE_BELOW_KOBO = PLATFORM_FEE_BANDS.find((b) => b.feeKobo === 0)?.belowKobo ?? 0;
+const FREE_BELOW_KOBO = PLATFORM_FEE_FREE_BELOW_KOBO;
 
 const PRESETS = [2000, 5000, 10000, 20000, 50000];
 
@@ -69,7 +77,12 @@ export function FeeCalculator() {
       };
     }
 
-    const oursKobo = calculateOrderPlatformFeeKobo(parsedPrice, parsedCount, "banded", 0);
+    const oursKobo = calculateOrderPlatformFeeKobo(
+      parsedPrice,
+      parsedCount,
+      DEFAULT_PLATFORM_FEE_TYPE,
+      DEFAULT_PLATFORM_FEE_VALUE
+    );
     const theirsKobo = typicalFeeKobo(parsedPrice, parsedCount);
 
     return {
@@ -180,7 +193,7 @@ export function FeeCalculator() {
                 <>
                   That&rsquo;s what stays with you on{" "}
                   {quantity.toLocaleString("en-NG")} tickets at{" "}
-                  {formatKobo(unitPriceKobo)}, against a platform charging 5% +
+                  {formatKobo(unitPriceKobo)}, against a platform charging 8% +
                   ₦100.
                 </>
               )}
@@ -202,7 +215,7 @@ export function FeeCalculator() {
           </div>
           <div className="flex items-baseline justify-between gap-4 py-2">
             <dt className="text-[var(--on-ground-soft)]">
-              A 5% + ₦100 platform
+              An 8% + ₦100 platform
               <span className="ml-2 text-[13px] text-[var(--on-ground-faint)]">
                 {formatKobo(Math.floor(unitPriceKobo * TYPICAL_RATE) + TYPICAL_FLAT_KOBO)} a
                 ticket

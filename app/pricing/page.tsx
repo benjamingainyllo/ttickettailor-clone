@@ -3,7 +3,15 @@ import { SiteNav, StartCta } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { Sparkle, Squiggle, Star, Underline } from "@/components/marketing/doodles";
 import { Check, X } from "lucide-react";
-import { PLATFORM_FEE_BANDS, bandFeeKobo, koboToNaira, nairaToKobo } from "@/lib/money";
+import {
+  DEFAULT_PLATFORM_FEE_TYPE,
+  DEFAULT_PLATFORM_FEE_VALUE,
+  PLATFORM_FEE_CAP_KOBO,
+  PLATFORM_FEE_FREE_BELOW_KOBO,
+  calculatePlatformFeeKobo,
+  koboToNaira,
+  nairaToKobo,
+} from "@/lib/money";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -17,28 +25,49 @@ export const metadata: Metadata = {
  * the engine actually charges is the worst bug this page can have, and
  * hardcoding the numbers twice is how that happens.
  */
-const TYPICAL_RATE = 0.05;
+/**
+ * What the incumbent actually charges: 8% + ₦100, added on top so the
+ * BUYER pays it, and charged once per seat on a group ticket.
+ *
+ * Verified 1 September 2026 against nine live ticket types on Tix's own
+ * checkout — every one matched exactly. It was published here as 5% for
+ * weeks, on no evidence, which understated us by about half. Check a
+ * live checkout before changing this and note the date.
+ */
+const TYPICAL_RATE = 0.08;
 const TYPICAL_FLAT = 100;
+const TYPICAL_CHECKED = "September 2026";
+/** "An 8% platform", not "a 8% platform" — read aloud, not spelled. */
+const article = (pct: number) => (/^(8|11|18)/.test(String(pct)) ? "An" : "A");
 
 const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
 /** What one ticket at this naira price costs the organiser. */
-const feeFor = (priceNaira: number) => koboToNaira(bandFeeKobo(nairaToKobo(priceNaira)));
+const feeFor = (priceNaira: number) =>
+  koboToNaira(
+    calculatePlatformFeeKobo(
+      nairaToKobo(priceNaira),
+      DEFAULT_PLATFORM_FEE_TYPE,
+      DEFAULT_PLATFORM_FEE_VALUE
+    )
+  );
 
-/** The band table, rendered straight from the engine's own boundaries. */
-const BAND_ROWS = PLATFORM_FEE_BANDS.map((band, i) => {
-  const fromNaira = i === 0 ? 0 : koboToNaira(PLATFORM_FEE_BANDS[i - 1].belowKobo);
-  const toNaira = Number.isFinite(band.belowKobo) ? koboToNaira(band.belowKobo) : null;
-  return {
-    range:
-      toNaira === null
-        ? `${naira(fromNaira)} and up`
-        : fromNaira === 0
-          ? `Under ${naira(toNaira)}`
-          : `${naira(fromNaira)} – ${naira(toNaira)}`,
-    fee: koboToNaira(band.feeKobo),
-  };
-});
+/** Read off the engine so the page can never quote a rate we don't charge. */
+const RATE_PCT = DEFAULT_PLATFORM_FEE_VALUE / 100;
+const CAP_NAIRA = koboToNaira(PLATFORM_FEE_CAP_KOBO);
+const FREE_BELOW_NAIRA = koboToNaira(PLATFORM_FEE_FREE_BELOW_KOBO);
+/** Where the cap starts biting — the number that makes the point. */
+const CAP_BITES_NAIRA = Math.round(CAP_NAIRA / (RATE_PCT / 100));
+
+/**
+ * Four worked prices rather than a rate table. A percentage means nothing
+ * to somebody pricing a night; "on a ₦20,000 ticket you pay ₦800" does.
+ * Every figure comes out of the engine, so the page cannot drift from it.
+ */
+const WORKED = [200000, 20000, 5000, 1500].map((price) => ({
+  price,
+  fee: feeFor(price),
+}));
 
 /**
  * Worked examples, weighted to the events we actually want: club nights,
@@ -87,18 +116,19 @@ export default function PricingPage() {
             Pricing
           </p>
           <h1 className="mt-5 text-[38px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-[56px]">
-            A flat fee per ticket.
+            {RATE_PCT}% a ticket.
             <br />
             <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
-              Four of them, and a free one.
+              Never more than {naira(CAP_NAIRA)}.
             </span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-lg text-[17px] leading-relaxed text-[var(--on-ground-soft)]">
-            Never a percentage of your revenue. The ticket&apos;s price picks
-            the fee, and then the fee stops — sell ten times as many and you
-            pay ten times ₦450, not ten times more of your takings. Cheap
-            tickets and free ones cost you nothing at all.
+            However much you charge, we never take more than{" "}
+            {naira(CAP_NAIRA)} from a ticket. Past {naira(CAP_BITES_NAIRA)} the
+            fee simply stops growing — so the bigger your night, the smaller
+            our share of it. Under {naira(FREE_BELOW_NAIRA)} a ticket, and on
+            free events, we charge nothing at all.
           </p>
 
           <div className="mx-auto mt-12 max-w-lg">
@@ -107,29 +137,34 @@ export default function PricingPage() {
                 <thead>
                   <tr>
                     <th className="px-5 pb-2 pt-4 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#1B1512]/70">
-                      Ticket price
+                      A ticket at
                     </th>
                     <th className="px-5 pb-2 pt-4 text-right text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#1B1512]/70">
-                      You pay
+                      Costs you
                     </th>
                   </tr>
                 </thead>
                 <tbody className="[font-variant-numeric:tabular-nums]">
-                  {BAND_ROWS.map((b, i) => (
-                    <tr key={b.range}>
+                  {WORKED.map((w, i) => (
+                    <tr key={w.price}>
                       <td
                         className={`px-5 py-3 text-[15px] font-semibold text-[var(--ink)] ${
                           i > 0 ? "border-t border-[#1B1512]/15" : ""
                         }`}
                       >
-                        {b.range}
+                        {naira(w.price)}
+                        {w.fee === CAP_NAIRA && (
+                          <span className="ml-2 text-[12px] font-bold uppercase tracking-[0.1em] text-[#1B1512]/55">
+                            capped
+                          </span>
+                        )}
                       </td>
                       <td
                         className={`px-5 py-3 text-right text-[22px] font-extrabold tracking-tight text-[var(--ink)] ${
                           i > 0 ? "border-t border-[#1B1512]/15" : ""
                         }`}
                       >
-                        {b.fee === 0 ? "Nothing" : naira(b.fee)}
+                        {w.fee === 0 ? "Nothing" : naira(w.fee)}
                       </td>
                     </tr>
                   ))}
@@ -139,9 +174,11 @@ export default function PricingPage() {
           </div>
 
           <p className="mx-auto mt-8 max-w-lg text-[15px] leading-relaxed text-[var(--on-ground-faint)]">
-            At no price do you pay more than a 5% platform would take. Below
-            ₦2,000 you pay nothing at all, and on a ₦150,000 retreat ticket
-            you pay three times less.
+            No steps, no bands, nothing to fall off. The same {RATE_PCT}% on
+            every ticket until the cap takes over &mdash; on a {naira(200000)}{" "}
+            table that is {naira(CAP_NAIRA)} against the {naira(200000 * TYPICAL_RATE + TYPICAL_FLAT)}{" "}
+            {article(Math.round(TYPICAL_RATE * 100)).toLowerCase()}{" "}
+            {Math.round(TYPICAL_RATE * 100)}% platform charges.
           </p>
 
           <div className="mt-9 flex justify-center">
@@ -206,7 +243,7 @@ export default function PricingPage() {
               <Underline className="h-3 w-52 text-[var(--coral)]" />
             </div>
             <p className="mt-5 text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
-              Five real-shaped events, against the 5% + ₦100 the incumbent charges.
+              Five real-shaped events, against the {Math.round(TYPICAL_RATE * 100)}% + {naira(TYPICAL_FLAT)} the incumbent charges &mdash; checked on their own checkout, {TYPICAL_CHECKED}.
             </p>
           </div>
 
@@ -214,7 +251,7 @@ export default function PricingPage() {
             <table className="w-full min-w-[560px] border-collapse text-[15px]">
               <thead>
                 <tr>
-                  {["", "Tickets", "Paylance", "A typical 5% platform", "You keep"].map((h) => (
+                  {["", "Tickets", "Paylance", `${article(Math.round(TYPICAL_RATE * 100))} ${Math.round(TYPICAL_RATE * 100)}% platform`, "You keep"].map((h) => (
                     <th
                       key={h}
                       className="border-b border-[var(--hairline)] pb-3 pr-4 text-left text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--on-ground-soft)] last:text-right"

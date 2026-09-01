@@ -6,7 +6,7 @@ This README is the living product and execution document. We will update it cont
 
 ## Product Positioning
 
-**Paylance sells tickets. A flat fee per ticket, no cut of your revenue, and the
+**Paylance sells tickets. 4% a ticket capped at ₦3,000, and the
 money lands in your own bank account.**
 
 Two things follow from that, and they are the product:
@@ -109,7 +109,7 @@ the same creator — but ticketing is the wedge, and the thing we are best at.
 
 ## Pricing
 
-Paylance charges a **flat fee per paid ticket — ₦200 — and no percentage of
+Paylance charges **4% of a ticket, and never more than ₦3,000 — no percentage of
 revenue**. Free tickets are never charged a fee. See `BUSINESS_MODEL.md` for
 the reasoning and the one open decision (a floor for very cheap tickets).
 

@@ -56,8 +56,16 @@ saves sending him hunting through menus.
 
 Paylance is an **event ticketing platform**, Nigeria-first.
 
-- **A flat fee per ticket — ₦200 — and no percentage of revenue.** This is the
-  whole pitch, and the landing page is built around it. Free events are free.
+- **4% of a ticket, and never more than ₦3,000.** Under ₦2,000 a ticket, and
+  on free events, we charge nothing. The cap is the pitch — past ₦75,000 a
+  ticket the fee stops growing, while a percentage competitor keeps taking
+  its cut. The rate, cap and free floor all live in `lib/money.ts`; the
+  pricing page and the calculator read them from there and must never
+  restate them by hand.
+- **The competition charges 8% + ₦100, per seat, added on top so the buyer
+  pays it.** Verified 1 September 2026 off nine live ticket types on Tix's
+  own checkout. This was published as 5% for weeks on no evidence and
+  understated us by about half — check a live checkout before changing it.
 - **No custody, ever.** Payments split at transaction time and the organiser's
   share settles directly to their own bank. There is no wallet, no balance and
   no withdrawal anywhere in the product, by design. Anything implying Paylance
@@ -73,7 +81,6 @@ Paylance is an **event ticketing platform**, Nigeria-first.
 
 ## Open decision
 
-The ₦200 flat fee is the entire ticket price on a ₦100 ticket (the fee is
-capped at what the buyer paid, so we never take more than the ticket). Before
-launch this needs a minimum ticket price or a percentage cap. Raise it; don't
-silently pick a policy.
+None on pricing. The old worry — a ₦200 flat fee swallowing a ₦100 ticket —
+was resolved first by the free floor and then by moving to a percentage:
+a ₦100 ticket now costs the organiser nothing.

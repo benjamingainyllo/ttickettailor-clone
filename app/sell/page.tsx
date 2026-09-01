@@ -21,7 +21,7 @@ import { FeeCalculator } from "@/components/marketing/fee-calculator";
 export const metadata: Metadata = {
   title: "What you'd keep",
   description:
-    "Work out what selling your tickets on Paylance would cost you, against a platform charging 5% + ₦100. A flat fee per ticket, free under ₦2,000, and the money reaches your bank the moment a ticket sells.",
+    "Work out what selling your tickets on Paylance would cost you, against a platform charging 8% + ₦100. 4% a ticket, capped at ₦3,000, free under ₦2,000, and the money reaches your bank the moment a ticket sells.",
 };
 
 const REASONS = [
@@ -30,8 +30,8 @@ const REASONS = [
     body: "Each payment splits as it happens and your share lands in your own bank account. Not after the event, not in seven days — while the tickets are still selling.",
   },
   {
-    title: "A flat fee, never a percentage",
-    body: "Sell twice as many tickets and you pay twice. Charge twice as much and you don't. The fee is per ticket, and it is the same whether your night takes ₦50,000 or ₦5,000,000.",
+    title: "The fee stops. Theirs doesn't",
+    body: "We take 4% of a ticket and never more than ₦3,000 — so past ₦75,000 a ticket, the fee simply stops growing. A percentage platform keeps taking its cut all the way up: on a ₦500,000 table they take ₦40,100 and we take ₦3,000.",
   },
   {
     title: "Tickets arrive on WhatsApp",
@@ -77,9 +77,9 @@ export default function SellPage() {
           </div>
 
           <p className="mx-auto mt-6 max-w-[52ch] text-center text-[13px] leading-relaxed text-[var(--on-ground-faint)]">
-            The 5% + ₦100 comparison is a common free-plan rate in this market,
-            checked in August 2026. Card processing is charged by the bank, not
-            by us, and applies on either platform.
+            The 8% + ₦100 comparison was read straight off the incumbent&rsquo;s
+            own checkout in September 2026, across nine ticket types. Card
+            processing is charged separately by the bank on either platform.
           </p>
         </div>
       </section>
