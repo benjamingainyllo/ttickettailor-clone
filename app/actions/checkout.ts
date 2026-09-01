@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { siteUrl } from "@/lib/site";
+import { grossUpForProcessing } from "@/lib/processing-fee";
 import {
   calculateOrderPlatformFeeKobo,
   DEFAULT_PLATFORM_FEE_TYPE,
@@ -309,12 +310,28 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
           payoutAccount.platform_fee_value ?? DEFAULT_PLATFORM_FEE_VALUE
         );
 
-    // When the organiser has chosen to pass the fee on, the buyer is charged
-    // the ticket price PLUS the fee, and the organiser receives the full face
-    // value. gross_kobo is always what the card was actually charged, so
-    // net = gross - fee holds either way and the figures reconcile with the
-    // provider's own record of the transaction.
-    const chargeKobo: Kobo = passFeeToBuyer ? grossKobo + platformFeeKobo : grossKobo;
+    // WHO PAYS WHAT.
+    //
+    //   Paylance's fee  -> the organiser, out of what they set
+    //   the bank's fee  -> the buyer, added to what they are charged
+    //
+    // So the amount that has to survive processing is the ticket price,
+    // plus our fee only when the organiser has chosen to pass that on too.
+    // Everything else falls out of grossing that up.
+    const beforeProcessingKobo: Kobo = passFeeToBuyer
+      ? grossKobo + platformFeeKobo
+      : grossKobo;
+
+    const chargeKobo: Kobo = grossUpForProcessing(beforeProcessingKobo);
+    const processingKobo: Kobo = chargeKobo - beforeProcessingKobo;
+
+    // The organiser's settlement is charge minus our transaction charge
+    // (which is our fee plus the processing we just funded), so it lands
+    // at beforeProcessing - platformFee whatever the bank actually takes.
+    // With the toggle on that is the full face value; with it off it is
+    // the face value less our fee. Both now mean what they say — before
+    // this, "pass the fee to the buyer" still quietly left the organiser
+    // paying the bank.
 
     const { data: paidOrder, error: insertError } = await admin
       .from("orders")
@@ -322,8 +339,12 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
         ...orderRow,
         gross_kobo: chargeKobo,
         platform_fee_kobo: platformFeeKobo,
-        provider_fee_kobo: 0,
-        net_kobo: chargeKobo - platformFeeKobo,
+        // Our estimate, and the one the split was actually built on — so
+        // it is what the organiser's settlement is calculated from, not
+        // whatever the webhook reports later. Any difference between the
+        // two is Paylance's to absorb, by design.
+        provider_fee_kobo: processingKobo,
+        net_kobo: chargeKobo - platformFeeKobo - processingKobo,
         status: "pending",
       })
       .select("id")
@@ -346,6 +367,7 @@ export async function createCheckoutSession(payload: CheckoutPayload): Promise<C
         buyerEmail: payload.buyerEmail,
         amountKobo: chargeKobo,
         platformFeeKobo,
+        processingFeeKobo: processingKobo,
         providerSubaccountId: payoutAccount.provider_subaccount_id,
         callbackUrl: `${siteOrigin()}/checkout/success?reference=${reference}`,
         metadata: {

@@ -16,16 +16,24 @@ import type {
 const BASE_URL = "https://api.paystack.co";
 
 /**
- * Who absorbs Paystack's own processing fee.
+ * Who Paystack deducts its processing fee from. SETTLED: "account".
  *
- * OPEN DECISION (see "Fee bearer" in the project doc). Until it's settled:
- *  - "subaccount" — the creator absorbs it (their settlement is reduced)
- *  - "account"    — Paylance absorbs it out of the platform fee
+ * Read this with lib/processing-fee.ts, because on its own it looks
+ * backwards. The decision is that the BUYER pays processing and the
+ * organiser pays only Paylance's fee. Paystack has no "buyer" bearer, so
+ * it is done in two parts:
  *
- * Defaulting to "subaccount" because with a thin platform fee, "account"
- * can make a transaction net-negative for us on small tickets.
+ *   1. the buyer is charged the ticket price PLUS the processing fee
+ *      (worked out by grossUpForProcessing)
+ *   2. that same processing fee is added to transaction_charge, and
+ *      Paystack deducts its real fee from there
+ *
+ * So Paylance's charge covers the bank and nets out to exactly its own
+ * fee, and the organiser's settlement is untouched by processing. Setting
+ * this back to "subaccount" without also changing the charge maths would
+ * silently take the fee out of the organiser's money twice over.
  */
-const PROCESSING_FEE_BEARER: "account" | "subaccount" = "subaccount";
+const PROCESSING_FEE_BEARER: "account" | "subaccount" = "account";
 
 function secretKey(): string {
   const key = process.env.PAYMENTS_PROVIDER_SECRET_KEY ?? process.env.PAYSTACK_SECRET_KEY;
@@ -104,7 +112,10 @@ export class PaystackProvider implements PaymentProvider {
         reference: params.reference,
         callback_url: params.callbackUrl,
         subaccount: params.providerSubaccountId,
-        transaction_charge: params.platformFeeKobo,
+        // Our fee PLUS the buyer-funded processing, because with
+        // bearer "account" Paystack takes its cut from this number. What
+        // is left after it does is exactly params.platformFeeKobo.
+        transaction_charge: params.platformFeeKobo + (params.processingFeeKobo ?? 0),
         bearer: PROCESSING_FEE_BEARER,
         metadata: params.metadata,
       },

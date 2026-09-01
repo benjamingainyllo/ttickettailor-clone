@@ -41,7 +41,15 @@ export async function settleOrder(input: SettleOrderInput) {
     return { ok: true as const, order, alreadySettled: true };
   }
 
-  const providerFeeKobo = input.providerFeeKobo ?? order.provider_fee_kobo ?? 0;
+  // Prefer the figure the split was actually built on. With the buyer
+  // funding processing, the organiser's settlement is charge minus our
+  // transaction_charge — both fixed when checkout ran — so recomputing it
+  // from whatever the provider reports afterwards would move a number
+  // that did not move. Any gap between the two is Paylance's, by design.
+  const providerFeeKobo =
+    Number(order.provider_fee_kobo ?? 0) > 0
+      ? Number(order.provider_fee_kobo)
+      : (input.providerFeeKobo ?? 0);
   const netKobo = Math.max(
     0,
     Number(order.gross_kobo) - Number(order.platform_fee_kobo) - Number(providerFeeKobo)

@@ -27,6 +27,12 @@ export interface InitializeCheckoutParams {
   /** The platform's cut. The remainder settles to the creator's own bank. */
   platformFeeKobo: Kobo;
   /**
+   * The buyer-funded processing fee already included in amountKobo. Added
+   * to the provider's transaction charge so the bank's cut comes out of
+   * our side rather than the organiser's. See lib/processing-fee.ts.
+   */
+  processingFeeKobo?: Kobo;
+  /**
    * The creator's provider-side subaccount. REQUIRED for paid checkouts —
    * it is what makes the money split at transaction time instead of
    * landing in the platform's account.
