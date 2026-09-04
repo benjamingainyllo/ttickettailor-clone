@@ -10,36 +10,26 @@ import { TITLE_STYLES, titleStyleCss, type TitleStyleId } from "@/lib/title-styl
  * result; showing each word in its own face means there is nothing to
  * imagine. That is the whole design of this control.
  *
- * The preview above shows their real title, not a sample string, because
- * "Detty December" and "Untitled Event" sit very differently in a script.
+ * THERE IS NO PREVIEW HERE, ON PURPOSE. The first version put a preview
+ * panel under the title field, which meant the organiser looked at their
+ * own event name twice on one screen — once as the thing they were
+ * typing, once as a picture of it. The title input renders in the chosen
+ * face instead, so the field IS the preview and there is nothing to keep
+ * in sync.
  */
 export function TitleStylePicker({
-  title,
   value,
   onChange,
 }: {
-  title: string;
   value: TitleStyleId;
   onChange: (id: TitleStyleId) => void;
 }) {
-  const shown = title.trim() || "Untitled Event";
-
   return (
     <div>
-      {/* The result, at roughly the size the public page uses. */}
-      <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-5 py-6">
-        <p
-          className="break-words text-[var(--dl-ink)]"
-          style={titleStyleCss(value, 40)}
-        >
-          {shown}
-        </p>
-      </div>
-
       {/* Horizontally scrollable so seven options never wrap into a
           ragged block on a phone. */}
       <div
-        className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1"
+        className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
         role="radiogroup"
         aria-label="Title style"
       >

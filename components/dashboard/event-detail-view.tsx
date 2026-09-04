@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft, Calendar as CalendarIcon, MapPin, Users, Ticket, Banknote,
-  Eye, Share2, ExternalLink, Inbox, Loader2, Globe, Lock, ScanLine, Package,
+  Eye, Share2, ExternalLink, Inbox, Loader2, Globe, Lock, ScanLine, Package, Pencil,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
@@ -121,7 +121,7 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
           <ArrowLeft className="h-5 w-5" />
         </button>
 
-        <div className="absolute right-4 top-4">
+        <div className="absolute right-4 top-4 flex items-center gap-2">
           <span
             className={`flex items-center gap-1.5 rounded-[3px] px-4 py-1.5 text-[11px] font-bold text-white shadow-lg ${
               isPublished ? "bg-[var(--mint)]" : "bg-[var(--dl-ink)]"
@@ -130,6 +130,14 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
             {isPublished ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
             {isPublished ? "Live" : "Draft"}
           </span>
+
+          <Link
+            href={`/events/${event.id}/edit`}
+            className="flex items-center gap-1.5 rounded-[3px] bg-white/95 px-4 py-1.5 text-[11px] font-bold text-[var(--dl-ink)] shadow-lg transition-transform hover:-translate-y-[1px]"
+          >
+            <Pencil className="h-3 w-3" strokeWidth={2.5} />
+            Edit
+          </Link>
         </div>
 
         <div className="absolute bottom-6 left-6 right-6">

@@ -123,6 +123,31 @@ export function titleStyle(id: string | null | undefined): TitleStyle {
   return BY_ID.get((id ?? "") as TitleStyleId) ?? BY_ID.get(DEFAULT_TITLE_STYLE)!;
 }
 
+/**
+ * Inline styles for a title that has to survive a phone and a desktop.
+ *
+ * The per-face scale has to be applied to BOTH ends of the clamp, not to
+ * a finished value — a script set to shrink to 32px on a phone is already
+ * illegible at 32, so the floor has to move with the face too.
+ */
+export function titleStyleCssClamp(
+  id: string | null | undefined,
+  minPx: number,
+  maxPx: number
+): React.CSSProperties {
+  const s = titleStyle(id);
+  return {
+    fontFamily: s.family,
+    fontWeight: s.weight,
+    letterSpacing: s.letterSpacing,
+    fontStyle: s.italic ? "italic" : "normal",
+    fontSize: `clamp(${Math.round(minPx * s.scale)}px, 7.5vw, ${Math.round(
+      maxPx * s.scale
+    )}px)`,
+    lineHeight: 1.02,
+  };
+}
+
 /** Inline styles for rendering a title in a given face at a given size. */
 export function titleStyleCss(
   id: string | null | undefined,

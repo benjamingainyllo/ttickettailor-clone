@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { getEventById, type PublicCohost, type PublicProduct, type PublicTicketType } from "@/app/actions/events";
-import { titleStyleCss } from "@/lib/title-styles";
+import { titleStyleCssClamp } from "@/lib/title-styles";
 import { MerchPicker, type Basket } from "@/components/storefront/merch-picker";
 import { createCheckoutSession } from "@/app/actions/checkout";
 import { getDeliveryChannels } from "@/app/actions/delivery";
@@ -225,16 +225,14 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_390px] lg:gap-16">
           {/* ── What it is ─────────────────────────────────── */}
           <div className="min-w-0">
-            {/* Two sizes of the chosen face rather than one that scales:
-                a script at 56px on a phone runs off the side, and clamp()
-                can't know which face it is being asked to fit. */}
-            <h1 className="break-words">
-              <span className="block sm:hidden" style={titleStyleCss(event.title_style, 40)}>
-                {event.title}
-              </span>
-              <span className="hidden sm:block" style={titleStyleCss(event.title_style, 56)}>
-                {event.title}
-              </span>
+            {/* One element. The clamp carries the face's own scale at both
+                ends, so a script shrinks from its larger size rather than
+                from everyone else's. */}
+            <h1
+              className="break-words"
+              style={titleStyleCssClamp(event.title_style, 40, 56)}
+            >
+              {event.title}
             </h1>
 
             <p className="mt-6 text-[19px] font-bold leading-[1.35] sm:text-[22px]">

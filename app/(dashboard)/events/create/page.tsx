@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { TitleStylePicker } from "@/components/dashboard/title-style-picker";
 import { CohostEditor, cleanCohosts, type CohostDraft } from "@/components/dashboard/cohost-editor";
-import { DEFAULT_TITLE_STYLE, type TitleStyleId } from "@/lib/title-styles";
+import { DEFAULT_TITLE_STYLE, titleStyleCssClamp, type TitleStyleId } from "@/lib/title-styles";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -260,22 +260,19 @@ export default function CreateEventPage() {
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Untitled event"
               aria-label="Event name"
-              className="w-full bg-transparent text-[32px] font-extrabold leading-[1] tracking-[-0.04em] outline-none placeholder:text-[var(--dl-ink-faint)] sm:text-[40px]"
+              // The field renders in whatever face is selected, so the
+              // organiser types straight into the finished thing instead of
+              // reading their own title twice on one screen.
+              style={titleStyleCssClamp(titleStyle, 32, 40)}
+              className="w-full bg-transparent text-[var(--dl-ink)] outline-none placeholder:text-[var(--dl-ink-faint)]"
             />
             <p className="mt-3 text-[14.5px] text-[var(--dl-ink-soft)]">
               The name people see on the flyer, the ticket and the link they
               share.
             </p>
 
-            <div className="mt-6">
-              <p className={sectionLabel}>Title style</p>
-              <div className="mt-2.5">
-                <TitleStylePicker
-                  title={formData.title}
-                  value={titleStyle}
-                  onChange={setTitleStyle}
-                />
-              </div>
+            <div className="mt-5">
+              <TitleStylePicker value={titleStyle} onChange={setTitleStyle} />
             </div>
 
             <div className="mt-8">
