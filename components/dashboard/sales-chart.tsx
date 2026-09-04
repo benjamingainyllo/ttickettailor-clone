@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  CartesianGrid, Line, LineChart, ReferenceLine,
+  Area, AreaChart, CartesianGrid, ReferenceLine,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { formatKobo } from "@/lib/money";
@@ -14,10 +14,17 @@ import {
 /**
  * Sales over time.
  *
- * DAYLIGHT, NOT THE DARK WORLD. The line is full ink, like every other rule
- * on this screen. Acid is deliberately not used: the house rule is one acid
- * area per screen and it belongs to whatever the organiser should click
- * next, which is never a chart.
+ * COLOUR CARRIES THE MEASURE. Money is green and tickets are indigo, so the
+ * toggle changes something you can see at a glance rather than only a label.
+ * Both were checked against the white panel for contrast and for colour
+ * blindness before being used.
+ *
+ * Acid is still deliberately absent: the house rule is one acid area per
+ * screen and it belongs to whatever the organiser should click next, which
+ * is never a chart. Full ink was the first attempt and it read as dead —
+ * a hairline over a mostly-empty plot looks like a broken page rather than
+ * a quiet month. The area fill under the line is what fixes that, not the
+ * hue on its own.
  *
  * ONE MEASURE AT A TIME, ON PURPOSE. Money and tickets have nothing to do
  * with each other numerically — a second y-axis would let ₦2m and 4 tickets
@@ -32,6 +39,15 @@ import {
 
 type Measure = "money" | "tickets";
 const RANGES = [7, 30, 90] as const;
+
+/**
+ * One hue per measure. Deep enough to hold a 2px stroke on white, far
+ * enough apart to stay distinct for a red/green colour-blind reader.
+ */
+const HUE: Record<Measure, string> = {
+  money: "#17714A",   // the mint of the light palette — money coming in
+  tickets: "#4257C4", // the periwinkle, deepened for light — a count
+};
 
 /** Axis labels only. The tooltip always shows the exact figure. */
 function compactNaira(kobo: number): string {
@@ -72,6 +88,7 @@ export function SalesChart({ orders }: { orders: readonly SalesOrderRow[] }) {
   // 90 day labels do not fit. Thin them rather than let them overlap.
   const tickGap = days <= 7 ? 0 : days <= 31 ? 2 : 9;
 
+  const tone = HUE[measure];
   const todayIso = points[points.length - 1]?.iso;
   const empty = totals.orders === 0;
 
@@ -93,7 +110,10 @@ export function SalesChart({ orders }: { orders: readonly SalesOrderRow[] }) {
       <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-[var(--dl-line)] p-5">
         <div>
           <p className={label}>Sales</p>
-          <p className="mt-1.5 text-[31px] font-extrabold leading-none tracking-[-0.04em] [font-variant-numeric:tabular-nums]">
+          <p
+            className="mt-1.5 text-[31px] font-extrabold leading-none tracking-[-0.04em] [font-variant-numeric:tabular-nums]"
+            style={{ color: tone }}
+          >
             {headline}
           </p>
           <p className="mt-1.5 text-[12.5px] text-[var(--dl-ink-soft)]">{caption}</p>
@@ -133,7 +153,15 @@ export function SalesChart({ orders }: { orders: readonly SalesOrderRow[] }) {
       <div className="p-5 pl-2">
         <div className="h-[220px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={points} margin={{ top: 8, right: 14, bottom: 0, left: 6 }}>
+            <AreaChart data={points} margin={{ top: 8, right: 14, bottom: 0, left: 6 }}>
+              <defs>
+                {/* Fades out before the baseline so the fill never fights
+                    the axis rule underneath it. */}
+                <linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={tone} stopOpacity={0.22} />
+                  <stop offset="100%" stopColor={tone} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
                 vertical={false}
                 stroke="var(--dl-line-soft)"
@@ -184,14 +212,17 @@ export function SalesChart({ orders }: { orders: readonly SalesOrderRow[] }) {
               )}
 
               <Tooltip
-                cursor={{ stroke: "var(--dl-ink)", strokeWidth: 1, strokeDasharray: "3 3" }}
+                cursor={{ stroke: tone, strokeWidth: 1.5, strokeDasharray: "3 3" }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const p = payload[0].payload as SalesPoint;
                   return (
                     <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-3 py-2 shadow-[3px_3px_0_var(--dl-line)]">
                       <p className={label}>{p.label}</p>
-                      <p className="mt-1 text-[16px] font-extrabold [font-variant-numeric:tabular-nums]">
+                      <p
+                        className="mt-1 text-[16px] font-extrabold [font-variant-numeric:tabular-nums]"
+                        style={{ color: tone }}
+                      >
                         {measure === "money" ? formatKobo(p.kobo) : `${p.tickets}`}
                       </p>
                       <p className="text-[11.5px] text-[var(--dl-ink-soft)]">
@@ -206,7 +237,7 @@ export function SalesChart({ orders }: { orders: readonly SalesOrderRow[] }) {
                 }}
               />
 
-              <Line
+              <Area
                 // Straight segments, NOT a smoothed curve. Monotone drew a
                 // bell shape between a day with nothing and a day with
                 // ₦255,000, so the slopes either side crossed heights that
@@ -215,19 +246,20 @@ export function SalesChart({ orders }: { orders: readonly SalesOrderRow[] }) {
                 // discrete; the line may only join points that exist.
                 type="linear"
                 dataKey={measure === "money" ? "kobo" : "tickets"}
-                stroke="var(--dl-ink)"
-                strokeWidth={2}
+                stroke={tone}
+                strokeWidth={2.25}
+                fill="url(#salesFill)"
                 dot={false}
                 activeDot={{
-                  r: 4.5,
-                  fill: "var(--dl-ink)",
+                  r: 5,
+                  fill: tone,
                   stroke: "var(--dl-panel)",
                   strokeWidth: 2,
                 }}
                 isAnimationActive={!stillFrames}
                 animationDuration={450}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
 
