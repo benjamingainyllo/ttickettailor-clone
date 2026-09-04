@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { getEventById, type PublicProduct, type PublicTicketType } from "@/app/actions/events";
+import { getEventById, type PublicCohost, type PublicProduct, type PublicTicketType } from "@/app/actions/events";
+import { titleStyleCss } from "@/lib/title-styles";
 import { MerchPicker, type Basket } from "@/components/storefront/merch-picker";
 import { createCheckoutSession } from "@/app/actions/checkout";
 import { getDeliveryChannels } from "@/app/actions/delivery";
@@ -12,6 +13,7 @@ import { Loader2, Calendar, MapPin, Users, ExternalLink, CheckCircle2, Minus, Pl
 export function EventCheckoutPage({ params }: { params: { id: string } }) {
   const [event, setEvent] = useState<any>(null);
   const [host, setHost] = useState<any>(null);
+  const [cohosts, setCohosts] = useState<PublicCohost[]>([]);
   const [ticketTypes, setTicketTypes] = useState<PublicTicketType[]>([]);
   const [products, setProducts] = useState<PublicProduct[]>([]);
   /** productId -> what the buyer picked. Absent means not in the basket. */
@@ -50,6 +52,7 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
         if (res.success && res.event) {
           setEvent(res.event);
           setHost(res.host ?? null);
+          setCohosts(res.cohosts ?? []);
           setTicketTypes(res.ticketTypes ?? []);
           setProducts(res.products ?? []);
           // Preselect the first tier a buyer can actually buy, so a
@@ -202,8 +205,15 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
       })
     : "Date to be announced";
 
+  // The flyer name wins over the account name when one is set. An
+  // organiser throws parties as "Benjitech" and banks as Benjamin — the
+  // payout still uses the verified account name, so this can only change
+  // what the poster says, never where the money lands.
   const hostName =
-    [host?.first_name, host?.last_name].filter(Boolean).join(" ") || host?.handle || null;
+    (event.host_nickname ?? "").trim() ||
+    [host?.first_name, host?.last_name].filter(Boolean).join(" ") ||
+    host?.handle ||
+    null;
 
   return (
     <div className="dl min-h-screen font-[family-name:var(--font-bricolage-grotesque)]">
@@ -215,8 +225,16 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_390px] lg:gap-16">
           {/* ── What it is ─────────────────────────────────── */}
           <div className="min-w-0">
-            <h1 className="text-[40px] font-extrabold leading-[0.98] tracking-[-0.045em] sm:text-[56px]">
-              {event.title}
+            {/* Two sizes of the chosen face rather than one that scales:
+                a script at 56px on a phone runs off the side, and clamp()
+                can't know which face it is being asked to fit. */}
+            <h1 className="break-words">
+              <span className="block sm:hidden" style={titleStyleCss(event.title_style, 40)}>
+                {event.title}
+              </span>
+              <span className="hidden sm:block" style={titleStyleCss(event.title_style, 56)}>
+                {event.title}
+              </span>
             </h1>
 
             <p className="mt-6 text-[19px] font-bold leading-[1.35] sm:text-[22px]">
@@ -255,6 +273,30 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                     <p className="text-[15px] font-extrabold">{hostName}</p>
                   )}
                 </div>
+              </div>
+            )}
+
+            {cohosts.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <p className={label}>With</p>
+                {cohosts.map((c) =>
+                  c.handle ? (
+                    <a
+                      key={c.id}
+                      href={`/${c.handle}`}
+                      className="rounded-full border-2 border-[var(--dl-line)] px-3 py-1 text-[13.5px] font-extrabold hover:-translate-y-[1px]"
+                    >
+                      {c.name}
+                    </a>
+                  ) : (
+                    <span
+                      key={c.id}
+                      className="rounded-full border-2 border-[var(--dl-line)] px-3 py-1 text-[13.5px] font-extrabold"
+                    >
+                      {c.name}
+                    </span>
+                  )
+                )}
               </div>
             )}
 

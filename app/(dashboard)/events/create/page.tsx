@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { TitleStylePicker } from "@/components/dashboard/title-style-picker";
+import { CohostEditor, cleanCohosts, type CohostDraft } from "@/components/dashboard/cohost-editor";
+import { DEFAULT_TITLE_STYLE, type TitleStyleId } from "@/lib/title-styles";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -49,6 +52,9 @@ export default function CreateEventPage() {
   const [passFeeToBuyer, setPassFeeToBuyer] = useState(false);
 
   /** Optional rows stay hidden until asked for, so the page opens short. */
+  const [titleStyle, setTitleStyle] = useState<TitleStyleId>(DEFAULT_TITLE_STYLE);
+  const [hostNickname, setHostNickname] = useState("");
+  const [cohosts, setCohosts] = useState<CohostDraft[]>([]);
   const [showMapLink, setShowMapLink] = useState(false);
   const [showCapacity, setShowCapacity] = useState(false);
 
@@ -149,11 +155,33 @@ export default function CreateEventPage() {
           status: "Upcoming",
           publish_status: "draft",
           pass_fee_to_buyer: passFeeToBuyer,
+          title_style: titleStyle,
+          host_nickname: hostNickname.trim() || null,
         })
         .select("id")
         .single();
 
       if (insertError) throw insertError;
+
+      // Cohosts are decoration on a flyer, so a failure here must not lose
+      // the event the organiser just spent five minutes writing. Saved
+      // separately, and a failure is reported without throwing away
+      // everything above it.
+      const cohostRows = cleanCohosts(cohosts);
+      if (cohostRows.length > 0) {
+        const { error: cohostError } = await supabase.from("event_cohosts").insert(
+          cohostRows.map((c, i) => ({
+            event_id: created.id,
+            name: c.name,
+            handle: c.handle || null,
+            sort_order: i,
+          }))
+        );
+        if (cohostError) {
+          console.error("Could not save cohosts", cohostError);
+          toast.error("Event saved, but the cohosts didn't. Add them from the event page.");
+        }
+      }
 
       // An event sells ticket TYPES, not a bare price — with none it can't
       // sell anything at all. The price typed here becomes the first one,
@@ -198,6 +226,8 @@ export default function CreateEventPage() {
   const row =
     "flex items-center gap-3.5 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-4 py-3.5";
   const rowIcon = "h-[18px] w-[18px] shrink-0 text-[var(--dl-ink-faint)]";
+  const sectionLabel =
+    "text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]";
   const rowInput =
     "w-full bg-transparent text-[15px] text-[var(--dl-ink)] placeholder-[var(--dl-ink-faint)] outline-none [color-scheme:light]";
   const addChip =
@@ -236,6 +266,39 @@ export default function CreateEventPage() {
               The name people see on the flyer, the ticket and the link they
               share.
             </p>
+
+            <div className="mt-6">
+              <p className={sectionLabel}>Title style</p>
+              <div className="mt-2.5">
+                <TitleStylePicker
+                  title={formData.title}
+                  value={titleStyle}
+                  onChange={setTitleStyle}
+                />
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <p className={sectionLabel}>Hosted by</p>
+              <input
+                type="text"
+                value={hostNickname}
+                onChange={(e) => setHostNickname(e.target.value)}
+                placeholder="Your name, or what you throw parties as"
+                maxLength={60}
+                aria-label="Host name shown on the flyer"
+                className="mt-2.5 w-full rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-3.5 py-2.5 text-[15px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--dl-ink)]"
+              />
+              <p className="mt-2 text-[13px] leading-relaxed text-[var(--dl-ink-soft)]">
+                Optional. Leave it empty and we use your own name. This changes
+                the flyer only &mdash; your money still goes to your verified
+                bank account either way.
+              </p>
+
+              <div className="mt-4">
+                <CohostEditor cohosts={cohosts} onChange={setCohosts} />
+              </div>
+            </div>
 
             <div className="mt-8 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">

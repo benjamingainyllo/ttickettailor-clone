@@ -37,6 +37,14 @@ export interface PublicProduct {
   soldOut: boolean;
 }
 
+/** A name on the flyer. No login, no permissions, no share of the money. */
+export interface PublicCohost {
+  id: string;
+  name: string;
+  handle: string | null;
+  avatarUrl: string | null;
+}
+
 export async function getEventById(id: string) {
   const supabase = createClient();
 
@@ -49,11 +57,11 @@ export async function getEventById(id: string) {
 
   if (error) {
     console.error("Error fetching event:", error);
-    return { success: false as const, error: error.message, event: null, host: null, ticketTypes: [], products: [] };
+    return { success: false as const, error: error.message, event: null, host: null, ticketTypes: [], products: [], cohosts: [] };
   }
 
   if (!event) {
-    return { success: false as const, error: "Event not found", event: null, host: null, ticketTypes: [], products: [] };
+    return { success: false as const, error: "Event not found", event: null, host: null, ticketTypes: [], products: [], cohosts: [] };
   }
 
   const { data: host } = await supabase
@@ -126,5 +134,26 @@ export async function getEventById(id: string) {
     };
   });
 
-  return { success: true as const, event, host: host ?? null, ticketTypes, products };
+  // Its own query, and a tolerant one. The table arrives with PART 9 of
+  // setup.sql, and an organiser who hasn't run it yet must still be able to
+  // sell tickets — a missing decoration table cannot be allowed to take a
+  // published event offline.
+  let cohosts: PublicCohost[] = [];
+  try {
+    const { data: cohostRows } = await supabase
+      .from("event_cohosts")
+      .select("id, name, handle, avatar_url")
+      .eq("event_id", id)
+      .order("sort_order", { ascending: true });
+    cohosts = (cohostRows ?? []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      handle: c.handle ?? null,
+      avatarUrl: c.avatar_url ?? null,
+    }));
+  } catch {
+    cohosts = [];
+  }
+
+  return { success: true as const, event, host: host ?? null, ticketTypes, products, cohosts };
 }

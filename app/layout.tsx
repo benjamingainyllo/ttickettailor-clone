@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Instrument_Serif } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  Instrument_Serif,
+  Abril_Fatface,
+  Pinyon_Script,
+  Space_Mono,
+  Cormorant_Garamond,
+} from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { Toaster } from "sonner";
@@ -17,6 +24,48 @@ const instrumentSerif = Instrument_Serif({
   weight: "400",
   style: ["normal", "italic"],
   variable: "--font-instrument-serif"
+});
+
+/**
+ * The faces an organiser can set their event title in. See
+ * lib/title-styles.ts, which is the source of truth for which id maps to
+ * which family.
+ *
+ * DECLARING SEVEN DOES NOT DOWNLOAD SEVEN. next/font emits a @font-face
+ * per family and self-hosts the files, but a browser only fetches a font
+ * file once something on the page actually renders in it. An event page
+ * uses exactly one title face, so a buyer downloads one — which matters,
+ * because most of them are opening this on mobile data.
+ *
+ * "Simple" is deliberately absent: it uses the system stack and costs
+ * nothing at all.
+ */
+const abrilFatface = Abril_Fatface({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  variable: "--font-abril-fatface",
+});
+
+const pinyonScript = Pinyon_Script({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  variable: "--font-pinyon-script",
+});
+
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-space-mono",
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  display: "swap",
+  variable: "--font-cormorant",
 });
 
 const SITE_TITLE = "Paylance — Sell tickets from ₦200 a ticket, never a percentage";
@@ -70,7 +119,16 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${bricolageGrotesque.variable} ${instrumentSerif.variable}`}>
+      <body
+        className={[
+          bricolageGrotesque.variable,
+          instrumentSerif.variable,
+          abrilFatface.variable,
+          pinyonScript.variable,
+          spaceMono.variable,
+          cormorantGaramond.variable,
+        ].join(" ")}
+      >
         <AuthProvider>
           {children}
           <Toaster

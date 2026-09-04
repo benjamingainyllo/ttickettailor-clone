@@ -1287,6 +1287,82 @@ CREATE INDEX IF NOT EXISTS events_demo_idx
 CREATE INDEX IF NOT EXISTS orders_demo_idx
   ON public.orders (creator_id) WHERE is_demo;
 
+-- ============================================================
+-- PART 9  Event personality: title styles, host name, cohosts
+-- ============================================================
+-- A flyer is not a form. Two parties on the same night with the same
+-- fields should not look like the same event, and the title is where an
+-- organiser's taste actually shows. These three columns are display only
+-- -- nothing here touches money, tickets or access.
+
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS title_style TEXT NOT NULL DEFAULT 'classic';
+
+-- The name the organiser wants ON THE FLYER, which is often not the name
+-- on their bank account. "Benjitech" throws the party; Benjamin Gainy
+-- gets paid. Payouts keep using the verified account name regardless of
+-- what is typed here, so this can never be used to mislead a buyer about
+-- who is receiving their money.
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS host_nickname TEXT;
+
+-- Validated in the database as well as the UI, because an unknown style
+-- would fall back to an undefined font and render in whatever the browser
+-- felt like. Kept in sync with TITLE_STYLES in lib/title-styles.ts.
+--
+-- Written as drop / normalise / add rather than a DO block with an
+-- exception handler: catching the constraint failure inside PL/pgSQL rolls
+-- the whole block back INCLUDING the DROP, so the retry then fails with
+-- "constraint already exists". Normalising first needs no handler at all.
+ALTER TABLE public.events DROP CONSTRAINT IF EXISTS events_title_style_check;
+
+UPDATE public.events SET title_style = 'classic'
+ WHERE title_style IS NULL
+    OR title_style NOT IN
+       ('classic','eclectic','fancy','literary','digital','elegant','simple');
+
+ALTER TABLE public.events ADD CONSTRAINT events_title_style_check
+  CHECK (title_style IN
+    ('classic','eclectic','fancy','literary','digital','elegant','simple'));
+
+
+-- The other people throwing it. Names on a flyer, not accounts: a cohost
+-- has no login, no permissions and no share of the money. Giving them the
+-- door scanner or edit rights is a separate decision with real security
+-- consequences, and this table deliberately does not pre-empt it.
+CREATE TABLE IF NOT EXISTS public.event_cohosts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 60),
+  -- Optional link to a Paylance handle, so a cohost who is also an
+  -- organiser gets their page linked from the flyer.
+  handle TEXT,
+  avatar_url TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS event_cohosts_event_idx
+  ON public.event_cohosts (event_id, sort_order);
+
+ALTER TABLE public.event_cohosts ENABLE ROW LEVEL SECURITY;
+
+-- Cohosts appear on a public flyer, so anyone may read them.
+DROP POLICY IF EXISTS "Public can view cohosts" ON public.event_cohosts;
+CREATE POLICY "Public can view cohosts" ON public.event_cohosts
+  FOR SELECT USING (true);
+
+-- Only the organiser who owns the event may change them. Same shape as
+-- the ticket_types policy so there is one pattern to reason about.
+DROP POLICY IF EXISTS "Creators manage own cohosts" ON public.event_cohosts;
+CREATE POLICY "Creators manage own cohosts" ON public.event_cohosts
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.events e
+      WHERE e.id = event_cohosts.event_id AND e.creator_id = auth.uid()
+    )
+  );
+
 
 -- ============================================================
 -- Done. You should see "Success. No rows returned".
