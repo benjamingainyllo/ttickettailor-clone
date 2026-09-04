@@ -1408,6 +1408,131 @@ CREATE POLICY "Creators see own announcements" ON public.event_announcements
 -- row can never claim a message was sent that wasn't.
 DROP POLICY IF EXISTS "Creators insert own announcements" ON public.event_announcements;
 
+-- ============================================================
+-- PART 11  The admin system: roles, audit, and admin-set state
+-- ============================================================
+-- Everything here exists so that a person with access to the whole
+-- platform can be held to account for what they do with it.
+
+-- ---- Roles --------------------------------------------------
+-- platform_admins was a membership list: you were in or you weren't.
+-- Four roles instead, because "can read a buyer's phone number" and "can
+-- suspend an organiser mid-event" should not be the same permission.
+ALTER TABLE public.platform_admins
+  ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'support';
+
+ALTER TABLE public.platform_admins DROP CONSTRAINT IF EXISTS platform_admins_role_check;
+
+UPDATE public.platform_admins SET role = 'support'
+ WHERE role IS NULL
+    OR role NOT IN ('super_admin', 'operations', 'finance', 'support');
+
+ALTER TABLE public.platform_admins ADD CONSTRAINT platform_admins_role_check
+  CHECK (role IN ('super_admin', 'operations', 'finance', 'support'));
+
+-- The first admin is the owner. Anybody added by hand before roles
+-- existed was, by definition, the founder putting themselves in.
+UPDATE public.platform_admins a SET role = 'super_admin'
+ WHERE a.role = 'support'
+   AND a.added_at = (SELECT MIN(added_at) FROM public.platform_admins);
+
+
+-- ---- The audit log ------------------------------------------
+-- Immutable from the admin interface. There is no UPDATE or DELETE policy
+-- and no INSERT policy: rows are written by the server actions using the
+-- service role, so an admin cannot edit or erase their own trail through
+-- any screen the product offers.
+CREATE TABLE IF NOT EXISTS public.admin_audit_log (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+
+  admin_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+  admin_email TEXT,
+
+  action TEXT NOT NULL,
+  subject_type TEXT NOT NULL,
+  subject_id TEXT NOT NULL,
+  subject_label TEXT,
+
+  -- What it was, and what it became. Both nullable: a note has no
+  -- previous value, and a read-only action has neither.
+  previous_value JSONB,
+  new_value JSONB,
+  reason TEXT,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ON DELETE RESTRICT above is deliberate: deleting an admin account must
+-- not quietly delete the record of what they did.
+
+CREATE INDEX IF NOT EXISTS admin_audit_log_time_idx
+  ON public.admin_audit_log (created_at DESC);
+CREATE INDEX IF NOT EXISTS admin_audit_log_subject_idx
+  ON public.admin_audit_log (subject_type, subject_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS admin_audit_log_admin_idx
+  ON public.admin_audit_log (admin_id, created_at DESC);
+
+ALTER TABLE public.admin_audit_log ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins read the audit log" ON public.admin_audit_log;
+CREATE POLICY "Admins read the audit log" ON public.admin_audit_log
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.platform_admins p WHERE p.user_id = auth.uid())
+  );
+
+
+-- ---- State an admin can set ---------------------------------
+-- Separate from publish_status, which belongs to the organiser. An
+-- organiser publishes and unpublishes their own event; an admin
+-- suspending one is a different act by a different person, and
+-- collapsing the two would let an organiser un-suspend themselves by
+-- pressing publish.
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS admin_state TEXT NOT NULL DEFAULT 'ok';
+
+ALTER TABLE public.events DROP CONSTRAINT IF EXISTS events_admin_state_check;
+UPDATE public.events SET admin_state = 'ok'
+ WHERE admin_state IS NULL
+    OR admin_state NOT IN ('ok', 'flagged', 'suspended', 'cancelled');
+ALTER TABLE public.events ADD CONSTRAINT events_admin_state_check
+  CHECK (admin_state IN ('ok', 'flagged', 'suspended', 'cancelled'));
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS account_state TEXT NOT NULL DEFAULT 'ok';
+
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_account_state_check;
+UPDATE public.profiles SET account_state = 'ok'
+ WHERE account_state IS NULL
+    OR account_state NOT IN ('ok', 'flagged', 'restricted', 'suspended');
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_account_state_check
+  CHECK (account_state IN ('ok', 'flagged', 'restricted', 'suspended'));
+
+
+-- ---- Internal notes -----------------------------------------
+-- A note is appended, never edited. "What did we know and when" is the
+-- whole value of an investigation trail, and an editable note answers
+-- neither question.
+CREATE TABLE IF NOT EXISTS public.admin_notes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  subject_type TEXT NOT NULL CHECK (subject_type IN ('organiser', 'event', 'order', 'customer')),
+  subject_id TEXT NOT NULL,
+  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+  author_email TEXT,
+  body TEXT NOT NULL CHECK (length(trim(body)) BETWEEN 1 AND 4000),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS admin_notes_subject_idx
+  ON public.admin_notes (subject_type, subject_id, created_at DESC);
+
+ALTER TABLE public.admin_notes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins read notes" ON public.admin_notes;
+CREATE POLICY "Admins read notes" ON public.admin_notes
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.platform_admins p WHERE p.user_id = auth.uid())
+  );
+
 
 -- ============================================================
 -- Done. You should see "Success. No rows returned".
