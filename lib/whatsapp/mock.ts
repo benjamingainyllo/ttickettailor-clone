@@ -1,4 +1,4 @@
-import type { SendResult, TicketMessage, WhatsAppProvider } from "./types";
+import type { AnnouncementMessage, SendResult, TicketMessage, WhatsAppProvider } from "./types";
 import { formatE164 } from "./phone";
 import { ticketFooterLine } from "@/lib/growth";
 
@@ -38,5 +38,22 @@ export class MockWhatsAppProvider implements WhatsAppProvider {
 
     console.log(lines.join("\n"));
     return { ok: true, id: `demo_${message.orderReference}` };
+  }
+
+  async sendAnnouncement(message: AnnouncementMessage): Promise<SendResult> {
+    console.log(
+      [
+        "",
+        "──────── WHATSAPP UPDATE (demo — nothing sent) ────────",
+        `To:     ${formatE164(message.to)}`,
+        `Event:  ${message.eventTitle}`,
+        `Link:   ${message.eventUrl}`,
+        "",
+        message.body,
+        "───────────────────────────────────────────────────────",
+        "",
+      ].join("\n")
+    );
+    return { ok: true, id: `demo-announce-${Date.now()}` };
   }
 }

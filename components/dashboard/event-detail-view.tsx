@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft, Calendar as CalendarIcon, MapPin, Users, Ticket, Banknote,
-  Eye, Share2, ExternalLink, Inbox, Loader2, Globe, Lock, ScanLine, Package, Pencil,
+  Eye, Share2, ExternalLink, Inbox, Loader2, Globe, Lock, ScanLine, Package, Pencil, Megaphone,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
@@ -130,6 +130,14 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
             {isPublished ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
             {isPublished ? "Live" : "Draft"}
           </span>
+
+          <Link
+            href={`/events/${event.id}/message`}
+            className="flex items-center gap-1.5 rounded-[3px] bg-white/95 px-4 py-1.5 text-[11px] font-bold text-[var(--dl-ink)] shadow-lg transition-transform hover:-translate-y-[1px]"
+          >
+            <Megaphone className="h-3 w-3" strokeWidth={2.5} />
+            Message
+          </Link>
 
           <Link
             href={`/events/${event.id}/edit`}

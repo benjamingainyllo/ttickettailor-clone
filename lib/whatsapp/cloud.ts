@@ -1,4 +1,4 @@
-import type { SendResult, TicketMessage, WhatsAppProvider } from "./types";
+import type { AnnouncementMessage, SendResult, TicketMessage, WhatsAppProvider } from "./types";
 
 /**
  * WhatsApp through Meta's Cloud API.
@@ -43,6 +43,24 @@ export class CloudWhatsAppProvider implements WhatsAppProvider {
   private readonly token = process.env.WHATSAPP_TOKEN!;
   private readonly phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID!;
   private readonly template = process.env.WHATSAPP_TEMPLATE_NAME || "ticket_delivery";
+  /**
+   * A SECOND approved template, for telling ticket-holders something
+   * changed. Meta will not carry free-form text to someone who hasn't
+   * messaged you in 24 hours, so this cannot reuse the ticket template —
+   * its parameters are fixed and none of them is "what the organiser
+   * wants to say".
+   *
+   * Submit a body to Meta shaped exactly like this, in this order:
+   *
+   *   Hi {{1}}, an update about {{2}}:
+   *   {{3}}
+   *   See the latest: {{4}}
+   *
+   * Until it is approved and named here, announcements go by email only
+   * and the sender reports WhatsApp as unavailable rather than pretending
+   * it worked.
+   */
+  private readonly updateTemplate = process.env.WHATSAPP_UPDATE_TEMPLATE_NAME || "";
   private readonly locale = process.env.WHATSAPP_TEMPLATE_LOCALE || "en";
 
   async sendTickets(message: TicketMessage): Promise<SendResult> {
@@ -90,6 +108,66 @@ export class CloudWhatsAppProvider implements WhatsAppProvider {
         return { ok: false, error: detail };
       }
 
+      return { ok: true, id: json?.messages?.[0]?.id };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "WhatsApp request failed",
+      };
+    }
+  }
+
+  async sendAnnouncement(message: AnnouncementMessage): Promise<SendResult> {
+    // Saying "not configured" is the honest answer. Falling back to the
+    // ticket template would deliver a message about tickets to somebody
+    // who is being told their event moved.
+    if (!this.updateTemplate) {
+      return {
+        ok: false,
+        error:
+          "No approved WhatsApp update template. Set WHATSAPP_UPDATE_TEMPLATE_NAME once Meta approves one.",
+      };
+    }
+
+    const body = {
+      messaging_product: "whatsapp",
+      to: message.to,
+      type: "template",
+      template: {
+        name: this.updateTemplate,
+        language: { code: this.locale },
+        components: [
+          {
+            type: "body",
+            parameters: [
+              { type: "text", text: message.guestName || "there" },
+              { type: "text", text: message.eventTitle },
+              { type: "text", text: message.body },
+              { type: "text", text: message.eventUrl },
+            ],
+          },
+        ],
+      },
+    };
+
+    try {
+      const res = await fetch(
+        `https://graph.facebook.com/v21.0/${this.phoneNumberId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        }
+      );
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        const detail =
+          json?.error?.error_user_msg || json?.error?.message || `HTTP ${res.status}`;
+        return { ok: false, error: detail };
+      }
       return { ok: true, id: json?.messages?.[0]?.id };
     } catch (error) {
       return {

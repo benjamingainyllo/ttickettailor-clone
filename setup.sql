@@ -1363,6 +1363,51 @@ CREATE POLICY "Creators manage own cohosts" ON public.event_cohosts
     )
   );
 
+-- ============================================================
+-- PART 10  Telling guests when something changes
+-- ============================================================
+-- An organiser who moves a date has to be able to say so. This records
+-- every announcement sent, which does three jobs at once: it stops the
+-- same message going twice, it gives the organiser a record of what they
+-- told people, and -- the one that matters -- it is the evidence that
+-- answers a chargeback. "The buyer was told on this date, at this
+-- address" is the difference between winning and losing a dispute where
+-- an event moved.
+
+CREATE TABLE IF NOT EXISTS public.event_announcements (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  creator_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  body TEXT NOT NULL CHECK (length(trim(body)) BETWEEN 1 AND 2000),
+
+  -- Counts, not addresses. Who was written to is already in orders; this
+  -- table exists to say what was sent and how it went.
+  recipients_total INTEGER NOT NULL DEFAULT 0,
+  email_sent INTEGER NOT NULL DEFAULT 0,
+  email_failed INTEGER NOT NULL DEFAULT 0,
+  whatsapp_sent INTEGER NOT NULL DEFAULT 0,
+  whatsapp_failed INTEGER NOT NULL DEFAULT 0,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS event_announcements_event_idx
+  ON public.event_announcements (event_id, created_at DESC);
+
+ALTER TABLE public.event_announcements ENABLE ROW LEVEL SECURITY;
+
+-- Only the organiser sees what they sent. Guests have the message in
+-- their inbox; nobody else has any business reading it.
+DROP POLICY IF EXISTS "Creators see own announcements" ON public.event_announcements;
+CREATE POLICY "Creators see own announcements" ON public.event_announcements
+  FOR SELECT USING (auth.uid() = creator_id);
+
+-- Nothing writes here through the API. Announcements are recorded by the
+-- server action that actually sends them, using the service role, so a
+-- row can never claim a message was sent that wasn't.
+DROP POLICY IF EXISTS "Creators insert own announcements" ON public.event_announcements;
+
 
 -- ============================================================
 -- Done. You should see "Success. No rows returned".

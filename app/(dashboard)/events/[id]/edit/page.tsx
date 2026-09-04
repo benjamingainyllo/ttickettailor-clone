@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  Loader2, CalendarDays, Clock, MapPin, Link2, ArrowLeft, ImagePlus, AlertTriangle, Ticket,
+  Loader2, CalendarDays, Clock, MapPin, Link2, ArrowLeft, ImagePlus, AlertTriangle, Ticket, Megaphone,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -225,12 +225,18 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
                     You&apos;re changing when or where it happens, so they bought a ticket
                     to something different.{" "}
                     <strong className="font-bold text-[var(--dl-ink)]">
-                      Message them yourself before you save
+                      Save this first, then tell them
                     </strong>{" "}
-                    &mdash; Paylance doesn&apos;t tell them automatically yet. Guests who
-                    turn up to the wrong place ask their bank for the money back, and that
-                    comes out of you.
+                    &mdash; guests who turn up to the wrong place ask their bank for the
+                    money back, and that comes out of you.
                   </p>
+                  <Link
+                    href={`/events/${params.id}/message`}
+                    className="mt-3 inline-flex items-center gap-2 rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] px-3.5 py-2 text-[12.5px] font-extrabold uppercase tracking-[0.04em]"
+                  >
+                    <Megaphone className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    Message the {ticketsIssued}
+                  </Link>
                 </div>
               </div>
             </div>
