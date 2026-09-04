@@ -53,8 +53,14 @@ export class CloudWhatsAppProvider implements WhatsAppProvider {
    * Submit a body to Meta shaped exactly like this, in this order:
    *
    *   Hi {{1}}, an update about {{2}}:
+   *
    *   {{3}}
-   *   See the latest: {{4}}
+   *
+   *   See the latest here: {{4}}
+   *   Your ticket is still valid.
+   *
+   * The trailing fixed line is not decoration: Meta rejects a template
+   * whose body ENDS in a variable.
    *
    * Until it is approved and named here, announcements go by email only
    * and the sender reports WhatsApp as unavailable rather than pretending
@@ -129,6 +135,18 @@ export class CloudWhatsAppProvider implements WhatsAppProvider {
       };
     }
 
+    // A template parameter may not contain a newline, and Meta rejects the
+    // whole send with an unhelpful code if it does. The organiser types
+    // into a textarea, so multi-line messages are the normal case, not the
+    // edge one — flattened here rather than restricting what they can
+    // write, because email carries the message properly and WhatsApp is
+    // the summary that gets them to open it.
+    // Trimmed BEFORE the replace, not after: a message ending in a blank
+    // line otherwise flattens to a dangling "· " nobody typed.
+    const flat = message.body.trim().replace(/\s*\n+\s*/g, " · ");
+    // Meta caps a parameter at 1024 characters.
+    const trimmed = flat.length > 900 ? `${flat.slice(0, 897)}...` : flat;
+
     const body = {
       messaging_product: "whatsapp",
       to: message.to,
@@ -142,7 +160,7 @@ export class CloudWhatsAppProvider implements WhatsAppProvider {
             parameters: [
               { type: "text", text: message.guestName || "there" },
               { type: "text", text: message.eventTitle },
-              { type: "text", text: message.body },
+              { type: "text", text: trimmed },
               { type: "text", text: message.eventUrl },
             ],
           },
