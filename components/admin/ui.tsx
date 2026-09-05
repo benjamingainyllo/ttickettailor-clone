@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { TrendChip } from "@/components/charts/figures";
+import type { Trend } from "@/lib/dashboard-shape";
 
 /**
  * The furniture every admin list is built from.
@@ -12,6 +14,14 @@ export const panel = "rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--d
 export const label =
   "text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]";
 
+/**
+ * A screen's label in a console, not a headline on a page.
+ *
+ * These were 38px display type, which is right for a page somebody reads
+ * and wrong for the twentieth screen of a tool somebody works in: it
+ * pushed the table — the reason the screen exists — down past the fold,
+ * and made every internal list read like an article about itself.
+ */
 export function PageHead({
   title,
   sub,
@@ -22,34 +32,56 @@ export function PageHead({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-[32px] font-extrabold leading-[1] tracking-[-0.04em] sm:text-[38px]">
-          {title}
-        </h1>
-        {sub && <p className="mt-2 text-[14.5px] text-[var(--dl-ink-soft)]">{sub}</p>}
+    <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 className="text-[22px] font-extrabold tracking-[-0.03em]">{title}</h1>
+        {sub && <p className="text-[13px] text-[var(--dl-ink-soft)]">{sub}</p>}
       </div>
       {right}
     </div>
   );
 }
 
-/** Numbers in a single ruled block, the same as the overview uses. */
-export function Figures({ items }: { items: { n: string; l: string; x?: string }[] }) {
+/**
+ * Numbers in a single ruled block.
+ *
+ * DELIBERATELY NOT THE SPARKLINE TILES the organiser's dashboard uses. An
+ * organiser opens their dashboard to see how they are doing, and a shape
+ * answers that. An owner opens the console to run the platform, and a row
+ * of chart cards above the work pushes the work below the fold — which is
+ * how an operations tool starts reading as a report about itself. The
+ * delta stays, because a fee total with no direction still says nothing;
+ * the picture goes.
+ */
+export function Figures({
+  items,
+}: {
+  items: { n: string; l: string; x?: string; t?: Trend; invert?: boolean }[];
+}) {
+  // The wrapper is shifted up and left by the rule width so the outer
+  // edges of the first row and first column tuck under the panel's own
+  // border. Without it, a strip that wraps to a second row shows a stray
+  // rule hanging off the left of the first cell in that row — which is
+  // exactly what five figures did on a phone.
   return (
-    <div className={`${panel} flex flex-wrap`}>
+    <div className={`${panel} overflow-hidden`}>
+      <div className="-ml-[2px] -mt-[2px] flex flex-wrap">
       {items.map((f) => (
         <div
           key={f.l}
-          className="min-w-[148px] flex-1 border-l-2 border-[var(--dl-line)] px-5 py-4 first:border-l-0"
+          className="min-w-[148px] flex-1 border-l-2 border-t-2 border-[var(--dl-line)] px-5 py-3.5"
         >
-          <p className="text-[24px] font-extrabold tracking-[-0.035em] [font-variant-numeric:tabular-nums]">
+          <p className={label}>{f.l}</p>
+          <p className="mt-1.5 text-[24px] font-extrabold leading-none tracking-[-0.035em] [font-variant-numeric:tabular-nums]">
             {f.n}
           </p>
-          <p className={`${label} mt-1`}>{f.l}</p>
-          {f.x && <p className="mt-1 text-[12px] text-[var(--dl-ink-soft)]">{f.x}</p>}
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {f.t && <TrendChip trend={f.t} invert={f.invert} />}
+            {f.x && <span className="text-[12px] text-[var(--dl-ink-soft)]">{f.x}</span>}
+          </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }
