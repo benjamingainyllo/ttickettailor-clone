@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
+import { buildDashboardShape, countdown } from "@/lib/dashboard-shape";
+import { TicketTypeSplit, WeekdayBars } from "@/components/charts/bars";
 import { useOrigin } from "@/lib/use-origin";
 import { publishItem, unpublishItem } from "@/app/actions/publish";
 import { TicketTypesEditor } from "@/components/dashboard/ticket-types-editor";
@@ -18,6 +20,14 @@ interface EventDetailViewProps {
   event: any;
   onBack: () => void;
   onChanged?: () => void;
+}
+
+interface EventTicketRow {
+  status: string | null;
+  ticket_type_name: string | null;
+  price_kobo: number | string | null;
+  checked_in_at: string | null;
+  created_at: string;
 }
 
 interface OrderRow {
@@ -35,6 +45,8 @@ interface OrderRow {
 export function EventDetailView({ event, onBack, onChanged }: EventDetailViewProps) {
   const [tab, setTab] = useState<"overview" | "tickets" | "merch" | "attendees">("overview");
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [tickets, setTickets] = useState<EventTicketRow[]>([]);
+  const [capacity, setCapacity] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
@@ -46,7 +58,6 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
   const origin = useOrigin();
 
   const isPublished = event.publish_status === "published";
-  const priceKobo = Number(event.price_kobo ?? 0);
 
   const fetchOrders = useCallback(async () => {
     const supabase = createClient();
@@ -63,6 +74,35 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
 
       if (error) throw error;
       setOrders((data ?? []) as OrderRow[]);
+
+      // Admissions and tier limits, asked for separately and allowed to
+      // come back empty: an event that sold before tickets were issued
+      // still gets its money, its orders and its description.
+      const [{ data: tix }, { data: tiers }] = await Promise.all([
+        supabase
+          .from("tickets")
+          .select("status, ticket_type_name, price_kobo, checked_in_at, created_at")
+          .eq("event_id", event.id),
+        supabase
+          .from("ticket_types")
+          .select("quantity")
+          .eq("event_id", event.id),
+      ]);
+
+      setTickets((tix ?? []) as EventTicketRow[]);
+
+      // One unlimited tier makes the event unlimited. Adding up only the
+      // limited ones would invent a ceiling that does not exist.
+      const limits = tiers ?? [];
+      const unlimited = limits.some((t) => t.quantity === null || t.quantity === undefined);
+      const summed = limits.reduce((sum, t) => sum + Number(t.quantity || 0), 0);
+      setCapacity(
+        !unlimited && summed > 0
+          ? summed
+          : event.capacity != null
+            ? Number(event.capacity)
+            : null
+      );
     } catch (error) {
       console.error("Could not load orders:", error);
       setLoadError("Couldn't load attendees. Try again in a moment.");
@@ -70,7 +110,7 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
       // Always resolves — never an indefinite spinner.
       setLoading(false);
     }
-  }, [event.id]);
+  }, [event.id, event.capacity]);
 
   useEffect(() => {
     fetchOrders();
@@ -78,7 +118,38 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
 
   // Revenue is derived from real orders, never accumulated on the event row.
   const grossKobo = orders.reduce((sum, o) => sum + Number(o.gross_kobo || 0), 0);
-  const attendees = orders.reduce((sum, o) => sum + Number(o.quantity || 1), 0);
+
+  const liveTickets = tickets.filter(
+    (t) => t.status !== "void" && t.status !== "refunded"
+  );
+  // Sold prefers issued tickets. The order quantity is the fallback for
+  // an event whose sales predate ticket issuing.
+  const sold =
+    liveTickets.length > 0
+      ? liveTickets.length
+      : orders.reduce((sum, o) => sum + Number(o.quantity || 1), 0);
+  const checkedIn = liveTickets.filter(
+    (t) => t.status === "checked_in" || t.checked_in_at
+  ).length;
+  const attendees = sold;
+
+  const pctSold = capacity && capacity > 0 ? Math.min(100, (sold / capacity) * 100) : null;
+  const shape = buildDashboardShape(orders);
+
+  /** What sold, by tier. Falls back to one line when there are no tiers. */
+  const tierSplit = (() => {
+    const totals = new Map<string, { tickets: number; grossKobo: number }>();
+    for (const t of liveTickets) {
+      const name = t.ticket_type_name?.trim() || "General admission";
+      const row = totals.get(name) ?? { tickets: 0, grossKobo: 0 };
+      row.tickets += 1;
+      row.grossKobo += Number(t.price_kobo || 0);
+      totals.set(name, row);
+    }
+    return Array.from(totals.entries())
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.tickets - a.tickets);
+  })();
 
   const handleTogglePublish = async () => {
     setPublishing(true);
@@ -240,9 +311,15 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
                 no tinted icon chips, and the number does the talking. */}
             <div className="flex flex-wrap rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
               {[
-                { label: "Revenue", value: formatKobo(grossKobo) },
-                { label: "Attendees", value: String(attendees) },
-                { label: "Lowest price", value: priceKobo === 0 ? "Free" : formatKobo(priceKobo) },
+                { label: "Taken", value: formatKobo(grossKobo) },
+                {
+                  label: "Tickets sold",
+                  value: capacity ? `${sold} / ${capacity}` : String(sold),
+                },
+                {
+                  label: "Turned up",
+                  value: sold > 0 ? `${checkedIn} / ${sold}` : "—",
+                },
                 { label: "Orders", value: String(orders.length) },
               ].map((m) => (
                 <div
@@ -257,6 +334,83 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
                   </p>
                 </div>
               ))}
+            </div>
+
+            {/* How full it is. The bar is the reason this tab exists —
+                a percentage on its own doesn't tell you whether to
+                promote, and the seats-left figure does. */}
+            <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)] p-5">
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+                  How it is selling
+                </p>
+                {event.date && (
+                  <p className="text-[13px] font-bold text-[var(--dl-ink-soft)]">
+                    Doors {countdown(event.date)}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-3 h-3 w-full overflow-hidden rounded-[2px] bg-black/[0.055]">
+                <div
+                  className="h-full rounded-[2px]"
+                  style={{
+                    width:
+                      pctSold === null
+                        ? sold > 0 ? "100%" : "0%"
+                        : `${Math.max(pctSold > 0 ? 2 : 0, pctSold)}%`,
+                    background:
+                      pctSold === null
+                        ? "#4257C4"
+                        : pctSold >= 100
+                          ? "#17714A"
+                          : pctSold >= 90
+                            ? "#141018"
+                            : "#4257C4",
+                    opacity: pctSold === null ? 0.25 : 1,
+                  }}
+                />
+              </div>
+
+              <p className="mt-2 text-[13.5px] text-[var(--dl-ink-soft)]">
+                {pctSold === null ? (
+                  sold > 0 ? (
+                    <>
+                      <strong className="text-[var(--dl-ink)]">{sold}</strong> sold. No
+                      limit set — add one on the Tickets tab if the room has a capacity.
+                    </>
+                  ) : (
+                    "Nothing sold yet."
+                  )
+                ) : sold >= capacity! ? (
+                  <strong className="text-[var(--dl-ink)]">Sold out.</strong>
+                ) : (
+                  <>
+                    <strong className="text-[var(--dl-ink)]">{Math.round(pctSold)}%</strong>{" "}
+                    sold — {(capacity! - sold).toLocaleString("en-NG")} still available.
+                  </>
+                )}
+              </p>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
+                <div className="border-b-2 border-[var(--dl-line)] px-5 py-4">
+                  <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+                    Which ticket sells
+                  </p>
+                </div>
+                <TicketTypeSplit data={tierSplit} />
+              </div>
+
+              <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
+                <div className="border-b-2 border-[var(--dl-line)] px-5 py-4">
+                  <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+                    When people buy
+                  </p>
+                </div>
+                <WeekdayBars data={shape.byWeekday} />
+              </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-[2fr_1fr]">

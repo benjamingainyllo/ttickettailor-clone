@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Landmark, ShieldCheck, Loader2, CheckCircle2, ArrowRight, Info, Inbox, TriangleAlert,
 } from "lucide-react";
+import { StatTiles } from "@/components/charts/figures";
 import { formatKobo } from "@/lib/money";
 import {
   connectBankAccount,
@@ -24,6 +25,9 @@ import { toast } from "sonner";
 export default function PayoutsPage() {
   const [account, setAccount] = useState<any>(null);
   const [settlements, setSettlements] = useState<any[]>([]);
+  const [sold, setSold] = useState<{ netKobo: number; orders: number; lastSaleAt: string | null }>(
+    { netKobo: 0, orders: 0, lastSaleAt: null }
+  );
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [demoMode, setDemoMode] = useState(false);
@@ -43,6 +47,7 @@ export default function PayoutsPage() {
       if (!res.success) throw new Error("Could not load payout details");
       setAccount(res.account);
       setSettlements(res.settlements);
+      setSold(res.sold);
     } catch (error) {
       console.error(error);
       setLoadError("Couldn't load your payout details.");
@@ -114,9 +119,15 @@ export default function PayoutsPage() {
     }
   };
 
-  const totalSettled = settlements
-    .filter((s) => s.status === "success")
-    .reduce((sum, s) => sum + Number(s.amount_kobo || 0), 0);
+  const settled = settlements.filter((s) => s.status === "success");
+  const totalSettled = settled.reduce((sum, s) => sum + Number(s.amount_kobo || 0), 0);
+  const lastSettlement = settled[0] ?? null;
+
+  // What has been sold but has not landed yet. Clamped at zero: a
+  // settlement can legitimately cover an order this page didn't count
+  // (an older one, or a correction), and a negative "on its way" would
+  // read as money owed rather than as an accounting quirk.
+  const onTheWay = Math.max(0, sold.netKobo - totalSettled);
 
   if (loading) {
     return (
@@ -134,6 +145,39 @@ export default function PayoutsPage() {
           Money from your sales settles straight into your own bank account.
         </p>
       </div>
+
+      <StatTiles
+        items={[
+          {
+            label: "Landed in your bank",
+            value: formatKobo(totalSettled),
+            note: settled.length > 0
+              ? `${settled.length} ${settled.length === 1 ? "payout" : "payouts"}`
+              : "nothing yet",
+          },
+          {
+            label: "On its way",
+            value: formatKobo(onTheWay),
+            note: onTheWay > 0 ? "sold, not landed yet" : "nothing outstanding",
+          },
+          {
+            label: "Last payout",
+            value: lastSettlement ? formatKobo(Number(lastSettlement.amount_kobo)) : "—",
+            note: lastSettlement?.settled_at
+              ? new Date(lastSettlement.settled_at).toLocaleDateString("en-NG", {
+                  day: "numeric", month: "short", year: "numeric",
+                })
+              : "no payouts yet",
+          },
+          {
+            label: "Bank account",
+            value: isConnected ? "Connected" : "Not set up",
+            note: isConnected
+              ? `${account.bank_name} ····${account.account_number_last4}`
+              : "needed before you can sell",
+          },
+        ]}
+      />
 
       {loadError && (
         <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-6 text-center">
@@ -272,46 +316,102 @@ export default function PayoutsPage() {
         </div>
       )}
 
-      {/* Settlement history — reporting only. */}
-      <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-surface p-6">
-        <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-text">Settlement history</h3>
+      {/* Settlement history — reporting only. Nothing on this page moves
+          money; it records money that has already moved. */}
+      <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-b-2 border-[var(--dl-line)] px-5 py-4">
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+            Payout history
+          </p>
           {settlements.length > 0 && (
-            <span className="text-xs text-subtle">
-              {formatKobo(totalSettled)} settled all time
-            </span>
+            <p className="text-[13px] text-[var(--dl-ink-soft)]">
+              {formatKobo(totalSettled)} landed all time
+            </p>
           )}
         </div>
 
         {settlements.length === 0 ? (
-          <div className="py-12 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[3px] bg-muted text-subtle">
+          <div className="px-6 py-14 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[3px] border-2 border-[var(--dl-line)]">
               <Inbox className="h-6 w-6" />
             </div>
-            <p className="text-sm font-medium text-text">No settlements yet</p>
-            <p className="mt-3 text-[15px] text-[var(--dl-ink-soft)]">
-              Payouts from your sales will be listed here once they land.
+            <p className="text-[15px] font-bold">No payouts yet</p>
+            <p className="mx-auto mt-2 max-w-sm text-[13.5px] text-[var(--dl-ink-soft)]">
+              {sold.orders > 0
+                ? "You have sales, so the first payout is with your bank's settlement cycle — it will be listed here the moment it lands."
+                : "Once you start selling, each payout into your bank will be listed here."}
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {settlements.map((s) => (
-              <div
-                key={s.id}
-                className="flex items-center justify-between rounded-[3px] border-2 border-[var(--dl-line)] bg-muted/30 p-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-text">{formatKobo(Number(s.amount_kobo))}</p>
-                  <p className="text-xs text-subtle">
-                    {s.settled_at ? new Date(s.settled_at).toLocaleDateString("en-NG") : "Pending"}
-                  </p>
-                </div>
-                <span className="text-[10px] uppercase tracking-wider text-subtle">{s.status}</span>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[13.5px]">
+              <thead>
+                <tr className="border-b-2 border-[var(--dl-line)]">
+                  <th scope="col" className="px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+                    Landed
+                  </th>
+                  <th scope="col" className="px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+                    Status
+                  </th>
+                  <th scope="col" className="px-5 py-2.5 text-right text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {settlements.map((s) => (
+                  <tr key={s.id} className="border-b border-[var(--dl-line-soft)] last:border-b-0">
+                    <td className="px-5 py-3">
+                      {s.settled_at
+                        ? new Date(s.settled_at).toLocaleDateString("en-NG", {
+                            weekday: "short", day: "numeric", month: "short", year: "numeric",
+                          })
+                        : "Not yet settled"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <SettlementStatus status={s.status} />
+                    </td>
+                    <td className="px-5 py-3 text-right font-extrabold [font-variant-numeric:tabular-nums]">
+                      {formatKobo(Number(s.amount_kobo))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * A payout's state, in words.
+ *
+ * "Reversed" is the one that matters and the one a colour alone would
+ * hide: the money went in and came back out, and an organiser who only
+ * saw a red dot would still believe they had been paid.
+ */
+function SettlementStatus({ status }: { status: string }) {
+  const tone: Record<string, string> = {
+    success: "border-[#17714A] text-[#17714A]",
+    pending: "border-[#8A5A00] text-[#8A5A00]",
+    failed: "border-[#C9294A] text-[#C9294A]",
+    reversed: "border-[#7B4FA8] text-[#7B4FA8]",
+  };
+  const words: Record<string, string> = {
+    success: "in your bank",
+    pending: "on its way",
+    failed: "failed",
+    reversed: "reversed",
+  };
+  return (
+    <span
+      className={`inline-block rounded-[2px] border-2 px-2 py-[1px] text-[10.5px] font-extrabold uppercase tracking-[0.06em] ${
+        tone[status] ?? tone.pending
+      }`}
+    >
+      {words[status] ?? status}
+    </span>
   );
 }

@@ -18,6 +18,13 @@ import {
  * no withdrawal and no transfer anywhere in this file.
  */
 
+/** Nothing sold. Shared so every early return has the same shape. */
+const EMPTY_SOLD = {
+  netKobo: 0,
+  orders: 0,
+  lastSaleAt: null as string | null,
+};
+
 /** Whether the app is running without a real payment gateway. */
 export async function getPaymentMode() {
   return { demo: isDemoPaymentMode() };
@@ -29,7 +36,9 @@ export async function getPayoutAccount() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { success: false as const, account: null, settlements: [] };
+  if (!user) {
+    return { success: false as const, account: null, settlements: [], sold: EMPTY_SOLD };
+  }
 
   const { data: account, error: accountError } = await supabase
     .from("payout_accounts")
@@ -43,7 +52,7 @@ export async function getPayoutAccount() {
   // would keep failing with no explanation anywhere.
   if (accountError) {
     console.error("Could not read the payout account:", accountError);
-    return { success: false as const, account: null, settlements: [] };
+    return { success: false as const, account: null, settlements: [], sold: EMPTY_SOLD };
   }
 
   const { data: settlements, error: settlementsError } = await supabase
@@ -59,10 +68,38 @@ export async function getPayoutAccount() {
     console.error("Could not read settlements:", settlementsError);
   }
 
+  // What has been sold, so the page can say how much is still on its way.
+  // Paylance holds none of it — this is the provider's settlement lag, not
+  // a balance — but an organiser still needs to know the gap between what
+  // they have sold and what has landed.
+  const { data: paid, error: paidError } = await supabase
+    .from("orders")
+    .select("net_kobo, paid_at, created_at")
+    .eq("creator_id", user.id)
+    .eq("status", "paid");
+
+  if (paidError) {
+    console.error("Could not read paid orders:", paidError);
+  }
+
+  const sold = (paid ?? []).reduce(
+    (acc, o) => {
+      const when = o.paid_at ?? o.created_at ?? null;
+      return {
+        netKobo: acc.netKobo + Number(o.net_kobo || 0),
+        orders: acc.orders + 1,
+        lastSaleAt:
+          when && (!acc.lastSaleAt || when > acc.lastSaleAt) ? when : acc.lastSaleAt,
+      };
+    },
+    { ...EMPTY_SOLD }
+  );
+
   return {
     success: true as const,
     account: account ?? null,
     settlements: settlements ?? [],
+    sold,
   };
 }
 
