@@ -849,3 +849,200 @@ export async function attentionSummary() {
     return { total: 0, critical: 0, high: 0, available: false };
   }
 }
+
+// ── Payments ────────────────────────────────────────────────────
+
+/**
+ * The same rows as Orders, seen as transactions.
+ *
+ * NOT A DUPLICATE SCREEN, AND NOT A SECOND TABLE. A payment and an order
+ * are one row in this database — inventing a payments table to satisfy a
+ * menu item would create two sources of truth for the same money. What
+ * differs is the question being asked: Orders is "what did this person
+ * buy", Payments is "what happened to this transaction", so this one
+ * leads with the provider reference, the channel and the fee breakdown,
+ * and carries a dispute flag.
+ */
+export async function listPayments(opts: {
+  page?: number;
+  q?: string;
+  status?: string;
+  channel?: string;
+  from?: string;
+  to?: string;
+}) {
+  const admin = createAdminClient();
+  const page = Math.max(1, opts.page ?? 1);
+  const start = (page - 1) * PAGE_SIZE;
+
+  let query = admin
+    .from("orders")
+    .select(
+      "id, reference, provider, provider_reference, buyer_email, buyer_name, event_id, creator_id, gross_kobo, platform_fee_kobo, provider_fee_kobo, net_kobo, status, payment_channel, created_at, paid_at, split_group_id",
+      { count: "exact" }
+    )
+    .order("created_at", { ascending: false })
+    .range(start, start + PAGE_SIZE - 1);
+
+  if (opts.q?.trim()) {
+    const t = like(opts.q);
+    query = query.or(
+      `reference.ilike.${t},provider_reference.ilike.${t},buyer_email.ilike.${t}`
+    );
+  }
+  if (opts.status && opts.status !== "all") query = query.eq("status", opts.status);
+  if (opts.channel && opts.channel !== "all") query = query.eq("payment_channel", opts.channel);
+  // Date range. `to` is pushed to the end of that day so "1st to 1st"
+  // means the whole of the 1st, which is what anybody typing it expects.
+  if (opts.from) query = query.gte("created_at", `${opts.from}T00:00:00.000Z`);
+  if (opts.to) query = query.lte("created_at", `${opts.to}T23:59:59.999Z`);
+
+  const { data, count } = await query;
+  const rows = data ?? [];
+
+  const eventIds = Array.from(new Set(rows.map((o: any) => o.event_id).filter(Boolean)));
+  const orderIds = rows.map((o: any) => o.id);
+
+  const [events, disputed] = await Promise.all([
+    eventIds.length
+      ? admin.from("events").select("id, title").in("id", eventIds)
+      : Promise.resolve({ data: [] as any[] }),
+    orderIds.length
+      ? admin.from("disputes").select("order_id").in("order_id", orderIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+
+  const eventById = new Map<string, any>();
+  for (const e of (events as any).data ?? []) eventById.set(e.id, e);
+  const disputedIds = new Set(((disputed as any).data ?? []).map((d: any) => d.order_id));
+
+  return {
+    rows: rows.map((o: any) => ({
+      ...o,
+      eventTitle: eventById.get(o.event_id)?.title ?? "—",
+      disputed: disputedIds.has(o.id),
+    })),
+    total: count ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+  };
+}
+
+// ── Split payments ──────────────────────────────────────────────
+
+export async function listSplitGroups(opts: { page?: number; status?: string; q?: string }) {
+  const admin = createAdminClient();
+  const page = Math.max(1, opts.page ?? 1);
+  const start = (page - 1) * PAGE_SIZE;
+
+  let query = admin
+    .from("split_groups")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(start, start + PAGE_SIZE - 1);
+
+  if (opts.status && opts.status !== "all") query = query.eq("status", opts.status);
+  if (opts.q?.trim()) {
+    const t = like(opts.q);
+    query = query.or(`code.ilike.${t},initiator_email.ilike.${t}`);
+  }
+
+  const { data, count } = await query;
+  const rows = data ?? [];
+  const ids = rows.map((g: any) => g.id);
+  const eventIds = Array.from(new Set(rows.map((g: any) => g.event_id).filter(Boolean)));
+
+  const [participants, events] = await Promise.all([
+    ids.length
+      ? admin.from("split_participants").select("group_id, status, amount_kobo").in("group_id", ids)
+      : Promise.resolve({ data: [] as any[] }),
+    eventIds.length
+      ? admin.from("events").select("id, title").in("id", eventIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+
+  const byGroup = new Map<string, { paid: number; taken: number; paidKobo: number }>();
+  for (const p of (participants as any).data ?? []) {
+    const cur = byGroup.get(p.group_id) ?? { paid: 0, taken: 0, paidKobo: 0 };
+    if (p.status !== "refunded" && p.status !== "failed") cur.taken += 1;
+    if (p.status === "paid") {
+      cur.paid += 1;
+      cur.paidKobo += toNum(p.amount_kobo);
+    }
+    byGroup.set(p.group_id, cur);
+  }
+  const eventById = new Map<string, any>();
+  for (const e of (events as any).data ?? []) eventById.set(e.id, e);
+
+  return {
+    rows: rows.map((g: any) => {
+      const c = byGroup.get(g.id) ?? { paid: 0, taken: 0, paidKobo: 0 };
+      const total = toNum(g.total_kobo);
+      return {
+        ...g,
+        eventTitle: eventById.get(g.event_id)?.title ?? "—",
+        seatsPaid: c.paid,
+        seatsTaken: c.taken,
+        paidKobo: c.paidKobo,
+        remainingKobo: Math.max(0, total - c.paidKobo),
+        expired: new Date(g.expires_at).getTime() < Date.now(),
+      };
+    }),
+    total: count ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+  };
+}
+
+export async function getSplitGroupAdmin(id: string) {
+  const admin = createAdminClient();
+  const { data: group } = await admin.from("split_groups").select("*").eq("id", id).maybeSingle();
+  if (!group) return null;
+
+  const [{ data: participants }, { data: event }] = await Promise.all([
+    admin
+      .from("split_participants")
+      .select("*")
+      .eq("group_id", id)
+      .order("created_at", { ascending: true }),
+    admin
+      .from("events")
+      .select("id, title, date, location, creator_id")
+      .eq("id", group.event_id)
+      .maybeSingle(),
+  ]);
+
+  const rows = participants ?? [];
+  const orderIds = rows.map((p: any) => p.order_id).filter(Boolean);
+  const orders = orderIds.length
+    ? await admin.from("orders").select("id, reference, status, gross_kobo").in("id", orderIds)
+    : { data: [] as any[] };
+  const orderById = new Map<string, any>();
+  for (const o of (orders as any).data ?? []) orderById.set(o.id, o);
+
+  const paid = rows.filter((p: any) => p.status === "paid");
+  const total = toNum(group.total_kobo);
+  const paidKobo = paid.reduce((s: number, p: any) => s + toNum(p.amount_kobo), 0);
+
+  return {
+    group,
+    event: event ?? null,
+    participants: rows.map((p: any) => ({ ...p, order: orderById.get(p.order_id) ?? null })),
+    seatsPaid: paid.length,
+    paidKobo,
+    remainingKobo: Math.max(0, total - paidKobo),
+    expired: new Date(group.expires_at).getTime() < Date.now(),
+  };
+}
+
+// ── Settings ────────────────────────────────────────────────────
+
+export async function getPlatformSettings() {
+  const admin = createAdminClient();
+  try {
+    const { data } = await admin.from("platform_settings").select("*").eq("id", true).maybeSingle();
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}

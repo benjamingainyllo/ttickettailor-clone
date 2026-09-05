@@ -30,10 +30,12 @@ const GROUPS: {
     items: [
       { href: "/admin/orders", label: "Orders" },
       { href: "/admin/tickets", label: "Tickets" },
+      { href: "/admin/payments", label: "Payments" },
       { href: "/admin/payouts", label: "Payouts" },
       { href: "/admin/refunds", label: "Refunds" },
     ],
   },
+  { label: "Split payments", items: [{ href: "/admin/splits", label: "All groups" }] },
   {
     label: "Risk",
     items: [
@@ -46,6 +48,7 @@ const GROUPS: {
     items: [
       { href: "/admin/admins", label: "Admin users", needs: ["super_admin"] },
       { href: "/admin/activity", label: "Activity log" },
+      { href: "/admin/settings", label: "Settings", needs: ["super_admin"] },
     ],
   },
 ];

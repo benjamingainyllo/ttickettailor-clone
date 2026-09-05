@@ -147,7 +147,7 @@ async function fulfillOrder(order: any) {
  * how somebody is told, not what makes it real. The ticket page is always
  * reachable from the order reference.
  */
-async function deliverTickets(order: any, tickets: IssuedTicket[]) {
+export async function deliverTickets(order: any, tickets: IssuedTicket[]) {
   // Sent in parallel: a slow WhatsApp call should not hold up the email,
   // and this runs inside a webhook that a provider will time out.
   await Promise.allSettled([

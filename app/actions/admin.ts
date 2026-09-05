@@ -454,3 +454,187 @@ export async function setAttentionStatus(
     return fail(e);
   }
 }
+
+// ── Platform settings ───────────────────────────────────────────
+
+/**
+ * Limits that live in the database rather than in environment
+ * variables, so changing one is not a redeploy.
+ *
+ * Super admin only. These are the numbers that decide how much a
+ * stranger can take before anybody looks at them — a level above
+ * suspending one account.
+ */
+export async function updatePlatformSettings(input: {
+  newOrganiserCapKobo: number;
+  newOrganiserMaxDaysAhead: number;
+  splitWindowHours: number;
+  signupsOpen: boolean;
+}) {
+  try {
+    const admin = await requireAdmin("write:admins");
+
+    const cap = Math.max(0, Math.floor(input.newOrganiserCapKobo));
+    const days = Math.max(0, Math.floor(input.newOrganiserMaxDaysAhead));
+    const hours = Math.min(720, Math.max(1, Math.floor(input.splitWindowHours)));
+
+    const db = createAdminClient();
+    const { data: before } = await db
+      .from("platform_settings")
+      .select("*")
+      .eq("id", true)
+      .maybeSingle();
+
+    const next = {
+      id: true,
+      new_organiser_cap_kobo: cap,
+      new_organiser_max_days_ahead: days,
+      split_window_hours: hours,
+      signups_open: input.signupsOpen,
+      updated_by: admin.userId,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await db.from("platform_settings").upsert(next, { onConflict: "id" });
+    if (error) {
+      return fail(
+        new Error(
+          error.message?.includes("platform_settings")
+            ? "Run setup.sql first — the settings table isn't there yet."
+            : "Could not save those settings."
+        )
+      );
+    }
+
+    await recordAdminAction({
+      admin,
+      action: "settings.updated",
+      subjectType: "admin",
+      subjectId: "platform",
+      subjectLabel: "Platform settings",
+      previousValue: before
+        ? {
+            cap_kobo: before.new_organiser_cap_kobo,
+            days_ahead: before.new_organiser_max_days_ahead,
+            split_hours: before.split_window_hours,
+            signups_open: before.signups_open,
+          }
+        : null,
+      newValue: {
+        cap_kobo: cap,
+        days_ahead: days,
+        split_hours: hours,
+        signups_open: input.signupsOpen,
+      },
+    });
+
+    revalidatePath("/admin/settings");
+    return { success: true as const };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ── Support actions on an order ─────────────────────────────────
+
+/**
+ * Send somebody their tickets again.
+ *
+ * The commonest support call there is: a buyer deleted the message, or
+ * gave an email with a typo they have since corrected elsewhere. This
+ * re-runs the SAME delivery the webhook uses rather than a second,
+ * slightly-different copy of it — so what they get now is exactly what
+ * they should have got then.
+ *
+ * It reissues nothing. The tickets already exist; this only tells them
+ * about the ones they have, which is why support can do it and why it
+ * cannot go wrong.
+ */
+export async function resendTickets(orderId: string) {
+  try {
+    // Deliberately the lowest bar in the file. A support user helping a
+    // buyer at 9pm should not need to wake a super admin, and the worst
+    // outcome of getting it wrong is a duplicate email.
+    const admin = await requireAdmin("write:notes");
+
+    const db = createAdminClient();
+    const { data: order } = await db.from("orders").select("*").eq("id", orderId).maybeSingle();
+    if (!order) return fail(new Error("Order not found."));
+    if (order.status !== "paid") {
+      return fail(new Error(`That order is ${order.status}. There is nothing to send.`));
+    }
+
+    const { data: tickets } = await db
+      .from("tickets")
+      .select("id, code, ticket_type_id")
+      .eq("order_id", orderId);
+
+    if (!tickets?.length) {
+      return fail(
+        new Error("No tickets exist on this order yet — that is the problem to fix, not delivery.")
+      );
+    }
+
+    const { deliverTickets } = await import("@/lib/orders");
+    await deliverTickets(order, tickets as any);
+
+    await recordAdminAction({
+      admin,
+      action: "order.tickets_resent",
+      subjectType: "order",
+      subjectId: orderId,
+      subjectLabel: order.reference,
+      newValue: { tickets: tickets.length, to: order.buyer_email },
+    });
+
+    revalidatePath(`/admin/orders/${orderId}`);
+    return { success: true as const, count: tickets.length };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Put an order in front of a human, from wherever you noticed it. */
+export async function flagOrder(orderId: string, note: string) {
+  try {
+    const admin = await requireAdmin("write:notes");
+    if (!note.trim()) return fail(new Error("Say what looks wrong."));
+
+    const db = createAdminClient();
+    const { data: order } = await db
+      .from("orders")
+      .select("id, reference, event_id, creator_id")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order) return fail(new Error("Order not found."));
+
+    const { raiseAttention } = await import("@/lib/disputes");
+    await raiseAttention({
+      kind: "flagged_by_admin",
+      severity: "high",
+      title: `Flagged for review — ${order.reference}`,
+      detail: `${admin.email ?? "An admin"}: ${note.trim()}`,
+      dedupeKey: `flag:${orderId}`,
+      subjectType: "order",
+      subjectId: orderId,
+      orderId,
+      eventId: order.event_id,
+      creatorId: order.creator_id,
+    });
+
+    await recordAdminAction({
+      admin,
+      action: "order.flagged",
+      subjectType: "order",
+      subjectId: orderId,
+      subjectLabel: order.reference,
+      reason: note.trim(),
+    });
+
+    revalidatePath("/admin/attention");
+    revalidatePath(`/admin/orders/${orderId}`);
+    return { success: true as const };
+  } catch (e) {
+    return fail(e);
+  }
+}

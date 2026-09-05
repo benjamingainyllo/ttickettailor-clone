@@ -172,6 +172,69 @@ export async function runDetectors(): Promise<void> {
       });
     }
 
+    // ── The same ticket scanned more than once ───────────────
+    // checked_in_at only records the FIRST scan, so a duplicate never
+    // shows up as two timestamps. What it does show up as is more
+    // tickets marked used at an event than were ever issued for it —
+    // which means either a code got shared or the scanner double-fired.
+    const { data: recentEvents } = await admin
+      .from("events")
+      .select("id, title, creator_id")
+      .eq("publish_status", "published")
+      .limit(100);
+
+    for (const e of recentEvents ?? []) {
+      const [{ count: issued }, { count: used }] = await Promise.all([
+        admin.from("tickets").select("id", { count: "exact", head: true }).eq("event_id", e.id),
+        admin
+          .from("tickets")
+          .select("id", { count: "exact", head: true })
+          .eq("event_id", e.id)
+          .not("checked_in_at", "is", null),
+      ]);
+      if ((issued ?? 0) === 0 || (used ?? 0) <= (issued ?? 0)) continue;
+      await raiseAttention({
+        kind: "checkin_mismatch",
+        severity: "high",
+        title: `More scans than tickets — ${e.title}`,
+        detail: `${used} tickets marked used but only ${issued} were ever issued. A code has been shared, or the scanner fired twice.`,
+        dedupeKey: `checkin_mismatch:${e.id}`,
+        subjectType: "event",
+        subjectId: e.id,
+        eventId: e.id,
+        creatorId: e.creator_id,
+      });
+    }
+
+    // ── Split groups sitting part-paid near their deadline ───
+    const { data: openGroups } = await admin
+      .from("split_groups")
+      .select("id, code, seats, expires_at, event_id, creator_id")
+      .eq("status", "open")
+      .limit(50);
+
+    for (const g of openGroups ?? []) {
+      const left = new Date(g.expires_at).getTime() - now;
+      if (left > 6 * 60 * 60 * 1000 || left < 0) continue;
+      const { count: paidSeats } = await admin
+        .from("split_participants")
+        .select("id", { count: "exact", head: true })
+        .eq("group_id", g.id)
+        .eq("status", "paid");
+      if ((paidSeats ?? 0) === 0 || (paidSeats ?? 0) >= g.seats) continue;
+      await raiseAttention({
+        kind: "split_nearly_expired",
+        severity: "medium",
+        title: `Split group ${g.code} won't fill in time`,
+        detail: `${paidSeats} of ${g.seats} paid, and the deadline is hours away. Whoever paid will need refunding.`,
+        dedupeKey: `split_soon:${g.id}`,
+        subjectType: "event",
+        subjectId: g.event_id,
+        eventId: g.event_id,
+        creatorId: g.creator_id,
+      });
+    }
+
     // ── A dispute deadline running out ───────────────────────
     const { data: openDisputes } = await admin
       .from("disputes")

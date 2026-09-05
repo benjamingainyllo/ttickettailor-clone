@@ -1672,6 +1672,157 @@ CREATE POLICY "Admins read attention items" ON public.attention_items
     EXISTS (SELECT 1 FROM public.platform_admins p WHERE p.user_id = auth.uid())
   );
 
+-- ============================================================
+-- PART 13  Split payments: a group buying tickets together
+-- ============================================================
+-- Five friends going to the same party, each paying their own share.
+-- This is how tickets actually get bought in Lagos, and until now the
+-- platform had no way to express it.
+--
+-- THE SHAPE, AND WHY. A group is N seats. Each participant pays for
+-- exactly one seat and gets exactly one ticket, so every share is an
+-- ordinary single-ticket order going through the ordinary checkout, the
+-- ordinary Paystack split and the ordinary ticket issuing. Nothing about
+-- money, fees or settlement is special-cased -- the group is only a
+-- bracket around orders that already work.
+--
+-- A DEADLINE IS NOT OPTIONAL. Without one, a half-paid group holds seats
+-- forever and the organiser cannot sell them to anybody else. When it
+-- passes, the group expires and whoever paid gets refunded through the
+-- refund system.
+
+CREATE TABLE IF NOT EXISTS public.split_groups (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+
+  -- What gets shared. Short, unambiguous, and typed into a phone from a
+  -- WhatsApp message, so no characters that look like each other.
+  code TEXT NOT NULL UNIQUE,
+
+  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  ticket_type_id UUID REFERENCES public.ticket_types(id) ON DELETE SET NULL,
+  creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+
+  -- Whoever started it. Not an account -- a buyer with a phone.
+  initiator_name TEXT,
+  initiator_email TEXT NOT NULL,
+
+  seats INTEGER NOT NULL CHECK (seats BETWEEN 2 AND 20),
+  unit_price_kobo BIGINT NOT NULL CHECK (unit_price_kobo >= 0),
+  total_kobo BIGINT NOT NULL CHECK (total_kobo >= 0),
+
+  status TEXT NOT NULL DEFAULT 'open'
+    CHECK (status IN ('open', 'complete', 'expired', 'cancelled', 'flagged')),
+
+  expires_at TIMESTAMPTZ NOT NULL,
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS split_groups_event_idx ON public.split_groups (event_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS split_groups_status_idx ON public.split_groups (status, expires_at);
+CREATE INDEX IF NOT EXISTS split_groups_creator_idx ON public.split_groups (creator_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.split_participants (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_id UUID NOT NULL REFERENCES public.split_groups(id) ON DELETE CASCADE,
+
+  name TEXT,
+  email TEXT NOT NULL,
+  phone TEXT,
+
+  amount_kobo BIGINT NOT NULL CHECK (amount_kobo >= 0),
+
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'paid', 'refunded', 'failed')),
+
+  -- The ordinary order their share became, once they paid.
+  order_id UUID REFERENCES public.orders(id) ON DELETE SET NULL,
+
+  paid_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  -- One seat per person per group. Somebody double-clicking the pay
+  -- button must not become two seats and two tickets.
+  UNIQUE (group_id, email)
+);
+
+CREATE INDEX IF NOT EXISTS split_participants_group_idx
+  ON public.split_participants (group_id, created_at);
+
+ALTER TABLE public.split_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.split_participants ENABLE ROW LEVEL SECURITY;
+
+-- The share link has to work for somebody with no account at all, so a
+-- group and its participants are publicly readable. The code is the
+-- secret; it is random and unguessable, and nothing sensitive lives here
+-- beyond first names and who has paid.
+DROP POLICY IF EXISTS "Anyone with the link can read a group" ON public.split_groups;
+CREATE POLICY "Anyone with the link can read a group" ON public.split_groups
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone with the link can read participants" ON public.split_participants;
+CREATE POLICY "Anyone with the link can read participants" ON public.split_participants
+  FOR SELECT USING (true);
+
+-- Nothing writes through the API. Groups and shares are created by the
+-- server actions that also take the money.
+
+
+-- ---- Order settings ------------------------------------------
+-- Whether an organiser lets buyers split at all, and into how many.
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS allow_split BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS split_max_seats INTEGER NOT NULL DEFAULT 6;
+
+ALTER TABLE public.events DROP CONSTRAINT IF EXISTS events_split_max_seats_check;
+UPDATE public.events SET split_max_seats = 6
+ WHERE split_max_seats IS NULL OR split_max_seats < 2 OR split_max_seats > 20;
+ALTER TABLE public.events ADD CONSTRAINT events_split_max_seats_check
+  CHECK (split_max_seats BETWEEN 2 AND 20);
+
+-- Link an order back to the share it paid for, so a payment can be
+-- traced to its group without a join table.
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS split_group_id UUID REFERENCES public.split_groups(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS orders_split_group_idx
+  ON public.orders (split_group_id) WHERE split_group_id IS NOT NULL;
+
+
+-- ---- Platform settings ---------------------------------------
+-- One row, edited by a super admin. Kept in the database rather than in
+-- environment variables so changing a limit is not a redeploy.
+CREATE TABLE IF NOT EXISTS public.platform_settings (
+  id BOOLEAN PRIMARY KEY DEFAULT true CHECK (id),
+
+  -- Caps a brand-new organiser until their first event completes
+  -- cleanly. 0 means no cap.
+  new_organiser_cap_kobo BIGINT NOT NULL DEFAULT 0 CHECK (new_organiser_cap_kobo >= 0),
+  -- How far ahead an unproven organiser may sell. 0 means no limit.
+  new_organiser_max_days_ahead INTEGER NOT NULL DEFAULT 0 CHECK (new_organiser_max_days_ahead >= 0),
+
+  -- How long a split group has to fill up, in hours.
+  split_window_hours INTEGER NOT NULL DEFAULT 48 CHECK (split_window_hours BETWEEN 1 AND 720),
+
+  -- Turn new signups off without a deploy, if something goes wrong.
+  signups_open BOOLEAN NOT NULL DEFAULT true,
+
+  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.platform_settings (id) VALUES (true) ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins read settings" ON public.platform_settings;
+CREATE POLICY "Admins read settings" ON public.platform_settings
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.platform_admins p WHERE p.user_id = auth.uid())
+  );
+
 
 -- ============================================================
 -- Done. You should see "Success. No rows returned".

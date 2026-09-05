@@ -6,6 +6,7 @@ import { roleCan } from "@/lib/admin-roles";
 import { formatKobo } from "@/lib/money";
 import { RefundBox } from "@/components/admin/refund-box";
 import { NoteBox } from "@/components/admin/note-box";
+import { OrderActions } from "@/components/admin/order-actions";
 import {
   panel, label, PageHead, Figures, Badge, stateTone, Empty, Scroll,
   th, td, tdNum, niceDate, niceDateTime,
@@ -210,6 +211,13 @@ export default async function AdminOrderPage({ params }: { params: { id: string 
               </div>
             </div>
           )}
+
+          <div>
+            <p className={label}>Actions</p>
+            <div className={`${panel} mt-3 p-4`}>
+              <OrderActions orderId={params.id} canResend={order.status === "paid" && tickets.length > 0} />
+            </div>
+          </div>
 
           <div>
             <p className={label}>Internal notes</p>
