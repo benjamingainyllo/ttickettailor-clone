@@ -202,13 +202,13 @@ export function AdminMobileHeader({ role }: { role: AdminRole }) {
   return (
     <>
       <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b-2 border-[var(--dl-line)] bg-[var(--dl-paper)] px-4 lg:hidden">
-        <Link href="/admin" className="text-[16px] font-extrabold tracking-[-0.03em]">
-          Paylance <span className="text-[var(--dl-ink-faint)]">owner</span>
+        <Link href="/admin" className="flex h-11 items-center text-[16px] font-extrabold tracking-[-0.03em]">
+          Paylance <span className="ml-1 text-[var(--dl-ink-faint)]">owner</span>
         </Link>
         <button
           onClick={() => setOpen(true)}
           aria-label="Open the menu"
-          className="flex h-9 w-9 items-center justify-center rounded-[3px] text-[var(--dl-ink-soft)]"
+          className="flex h-11 w-11 items-center justify-center rounded-[3px] text-[var(--dl-ink-soft)]"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -223,7 +223,11 @@ export function AdminMobileHeader({ role }: { role: AdminRole }) {
           >
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[15px] font-extrabold">Menu</span>
-              <button onClick={() => setOpen(false)} aria-label="Close the menu">
+              <button
+                onClick={() => setOpen(false)}
+                aria-label="Close the menu"
+                className="flex h-11 w-11 items-center justify-center"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -238,7 +242,7 @@ export function AdminMobileHeader({ role }: { role: AdminRole }) {
                   <Link
                     key={i.href}
                     href={i.href as never}
-                    className={`flex h-9 items-center gap-3 rounded-[3px] px-3 text-[14px] ${
+                    className={`flex h-11 items-center gap-3 rounded-[3px] px-3 text-[14px] ${
                       isOn(pathname, i.href)
                         ? "bg-[var(--dl-ink)] font-extrabold text-[var(--dl-paper)]"
                         : "font-semibold text-[var(--dl-ink-soft)]"

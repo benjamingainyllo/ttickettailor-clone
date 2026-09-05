@@ -28,7 +28,7 @@ export function SiteNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--hairline)] bg-[var(--ground)]">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-10 lg:px-16">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex h-11 items-center gap-2">
           <span className="flex h-8 w-8 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[13px] font-black text-white">
             P
           </span>
@@ -40,7 +40,7 @@ export function SiteNav() {
             <Link
               key={to}
               href={to}
-              className="text-[13px] font-semibold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
+              className="flex h-10 items-center text-[13px] font-semibold text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
             >
               {label}
             </Link>
@@ -49,13 +49,16 @@ export function SiteNav() {
 
         <div className="hidden items-center gap-4 md:flex">
           {!signedIn && (
-            <Link href="/login" className="text-[13px] font-semibold text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]">
+            <Link
+              href="/login"
+              className="flex h-10 items-center text-[13px] font-semibold text-[var(--on-ground-soft)] hover:text-[var(--on-ground)]"
+            >
               Sign in
             </Link>
           )}
           <Link
             href={href}
-            className="rounded-full bg-[var(--paper)] px-5 py-2.5 text-[12px] font-bold text-[var(--ink)] transition-transform hover:-translate-y-0.5"
+            className="flex h-10 items-center rounded-full bg-[var(--paper)] px-5 text-[12px] font-bold text-[var(--ink)] transition-transform hover:-translate-y-0.5"
           >
             {signedIn ? "Dashboard" : "Get started"}
           </Link>
@@ -65,28 +68,42 @@ export function SiteNav() {
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--hairline-firm)] md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--hairline-firm)] md:hidden"
         >
-          {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </nav>
 
       {menuOpen && (
         <div className="border-t border-[var(--hairline)] px-6 py-4 sm:px-10 md:hidden lg:px-16">
-          <div className="flex flex-col gap-4">
+          {/* Every row is a 48px band, not a line of text. A menu on a
+              phone is thumbs, and a 17px-tall link is a miss waiting to
+              happen — the row divider also makes it obvious what is
+              tappable. */}
+          <div className="flex flex-col">
             {MARKETING_NAV.map(([to, label]) => (
               <Link
                 key={to}
                 href={to}
                 onClick={() => setMenuOpen(false)}
-                className="text-sm font-semibold text-[var(--on-ground-soft)]"
+                className="flex h-12 items-center border-b border-[var(--hairline)] text-[15px] font-semibold text-[var(--on-ground-soft)]"
               >
                 {label}
               </Link>
             ))}
+            {!signedIn && (
+              <Link
+                href="/login"
+                onClick={() => setMenuOpen(false)}
+                className="flex h-12 items-center border-b border-[var(--hairline)] text-[15px] font-semibold text-[var(--on-ground-soft)]"
+              >
+                Sign in
+              </Link>
+            )}
             <Link
               href={href}
-              className="rounded-full bg-[var(--paper)] px-4 py-3 text-center text-xs font-bold text-[var(--ink)]"
+              onClick={() => setMenuOpen(false)}
+              className="mt-4 flex h-12 items-center justify-center rounded-full bg-[var(--paper)] px-4 text-[14px] font-bold text-[var(--ink)]"
             >
               {signedIn ? "Dashboard" : "Get started"}
             </Link>

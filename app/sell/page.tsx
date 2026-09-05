@@ -125,7 +125,7 @@ export default function SellPage() {
             <StartCta />
             <Link
               href="/pricing"
-              className="text-[14px] font-semibold text-[var(--on-ground-soft)] underline-offset-4 hover:text-[var(--on-ground)] hover:underline"
+              className="flex h-11 items-center text-[14px] font-semibold text-[var(--on-ground-soft)] underline-offset-4 hover:text-[var(--on-ground)] hover:underline"
             >
               See the full price list
             </Link>

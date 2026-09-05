@@ -223,7 +223,7 @@ export default function LandingPage() {
             <div className="mt-8">
               <Link
                 href="/pricing"
-                className="inline-flex items-center gap-2 text-[15px] font-bold text-[var(--on-ground)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
+                className="inline-flex h-11 items-center gap-2 text-[15px] font-bold text-[var(--on-ground)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
               >
                 See the full pricing
                 <ArrowRight className="h-4 w-4" />
@@ -271,7 +271,7 @@ export default function LandingPage() {
           <div className="mt-10">
             <Link
               href="/event-types"
-              className="inline-flex items-center gap-2 text-[15px] font-bold text-[var(--on-ground)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
+              className="inline-flex h-11 items-center gap-2 text-[15px] font-bold text-[var(--on-ground)] underline decoration-[var(--coral)] decoration-2 underline-offset-4 hover:decoration-4"
             >
               See all {EVENT_TYPES.length} kinds of event
               <ArrowRight className="h-4 w-4" />

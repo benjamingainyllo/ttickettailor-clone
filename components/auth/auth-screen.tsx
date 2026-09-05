@@ -261,7 +261,7 @@ export function AuthScreen() {
   return (
     <main className="lp flex min-h-screen flex-col items-center justify-center px-6 py-14 font-[family-name:var(--font-bricolage-grotesque)]">
       <div className="w-full max-w-[420px]">
-        <Link href="/" className="mb-9 flex items-center justify-center gap-2">
+        <Link href="/" className="mb-9 flex h-11 items-center justify-center gap-2">
           <span className="flex h-8 w-8 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[13px] font-black text-white">
             P
           </span>
@@ -333,14 +333,14 @@ export function AuthScreen() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-[12.5px] font-bold text-[var(--on-ground-faint)] hover:text-[var(--on-ground)]"
+                    className="flex h-10 items-center px-2 text-[12.5px] font-bold text-[var(--on-ground-faint)] hover:text-[var(--on-ground)]"
                   >
                     {showPassword ? "Hide" : "Show"}
                   </button>
                   <button
                     type="button"
                     onClick={() => startLink("reset")}
-                    className="text-[12.5px] font-bold text-[var(--coral)] hover:underline"
+                    className="flex h-10 items-center px-2 text-[12.5px] font-bold text-[var(--coral)] hover:underline"
                   >
                     Forgot?
                   </button>
@@ -408,7 +408,7 @@ export function AuthScreen() {
           {isLogin ? "New here? " : "Already have an account? "}
           <button
             onClick={() => swap(!isLogin)}
-            className="font-bold text-[var(--coral)] hover:underline"
+            className="inline-flex h-11 items-center px-1 font-bold text-[var(--coral)] hover:underline"
           >
             {isLogin ? "Create an account" : "Sign in"}
           </button>

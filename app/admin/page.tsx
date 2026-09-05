@@ -194,8 +194,12 @@ export default async function AdminPage() {
       </div>
 
       {/* ── The body: two tables, side by side. ─────────────── */}
+      {/* min-w-0 on every child: a grid item will not shrink below its own
+          content by default, so the min-w-[480px] table below pushed the
+          whole column past the right edge of a phone instead of scrolling
+          inside its own box. */}
       <div className="grid gap-5 xl:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <div className="mb-2.5 flex items-baseline justify-between gap-4">
             <p className={label}>Newest events</p>
             <Link href="/admin/events" className="text-[12.5px] font-bold underline underline-offset-2">
@@ -241,7 +245,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <div className="mb-2.5 flex items-baseline justify-between gap-4">
             <p className={label}>Who is carrying it</p>
             <Link href="/admin/organisers" className="text-[12.5px] font-bold underline underline-offset-2">
@@ -283,12 +287,12 @@ export default async function AdminPage() {
 
       {/* ── Background questions, at the bottom. ────────────── */}
       <div className="grid gap-5 xl:grid-cols-2">
-        <div className={panel}>
+        <div className={`${panel} min-w-0`}>
           <Band title="When people buy" note="last 30 days" tone="count" />
           <WeekdayBars data={shape.byWeekday} />
         </div>
 
-        <div className={panel}>
+        <div className={`${panel} min-w-0`}>
           <Band
             title="What they buy"
             tone="money"

@@ -21,7 +21,7 @@ export function SiteFooter() {
     <footer className="border-t border-[var(--hairline)] px-6 py-14 sm:px-10 lg:px-16">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between lg:gap-16">
-          <Link href="/" className="flex shrink-0 items-center gap-2.5 self-start">
+          <Link href="/" className="flex h-11 shrink-0 items-center gap-2.5 self-start">
             <span className="flex h-9 w-9 rotate-[-4deg] items-center justify-center rounded-lg border-2 border-[var(--ink)] bg-[var(--coral)] text-[14px] font-black text-white">
               P
             </span>
@@ -34,12 +34,15 @@ export function SiteFooter() {
                 <p className="text-[13px] font-semibold text-[var(--on-ground-faint)]">
                   {column.title}
                 </p>
-                <ul className="mt-4 space-y-3">
+                {/* Each link is a 40px band rather than a 17px line of
+                    text. A footer is where a thumb goes hunting, and every
+                    one of these was under half the size a thumb needs. */}
+                <ul className="mt-2">
                   {column.links.map(([href, label]) => (
                     <li key={`${href}-${label}`}>
                       <Link
                         href={href}
-                        className="text-[14px] text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
+                        className="flex h-10 items-center text-[14px] text-[var(--on-ground-soft)] transition-colors hover:text-[var(--on-ground)]"
                       >
                         {label}
                       </Link>

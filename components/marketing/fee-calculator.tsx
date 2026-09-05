@@ -153,7 +153,7 @@ export function FeeCalculator() {
             key={p}
             type="button"
             onClick={() => setPriceInput(p.toLocaleString("en-NG"))}
-            className="rounded-full border border-[var(--hairline-firm)] px-3 py-1.5 text-[13px] font-semibold text-[var(--on-ground-soft)] transition-colors hover:border-[var(--on-ground)] hover:text-[var(--on-ground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--coral)]"
+            className="flex h-11 items-center rounded-full border border-[var(--hairline-firm)] px-4 text-[13px] font-semibold text-[var(--on-ground-soft)] transition-colors hover:border-[var(--on-ground)] hover:text-[var(--on-ground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--coral)]"
           >
             ₦{p.toLocaleString("en-NG")}
           </button>

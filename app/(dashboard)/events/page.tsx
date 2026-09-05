@@ -533,19 +533,19 @@ function EventCard({
       <div className="mt-4 flex border-t-2 border-[var(--dl-line)]">
         <button
           onClick={onOpen}
-          className="flex-1 px-3 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.06em] transition-colors hover:bg-black/[0.03]"
+          className="flex h-12 flex-1 items-center justify-center px-3 text-[12px] font-extrabold uppercase tracking-[0.06em] transition-colors hover:bg-black/[0.03]"
         >
           <Ticket className="mr-1.5 inline h-3.5 w-3.5" /> Manage
         </button>
         <button
           onClick={onNotify}
-          className="flex-1 border-l-2 border-[var(--dl-line)] px-3 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.06em] transition-colors hover:bg-black/[0.03]"
+          className="flex h-12 flex-1 items-center justify-center border-l-2 border-[var(--dl-line)] px-3 text-[12px] font-extrabold uppercase tracking-[0.06em] transition-colors hover:bg-black/[0.03]"
         >
           <Megaphone className="mr-1.5 inline h-3.5 w-3.5" /> Notify
         </button>
         <button
           onClick={onScanner}
-          className="flex-1 border-l-2 border-[var(--dl-line)] px-3 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.06em] transition-colors hover:bg-black/[0.03]"
+          className="flex h-12 flex-1 items-center justify-center border-l-2 border-[var(--dl-line)] px-3 text-[12px] font-extrabold uppercase tracking-[0.06em] transition-colors hover:bg-black/[0.03]"
         >
           <QrCode className="mr-1.5 inline h-3.5 w-3.5" /> Door
         </button>

@@ -77,7 +77,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           <button
             onClick={onClose}
             aria-label="Close the menu"
-            className="flex h-9 w-9 items-center justify-center rounded-[3px] text-[var(--dl-ink-soft)] transition-colors hover:bg-[rgba(20,16,24,0.06)] hover:text-[var(--dl-ink)]"
+            className="flex h-11 w-11 items-center justify-center rounded-[3px] text-[var(--dl-ink-soft)] transition-colors hover:bg-[rgba(20,16,24,0.06)] hover:text-[var(--dl-ink)]"
           >
             <X className="h-5 w-5" />
           </button>

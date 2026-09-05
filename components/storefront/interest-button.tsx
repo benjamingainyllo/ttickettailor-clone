@@ -100,13 +100,13 @@ export function InterestButton({
       aria-pressed={shown.saved}
       aria-label={label}
       title={failed ? "That didn't save — try again" : label}
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors disabled:opacity-70 ${
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors disabled:opacity-70 ${
         shown.saved
           ? "border-[var(--marker)] bg-[var(--marker)] text-[var(--ink)]"
           : "border-[var(--hairline)] text-[var(--on-ground-faint)] hover:border-[var(--hairline-firm)] hover:text-[var(--on-ground)]"
       }`}
     >
-      <Star className="h-[15px] w-[15px]" strokeWidth={2.25} fill={shown.saved ? "currentColor" : "none"} />
+      <Star className="h-[17px] w-[17px]" strokeWidth={2.25} fill={shown.saved ? "currentColor" : "none"} />
     </button>
   );
 }
