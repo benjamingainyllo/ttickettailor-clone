@@ -1825,5 +1825,102 @@ CREATE POLICY "Admins read settings" ON public.platform_settings
 
 
 -- ============================================================
+-- PART 14  Interest: saving an event without an account
+-- ============================================================
+-- The discovery page needs a real signal for "people want this", and the
+-- only honest one is people actually saying so. Buying a ticket on
+-- Paylance needs no account, so saving one must not either — asking a
+-- stranger to sign up before they can tap a star is how a discovery page
+-- gets no signal at all.
+--
+-- WHO IS SAVING: a random id the server puts in a cookie on the first
+-- tap. It is not a person, it identifies a browser, and that is all it
+-- claims to be. No email, no name, nothing to leak.
+
+CREATE TABLE IF NOT EXISTS public.event_interest (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+
+  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+
+  -- Opaque, server-generated, cookie-held. Never derived from anything
+  -- about the visitor, so it cannot be reversed into a fingerprint.
+  visitor_key TEXT NOT NULL CHECK (char_length(visitor_key) BETWEEN 16 AND 64),
+
+  -- Set only when a signed-in organiser saves something. Lets the same
+  -- person's saves follow them between devices; null for everyone else.
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  -- One save per browser per event. Tapping twice unsaves rather than
+  -- counting twice, and a replayed request cannot inflate the number.
+  UNIQUE (event_id, visitor_key)
+);
+
+CREATE INDEX IF NOT EXISTS event_interest_event_idx
+  ON public.event_interest(event_id);
+CREATE INDEX IF NOT EXISTS event_interest_visitor_idx
+  ON public.event_interest(visitor_key);
+
+-- The public count lives on the event so a listing of thirty events is
+-- one read rather than thirty. Kept honest by the trigger below — nothing
+-- in the application is allowed to set it.
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS interested_count INTEGER NOT NULL DEFAULT 0;
+
+CREATE OR REPLACE FUNCTION public.sync_event_interest_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE public.events
+    SET interested_count = interested_count + 1
+    WHERE id = NEW.event_id;
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    -- GREATEST guards the one case that would otherwise show a negative
+    -- count forever: a row deleted twice by a retried request.
+    UPDATE public.events
+    SET interested_count = GREATEST(0, interested_count - 1)
+    WHERE id = OLD.event_id;
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS event_interest_count ON public.event_interest;
+CREATE TRIGGER event_interest_count
+  AFTER INSERT OR DELETE ON public.event_interest
+  FOR EACH ROW EXECUTE FUNCTION public.sync_event_interest_count();
+
+-- Re-count from scratch, so running this file after rows already exist
+-- leaves the counter correct rather than double-counted.
+UPDATE public.events e
+SET interested_count = COALESCE(c.n, 0)
+FROM (
+  SELECT ev.id, COUNT(i.id) AS n
+  FROM public.events ev
+  LEFT JOIN public.event_interest i ON i.event_id = ev.id
+  GROUP BY ev.id
+) c
+WHERE c.id = e.id AND e.interested_count IS DISTINCT FROM COALESCE(c.n, 0);
+
+ALTER TABLE public.event_interest ENABLE ROW LEVEL SECURITY;
+
+-- No policy grants anyone anything. Every read and write goes through a
+-- server action holding the service key, which is the only place the
+-- visitor's cookie can be trusted: a browser could otherwise claim any
+-- visitor_key it liked and delete other people's saves.
+DROP POLICY IF EXISTS "Organisers read interest in their events" ON public.event_interest;
+CREATE POLICY "Organisers read interest in their events" ON public.event_interest
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.events e
+      WHERE e.id = event_interest.event_id AND e.creator_id = auth.uid()
+    )
+  );
+
+
+-- ============================================================
 -- Done. You should see "Success. No rows returned".
 -- ============================================================

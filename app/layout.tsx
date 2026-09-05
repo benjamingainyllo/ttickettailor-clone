@@ -68,10 +68,18 @@ const cormorantGaramond = Cormorant_Garamond({
   variable: "--font-cormorant",
 });
 
-const SITE_TITLE = "Paylance — Sell tickets from ₦200 a ticket, never a percentage";
+/*
+ * The title and description Google shows.
+ *
+ * These advertised the superseded band table — "from ₦200 a ticket, never
+ * a percentage" — long after the product moved to 4% capped at ₦3,000, so
+ * the first thing anybody read about us was a price we do not charge.
+ * The cap is the pitch; say the cap.
+ */
+const SITE_TITLE = "Paylance — Sell tickets at 4% a ticket, capped at ₦3,000";
 
 const SITE_DESCRIPTION =
-  "Event ticketing with a flat fee per ticket — from ₦200 — and no cut of your revenue. Set your ticket types, share one link, scan people in at the door — and the money settles straight to your own bank account.";
+  "Event ticketing that takes 4% of a ticket and never more than ₦3,000 — so the fee stops growing where a percentage competitor keeps climbing. Free under ₦2,000 a ticket and on free events. Set your ticket types, share one link, scan people in at the door, and the money settles straight to your own bank account.";
 
 export const metadata: Metadata = {
   title: {
@@ -82,7 +90,8 @@ export const metadata: Metadata = {
   keywords: [
     "event ticketing",
     "sell event tickets",
-    "flat fee ticketing",
+    "capped fee ticketing",
+    "low fee event tickets",
     "ticket check-in app",
     "QR ticket scanner",
     "event ticketing Nigeria"

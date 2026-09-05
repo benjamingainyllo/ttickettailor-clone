@@ -5,6 +5,8 @@ import { getEventById, type PublicCohost, type PublicProduct, type PublicTicketT
 import { titleStyleCssClamp } from "@/lib/title-styles";
 import { MerchPicker, type Basket } from "@/components/storefront/merch-picker";
 import { createCheckoutSession } from "@/app/actions/checkout";
+import { getInterest } from "@/app/actions/interest";
+import { InterestButton } from "@/components/storefront/interest-button";
 import { getDeliveryChannels } from "@/app/actions/delivery";
 import { bandFeeKobo, formatKobo } from "@/lib/money";
 import { formatE164, toE164 } from "@/lib/whatsapp/phone";
@@ -32,6 +34,14 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
   const [isPending, startTransition] = useTransition();
   const [registered, setRegistered] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  /** Null until the save state is known, so the star never renders a lie. */
+  const [interest, setInterest] = useState<{ count: number; saved: boolean } | null>(null);
+
+  useEffect(() => {
+    getInterest(params.id)
+      .then(setInterest)
+      .catch(() => {});
+  }, [params.id]);
 
   useEffect(() => {
     getDeliveryChannels()
@@ -271,6 +281,23 @@ export function EventCheckoutPage({ params }: { params: { id: string } }) {
                     <p className="text-[15px] font-extrabold">{hostName}</p>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Saving is deliberately separate from buying: plenty of
+                people decide they want to go weeks before they decide to
+                pay, and until now the page had nowhere for that to land.
+                Rendered only once the real state is known — a star that
+                starts empty and fills a moment later reads as the page
+                undoing the visitor's tap. */}
+            {interest && (
+              <div className="mt-6 flex">
+                <InterestButton
+                  eventId={params.id}
+                  initialSaved={interest.saved}
+                  initialCount={interest.count}
+                  variant="full"
+                />
               </div>
             )}
 

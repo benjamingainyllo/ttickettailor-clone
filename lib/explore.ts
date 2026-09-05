@@ -32,8 +32,12 @@ export interface ExploreEvent {
   hostHandle: string | null;
   /** Cheapest active tier, in kobo. Null when the event has no tier. */
   fromKobo: number | null;
-  /** Real admissions issued. Never an "interested" count — we have none. */
+  /** Real admissions issued. */
   going: number;
+  /** People who tapped save. A real signal now — see PART 14 of setup.sql. */
+  interested: number;
+  /** Whether THIS browser saved it. Filled in by the page, not the query. */
+  saved: boolean;
 }
 
 export interface CityBlock {
@@ -61,6 +65,35 @@ function num(v: unknown): number {
  * without fixing a date has still published; hiding them would make a page
  * that looks broken to the person who put the event up.
  */
+/**
+ * The interest counter, asked for on its own and allowed to fail.
+ *
+ * `interested_count` arrives with PART 14 of setup.sql, and a database
+ * that has not run it yet does not have the column. PostgREST answers an
+ * unknown column with an error, not a null — so selecting it alongside
+ * the rest would take the whole Explore page down until the migration
+ * ran. Asked for separately, a missing column costs a zero.
+ */
+async function readInterestedCounts(
+  admin: ReturnType<typeof createAdminClient>,
+  ids: string[]
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  try {
+    const { data, error } = await admin
+      .from("events")
+      .select("id, interested_count")
+      .in("id", ids);
+    if (error) return out;
+    for (const row of data ?? []) {
+      out.set(row.id as string, num((row as Record<string, unknown>).interested_count));
+    }
+  } catch {
+    // Not yet migrated. Zero is the honest answer, not a failure.
+  }
+  return out;
+}
+
 export async function loadExplore(now = new Date()): Promise<{
   blocks: CityBlock[];
   total: number;
@@ -89,7 +122,7 @@ export async function loadExplore(now = new Date()): Promise<{
     new Set(rows.map((e) => e.creator_id as string).filter(Boolean))
   );
 
-  const [{ data: tiers }, { data: hosts }] = await Promise.all([
+  const [{ data: tiers }, { data: hosts }, interestedBy] = await Promise.all([
     admin
       .from("ticket_types")
       .select("event_id, price_kobo, sold_count, status")
@@ -98,6 +131,7 @@ export async function loadExplore(now = new Date()): Promise<{
     creatorIds.length > 0
       ? admin.from("profiles").select("id, handle, box_office_name, first_name").in("id", creatorIds)
       : Promise.resolve({ data: [] as any[] }),
+    readInterestedCounts(admin, ids),
   ]);
 
   const cheapest = new Map<string, number>();
@@ -140,6 +174,8 @@ export async function loadExplore(now = new Date()): Promise<{
       hostHandle: host?.handle ?? null,
       fromKobo: cheapest.get(e.id as string) ?? null,
       going: sold.get(e.id as string) ?? 0,
+      interested: interestedBy.get(e.id as string) ?? 0,
+      saved: false,
     };
 
     const block = byCity.get(city.key) ?? { city, events: [] };

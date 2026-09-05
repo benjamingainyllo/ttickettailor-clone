@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { formatKobo } from "@/lib/money";
 import type { ExploreEvent } from "@/lib/explore";
+import { InterestButton } from "@/components/storefront/interest-button";
 
 /**
  * One event, as a stranger sees it.
  *
- * WHAT IT DOES NOT SAY IS THE POINT. The page this is modelled on puts an
- * "886 interested" under every card, and we have no interest signal —
- * nobody can save an event on Paylance yet. Inventing one would be the
- * single most damaging thing on a discovery page: a visitor who turns up
- * to a room of eleven people having read "886 interested" never comes
- * back, and neither does the organiser. So the only number here is
- * tickets actually issued, it is called "going", and when it is zero it
- * is absent rather than a zero — a new event reads as new, not as unloved.
+ * BOTH NUMBERS ARE REAL, WHICH IS THE ONLY REASON EITHER IS HERE. The
+ * page this is modelled on puts "886 interested" under every card;
+ * inventing that would be the most damaging thing on a discovery page,
+ * because a visitor who turns up to a room of eleven having read it never
+ * comes back, and neither does the organiser. "Going" is tickets actually
+ * issued. "Interested" is people who actually tapped the star — a real
+ * signal now, and it is the same star, so what a visitor does here is
+ * what the next visitor reads. Zero is shown as absence rather than as a
+ * zero: a new event should read as new, not as unloved.
  */
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -119,7 +121,22 @@ export function ExploreCard({ event }: { event: ExploreEvent }) {
               {event.going.toLocaleString("en-NG")} going
             </span>
           )}
+          {event.interested > 0 && (
+            <span className="text-[11.5px] text-[var(--on-ground-faint)]">
+              {event.interested.toLocaleString("en-NG")} interested
+            </span>
+          )}
         </div>
+      </div>
+
+      {/* Its own control, inside a link. The button stops the click so a
+          tap on the star saves rather than opening the event. */}
+      <div className="flex shrink-0 items-start pt-0.5">
+        <InterestButton
+          eventId={event.id}
+          initialSaved={event.saved}
+          initialCount={event.interested}
+        />
       </div>
     </Link>
   );

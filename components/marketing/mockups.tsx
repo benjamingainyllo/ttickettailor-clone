@@ -1,10 +1,38 @@
+import {
+  DEFAULT_PLATFORM_FEE_TYPE,
+  DEFAULT_PLATFORM_FEE_VALUE,
+  calculatePlatformFeeKobo,
+  formatKobo,
+  nairaToKobo,
+} from "@/lib/money";
+
 /**
  * Product mockups, built in markup rather than screenshotted.
  *
  * Showing the thing beats describing it, and these stay honest: every number
  * here is obviously illustrative and sits inside a frame that reads as a
  * picture of the product, not a live figure in the reader's account.
+ *
+ * ILLUSTRATIVE IS NOT THE SAME AS MADE UP. The settlement mock quoted
+ * "Paylance · ₦450 each" — a rate from the superseded band table — and
+ * totalled a payout from it, so a reader working the sum out got a number
+ * the product would never produce. The prices here are invented; what we
+ * charge on them is computed by the same function that bills a real
+ * organiser.
  */
+
+/** What one ticket at this naira price actually costs the organiser. */
+function feeNaira(priceNaira: number): number {
+  return (
+    calculatePlatformFeeKobo(
+      nairaToKobo(priceNaira),
+      DEFAULT_PLATFORM_FEE_TYPE,
+      DEFAULT_PLATFORM_FEE_VALUE
+    ) / 100
+  );
+}
+
+const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
 export function EventCardMock() {
   return (
@@ -40,18 +68,27 @@ export function EventCardMock() {
 }
 
 export function PayoutMock() {
+  // Forty tickets at ₦15,000. The gross and the card cost are invented;
+  // our cut is worked out by the live fee engine.
+  const TICKETS = 40;
+  const PRICE = 15000;
+  const gross = TICKETS * PRICE;
+  const ours = TICKETS * feeNaira(PRICE);
+  const processing = 13975;
+  const settled = gross - ours - processing;
+
   return (
     <div className="w-full max-w-[300px] rounded-2xl border-2 border-[var(--ink)] bg-white p-5 shadow-[6px_6px_0_var(--block-shadow)]">
       <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-soft)]">
         Settled to your bank
       </p>
-      <p className="mt-1 text-3xl font-bold tracking-tight text-[var(--ink)]">₦568,025</p>
+      <p className="mt-1 text-3xl font-bold tracking-tight text-[var(--ink)]">{naira(settled)}</p>
 
       <div className="mt-4 space-y-2 border-t-2 border-dashed border-[var(--rule)] pt-4 text-[11px]">
         {[
-          ["Gross · 40 tickets", "₦600,000"],
-          ["Paylance · ₦450 each", "−₦18,000"],
-          ["Processing", "−₦13,975"],
+          [`Gross · ${TICKETS} tickets`, naira(gross)],
+          [`Paylance · ${naira(feeNaira(PRICE))} each`, `−${naira(ours)}`],
+          ["Processing", `−${naira(processing)}`],
         ].map(([k, v]) => (
           <div key={k} className="flex justify-between">
             <span className="text-[var(--ink-soft)]">{k}</span>

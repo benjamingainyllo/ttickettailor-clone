@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { TYPICAL_RATE, TYPICAL_FLAT_NAIRA } from "@/lib/competitor";
 import {
   DEFAULT_PLATFORM_FEE_TYPE,
   DEFAULT_PLATFORM_FEE_VALUE,
@@ -30,8 +31,10 @@ import {
  * understated our own advantage by roughly half — check a live checkout
  * before changing it.
  */
-const TYPICAL_RATE = 0.08;
-const TYPICAL_FLAT_KOBO = 10_000; // ₦100
+/* The rate itself lives in lib/competitor.ts so this page, the home page
+   and /pricing cannot drift apart again — they already had, at 5% and 8%
+   simultaneously. Kobo here because everything on this screen is kobo. */
+const TYPICAL_FLAT_KOBO = TYPICAL_FLAT_NAIRA * 100;
 
 /** Quantity is a person's estimate, not a fact — keep it in sane territory. */
 const MAX_QUANTITY = 100_000;

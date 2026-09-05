@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DEFAULT_PLATFORM_FEE_VALUE, PLATFORM_FEE_CAP_KOBO, formatKobo } from "@/lib/money";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -429,7 +430,11 @@ export function AuthScreen() {
 
         {/* Three facts about the product, all of them checkable. */}
         <ul className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-[var(--hairline)] pt-6">
-          {["Free to open", "From ₦200 a ticket", "Money to your own bank"].map((f) => (
+          {[
+            "Free to open",
+            `${DEFAULT_PLATFORM_FEE_VALUE / 100}% a ticket, capped at ${formatKobo(PLATFORM_FEE_CAP_KOBO)}`,
+            "Money to your own bank",
+          ].map((f) => (
             <li
               key={f}
               className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--on-ground-faint)]"

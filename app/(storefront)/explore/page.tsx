@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ExploreBoard } from "@/components/storefront/explore-board";
 import { loadExplore } from "@/lib/explore";
+import { savedEventIds } from "@/app/actions/interest";
 
 /**
  * Explore — every published event on Paylance, by city.
@@ -24,15 +25,29 @@ export const metadata: Metadata = {
 };
 
 /**
- * Rebuilt every five minutes rather than on every request.
+ * Rendered per request, not cached.
  *
- * A public page that runs four database queries per visitor is a page that
- * falls over the first time an organiser's event goes round a group chat,
- * which is the exact moment it needs to work.
+ * It was statically rebuilt every five minutes, which stopped being
+ * possible the moment the page had to show whether YOU had saved
+ * something: a cached page would hand one visitor's saved stars to
+ * everybody. The counts still come from a single column, so this is four
+ * small queries, and the alternative — caching the page and fetching the
+ * stars from the browser afterwards — trades that for a visible flicker
+ * on every card.
  */
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function ExplorePage() {
   const { blocks, total } = await loadExplore();
-  return <ExploreBoard blocks={blocks} total={total} />;
+
+  const saved = await savedEventIds(
+    blocks.flatMap((b) => b.events.map((e) => e.id))
+  );
+
+  const marked = blocks.map((b) => ({
+    ...b,
+    events: b.events.map((e) => ({ ...e, saved: saved.has(e.id) })),
+  }));
+
+  return <ExploreBoard blocks={marked} total={total} />;
 }

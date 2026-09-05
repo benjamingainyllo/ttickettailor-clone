@@ -8,7 +8,17 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { EVENT_TYPES } from "@/components/marketing/event-types";
 import { ArrowCurve, Circled, Sparkle, Squiggle, Star, Underline } from "@/components/marketing/doodles";
 import { DoorMock, LinkMock, PayoutMock, TicketMock, TiersMock } from "@/components/marketing/mockups";
-import { bandFeeKobo, koboToNaira, nairaToKobo } from "@/lib/money";
+import {
+  DEFAULT_PLATFORM_FEE_TYPE,
+  DEFAULT_PLATFORM_FEE_VALUE,
+  PLATFORM_FEE_CAP_KOBO,
+  PLATFORM_FEE_FREE_BELOW_KOBO,
+  calculatePlatformFeeKobo,
+  formatKobo,
+  koboToNaira,
+  nairaToKobo,
+} from "@/lib/money";
+import { TYPICAL_LABEL, typicalFeeNaira } from "@/lib/competitor";
 
 /** Highlighter stroke behind a word. */
 function Mark({ children, color }: { children: React.ReactNode; color?: string }) {
@@ -22,16 +32,32 @@ function Mark({ children, color }: { children: React.ReactNode; color?: string }
 /** The home page shows a taste; /event-types has the full list. */
 const FEATURED_TYPES = EVENT_TYPES.slice(0, 9);
 
-/** The comparison the whole product rests on. One ticket, then two hundred. */
+/**
+ * The comparison the whole product rests on. One ticket, then two hundred.
+ *
+ * BOTH SIDES ARE COMPUTED, NEITHER IS TYPED IN. This page spent weeks
+ * quoting the superseded band table — "from ₦200 a ticket, never a
+ * percentage" — against a competitor at 5%, while the engine charged 4%
+ * capped and the competitor charged 8% + ₦100. Every number was wrong and
+ * the error ran the wrong way: it understated our own advantage by about
+ * half, on the first page anybody reads. Ours now comes from the same
+ * function that bills the organiser; theirs from lib/competitor.ts.
+ */
 const TICKET_PRICE = 20000;
 const TICKET_COUNT = 200;
-// Read from the live band table rather than typed in, so this figure can
-// never quietly disagree with what a seller is actually charged.
-const PAYLANCE_PER_TICKET = koboToNaira(bandFeeKobo(nairaToKobo(TICKET_PRICE)));
-// Tix.Africa, the incumbent here, charges ₦100 + 5% on its free plan
-// (₦100 + 3.5% on Pro). Checked August 2026 — an overstated competitor
-// rate is the kind of thing that gets screenshotted.
-const TYPICAL_PER_TICKET = TICKET_PRICE * 0.05 + 100;
+const PAYLANCE_PER_TICKET = koboToNaira(
+  calculatePlatformFeeKobo(
+    nairaToKobo(TICKET_PRICE),
+    DEFAULT_PLATFORM_FEE_TYPE,
+    DEFAULT_PLATFORM_FEE_VALUE
+  )
+);
+const TYPICAL_PER_TICKET = typicalFeeNaira(TICKET_PRICE);
+
+/** The pitch, in the engine's own numbers. */
+const RATE_LABEL = `${DEFAULT_PLATFORM_FEE_VALUE / 100}%`;
+const CAP_LABEL = formatKobo(PLATFORM_FEE_CAP_KOBO);
+const FREE_BELOW_LABEL = formatKobo(PLATFORM_FEE_FREE_BELOW_KOBO);
 
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 
@@ -69,7 +95,7 @@ export default function LandingPage() {
           <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
             <div>
               <span className="lp-block-soft inline-block rotate-[-1.5deg] rounded-full bg-[var(--paper)] px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--ink)]">
-                From ₦200 a ticket · never a percentage
+                {RATE_LABEL} a ticket · never more than {CAP_LABEL}
               </span>
 
               <h1 className="mt-6 text-[46px] font-extrabold leading-[0.95] tracking-[-0.03em] text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.4)] sm:text-[72px]">
@@ -83,10 +109,13 @@ export default function LandingPage() {
               </h1>
 
               <p className="mt-6 max-w-md text-[17px] leading-relaxed text-white/90">
-                A flat fee for every ticket you sell — from ₦200, and never a
-                percentage of your revenue. Your share splits off the moment
-                someone pays and settles to your own bank. No wallet here,
-                nothing to withdraw, nobody holding it until after the night.
+                {RATE_LABEL} of a ticket, and never more than {CAP_LABEL} however
+                much it costs — so the fee stops growing where everyone else&apos;s
+                keeps climbing. Under {FREE_BELOW_LABEL} a ticket, and on free
+                events, we charge nothing at all. Your share splits off the
+                moment someone pays and settles to your own bank. No wallet
+                here, nothing to withdraw, nobody holding it until after the
+                night.
               </p>
 
               <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -108,7 +137,17 @@ export default function LandingPage() {
                     <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink)]">
                       Your fee
                     </p>
-                    <p className="text-[20px] font-extrabold text-[var(--ink)]">₦200</p>
+                    {/* The mock above sells a ₦5,000 ticket. Our cut on it,
+                        from the engine — not a number typed beside a picture. */}
+                    <p className="text-[20px] font-extrabold text-[var(--ink)]">
+                      {formatKobo(
+                        calculatePlatformFeeKobo(
+                          nairaToKobo(5000),
+                          DEFAULT_PLATFORM_FEE_TYPE,
+                          DEFAULT_PLATFORM_FEE_VALUE
+                        )
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -156,13 +195,13 @@ export default function LandingPage() {
 
             <div className="lp-block-dark lp-tilt-3 rounded-2xl bg-[var(--ground-raised)] p-7">
               <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--on-ground-soft)]">
-                A typical 5% platform
+                {TYPICAL_LABEL} platform
               </p>
               <p className="mt-2 text-[42px] font-extrabold leading-none tracking-tight text-[var(--on-ground-soft)]">
                 {naira(typicalTotal)}
               </p>
               <p className="mt-2 text-[13px] font-semibold text-[var(--on-ground-soft)]">
-                in fees · 5% + ₦100 a ticket
+                in fees · {TYPICAL_LABEL} a ticket
               </p>
               <div className="mt-5 border-t border-[var(--hairline)] pt-4">
                 <p className="text-[12px] font-semibold text-[var(--on-ground-soft)]">You keep</p>
@@ -208,7 +247,7 @@ export default function LandingPage() {
             </h2>
             <p className="mt-5 max-w-md text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
               Thirty people in a room or three thousand in a field — same
-              tickets, same scanner, same flat fee.
+              tickets, same scanner, same {RATE_LABEL} — capped at {CAP_LABEL}.
             </p>
           </div>
 
@@ -372,7 +411,7 @@ export default function LandingPage() {
             <div className="mt-8 inline-flex items-center gap-2.5 rounded-full border-2 border-[#FFDE59] px-5 py-2.5">
               <span className="h-2 w-2 rounded-full bg-[#FFDE59]" />
               <span className="text-[13px] font-bold text-[#FFDE59]">
-                From ₦200 a ticket. Never a percentage.
+                {RATE_LABEL} a ticket. Never more than {CAP_LABEL}.
               </span>
             </div>
           </div>
@@ -422,7 +461,7 @@ export default function LandingPage() {
 
           <div className="mt-12 space-y-3">
             {[
-              { q: "What does it actually cost?", a: "A flat fee for every paid ticket you sell, set by the ticket\u2019s price: ₦200 under ₦7,500, ₦450 up to ₦30,000, ₦1,500 up to ₦75,000 and ₦2,500 above that. There's no signup fee, no monthly plan, and no percentage of your revenue. If you sell nothing, you pay nothing." },
+              { q: "What does it actually cost?", a: `${RATE_LABEL} of each paid ticket, and never more than ${CAP_LABEL} on a single one — so past about ₦75,000 a ticket the fee stops growing while a percentage competitor keeps taking its cut. Tickets under ${FREE_BELOW_LABEL}, and free events, cost nothing at all. No signup fee, no monthly plan. If you sell nothing, you pay nothing.` },
               { q: "What about free events?", a: "Completely free. We don't charge a fee on a ₦0 ticket, so community nights, open days and RSVPs cost you nothing at all — and everyone still gets a real scannable ticket." },
               { q: "How do I get my money?", a: "Straight to your own bank account. The payment splits at the moment someone buys, so your share settles directly to you. We never hold it, which is also why there's nothing to withdraw." },
               { q: "Do my buyers need an account?", a: "No. They tap your link, pick their tickets, enter a name and email, and pay. Their tickets arrive by email seconds later." },

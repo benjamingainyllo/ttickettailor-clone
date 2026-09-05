@@ -40,7 +40,13 @@ export function ExploreBoard({ blocks, total }: { blocks: CityBlock[]; total: nu
         <Sparkle className="absolute right-[14%] top-[24%] hidden h-5 w-5 text-[var(--marker)]/60 sm:block" />
         <Star className="absolute left-[8%] bottom-[22%] hidden h-4 w-4 text-[var(--coral)]/50 sm:block" />
 
-        <div className="relative mx-auto max-w-3xl">
+        {/* max-w-7xl, NOT a centred max-w-3xl. A narrow centred column
+            put the hero in the middle of a wide screen while the city
+            columns underneath began at the left margin, so the page had
+            two different left edges and the heading belonged to neither.
+            One container for the whole page; the paragraph is what gets
+            a reading width, not the block. */}
+        <div className="relative mx-auto max-w-7xl">
           <p className={label}>Explore</p>
           <h1 className="mt-4 text-[44px] font-extrabold leading-[0.98] tracking-[-0.04em] sm:text-[64px]">
             What&apos;s on,
@@ -75,17 +81,17 @@ export function ExploreBoard({ blocks, total }: { blocks: CityBlock[]; total: nu
       {/* ══════════════ Nothing yet ══════════════ */}
       {blocks.length === 0 && (
         <section className="px-6 py-24 sm:px-10 lg:px-16">
-          <div className="mx-auto max-w-xl text-center">
-            <Squiggle className="mx-auto h-6 w-24 text-[var(--coral)]/50" />
+          <div className="mx-auto max-w-7xl">
+            <Squiggle className="h-6 w-24 text-[var(--coral)]/50" />
             <h2 className="mt-6 text-[26px] font-extrabold tracking-[-0.03em]">
               Nothing on sale yet
             </h2>
-            <p className="mt-3 text-[15.5px] leading-relaxed text-[var(--on-ground-soft)]">
+            <p className="mt-3 max-w-lg text-[15.5px] leading-relaxed text-[var(--on-ground-soft)]">
               The moment an organiser publishes a paid or free event, it appears
               here with its date, its city and who is putting it on. Be the
               first — it takes about four minutes and costs nothing to list.
             </p>
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex">
               <StartCta />
             </div>
           </div>
@@ -161,7 +167,7 @@ export function ExploreBoard({ blocks, total }: { blocks: CityBlock[]; total: nu
       {/* ══════════════ For organisers ══════════════ */}
       {blocks.length > 0 && (
         <section className="border-t border-[var(--hairline)] px-6 py-16 sm:px-10 lg:px-16">
-          <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
+          <div className="mx-auto flex max-w-7xl flex-col items-start gap-6">
             <h2 className="text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-[40px]">
               Putting something on?{" "}
               <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
@@ -173,7 +179,7 @@ export function ExploreBoard({ blocks, total }: { blocks: CityBlock[]; total: nu
               share. Money from every ticket lands in your own bank account as
               it sells — Paylance never holds it.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <StartCta />
               <Link
                 href="/pricing"

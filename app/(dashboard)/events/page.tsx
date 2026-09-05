@@ -55,6 +55,8 @@ interface EventStats {
   checkedIn: number;
   grossKobo: number;
   capacity: number | null;
+  /** People who saved it without buying yet. Demand before revenue. */
+  interested: number;
 }
 
 type Filter = "upcoming" | "live" | "draft" | "past" | "all";
@@ -125,7 +127,15 @@ export default function EventsPage() {
 
       const next: Record<string, EventStats> = {};
       for (const e of rows) {
-        next[e.id] = { sold: 0, checkedIn: 0, grossKobo: 0, capacity: e.capacity ?? null };
+        next[e.id] = {
+          sold: 0,
+          checkedIn: 0,
+          grossKobo: 0,
+          capacity: e.capacity ?? null,
+          // Asked for with the events themselves. Absent on a database
+          // that has not run PART 14 yet, which reads as nobody saved it.
+          interested: Number((e as Record<string, unknown>).interested_count ?? 0),
+        };
       }
 
       for (const o of orderRows ?? []) {
@@ -181,6 +191,7 @@ export default function EventsPage() {
     const all = Object.values(stats);
     return {
       sold: all.reduce((s, v) => s + v.sold, 0),
+      interested: all.reduce((s, v) => s + v.interested, 0),
       gross: all.reduce((s, v) => s + v.grossKobo, 0),
       live: events.filter((e) => e.publish_status === "published" && !isPast(e.date)).length,
       drafts: events.filter((e) => e.publish_status !== "published").length,
@@ -281,10 +292,18 @@ export default function EventsPage() {
             tone: "count",
           },
           {
+            label: "Interested",
+            value: totals.interested.toLocaleString("en-NG"),
+            note:
+              totals.interested > 0
+                ? "saved, not bought yet"
+                : "nobody has saved one yet",
+            tone: "group",
+          },
+          {
             label: "On sale now",
             value: String(totals.live),
             note: totals.drafts > 0 ? `${totals.drafts} in draft` : "nothing in draft",
-            tone: "group",
           },
         ]}
       />
@@ -317,7 +336,12 @@ export default function EventsPage() {
             <EventCard
               key={event.id}
               event={event}
-              stats={stats[event.id] ?? { sold: 0, checkedIn: 0, grossKobo: 0, capacity: event.capacity ?? null }}
+              stats={
+                stats[event.id] ?? {
+                  sold: 0, checkedIn: 0, grossKobo: 0,
+                  capacity: event.capacity ?? null, interested: 0,
+                }
+              }
               onOpen={() => setSelectedEvent(event)}
               onScanner={() => router.push(`/events/${event.id}/door` as never)}
               onNotify={() => router.push(`/events/${event.id}/message` as never)}
@@ -492,6 +516,11 @@ function EventCard({
               : stats.sold > 0
                 ? "No limit set on this event."
                 : "Nothing sold yet."}
+          {stats.interested > 0 && !past && (
+            <span className="ml-1.5">
+              · {stats.interested.toLocaleString("en-NG")} interested
+            </span>
+          )}
           {past && stats.sold > 0 && (
             <span className="ml-1.5 inline-flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3" />

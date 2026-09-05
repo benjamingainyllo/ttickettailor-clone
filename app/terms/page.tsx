@@ -84,12 +84,14 @@ export default function TermsPage() {
 
       <Clause n="5." title="Our fee">
         <P>
-          We charge a flat fee for each paid ticket sold. The fee is set by the
-          ticket&apos;s own price and is published in full on our{" "}
+          We charge a percentage of each paid ticket sold, subject to a cap
+          per ticket, and nothing at all below a minimum ticket price or on a
+          free event. The current rate, cap and floor are published in full on
+          our{" "}
           <Link href="/pricing" className="font-semibold text-[var(--coral)] underline">
             pricing page
           </Link>
-          . We take no percentage of your revenue.
+          , and the fee charged on any order is itemised on that order.
         </P>
         <Bullets
           items={[

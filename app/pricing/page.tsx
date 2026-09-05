@@ -12,11 +12,12 @@ import {
   koboToNaira,
   nairaToKobo,
 } from "@/lib/money";
+import { TYPICAL_RATE, TYPICAL_FLAT_NAIRA, TYPICAL_CHECKED } from "@/lib/competitor";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "A flat fee per paid ticket, from ₦200. No percentage of your revenue, no monthly plan, no signup fee, and nothing at all on a free event.",
+    "4% of each paid ticket, and never more than ₦3,000 on a single one. Nothing at all under ₦2,000 a ticket or on a free event. No monthly plan, no signup fee.",
 };
 
 /**
@@ -25,19 +26,9 @@ export const metadata: Metadata = {
  * the engine actually charges is the worst bug this page can have, and
  * hardcoding the numbers twice is how that happens.
  */
-/**
- * What the incumbent actually charges: 8% + ₦100, added on top so the
- * BUYER pays it, and charged once per seat on a group ticket.
- *
- * Verified 1 September 2026 against nine live ticket types on Tix's own
- * checkout — every one matched exactly. It was published here as 5% for
- * weeks, on no evidence, which understated us by about half. Check a
- * live checkout before changing this and note the date.
- */
-const TYPICAL_RATE = 0.08;
-const TYPICAL_FLAT = 100;
-const TYPICAL_CHECKED = "September 2026";
-/** "An 8% platform", not "a 8% platform" — read aloud, not spelled. */
+/* What the incumbent charges lives in lib/competitor.ts — one file, so
+   the home page, this page and the calculator cannot disagree about it
+   again. See the note there before changing the rate. */
 const article = (pct: number) => (/^(8|11|18)/.test(String(pct)) ? "An" : "A");
 
 const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
@@ -176,7 +167,7 @@ export default function PricingPage() {
           <p className="mx-auto mt-8 max-w-lg text-[15px] leading-relaxed text-[var(--on-ground-faint)]">
             No steps, no bands, nothing to fall off. The same {RATE_PCT}% on
             every ticket until the cap takes over &mdash; on a {naira(200000)}{" "}
-            table that is {naira(CAP_NAIRA)} against the {naira(200000 * TYPICAL_RATE + TYPICAL_FLAT)}{" "}
+            table that is {naira(CAP_NAIRA)} against the {naira(200000 * TYPICAL_RATE + TYPICAL_FLAT_NAIRA)}{" "}
             {article(Math.round(TYPICAL_RATE * 100)).toLowerCase()}{" "}
             {Math.round(TYPICAL_RATE * 100)}% platform charges.
           </p>
@@ -243,7 +234,7 @@ export default function PricingPage() {
               <Underline className="h-3 w-52 text-[var(--coral)]" />
             </div>
             <p className="mt-5 text-[16px] leading-relaxed text-[var(--on-ground-soft)]">
-              Five real-shaped events, against the {Math.round(TYPICAL_RATE * 100)}% + {naira(TYPICAL_FLAT)} the incumbent charges &mdash; checked on their own checkout, {TYPICAL_CHECKED}.
+              Five real-shaped events, against the {Math.round(TYPICAL_RATE * 100)}% + {naira(TYPICAL_FLAT_NAIRA)} the incumbent charges &mdash; checked on their own checkout, {TYPICAL_CHECKED}.
             </p>
           </div>
 
@@ -264,7 +255,7 @@ export default function PricingPage() {
               <tbody className="[font-variant-numeric:tabular-nums]">
                 {SCENARIOS.map((s) => {
                   const ours = feeFor(s.price) * s.count;
-                  const theirs = (s.price * TYPICAL_RATE + TYPICAL_FLAT) * s.count;
+                  const theirs = (s.price * TYPICAL_RATE + TYPICAL_FLAT_NAIRA) * s.count;
                   return (
                     <tr key={s.label}>
                       <td className="border-b border-[var(--hairline)] py-4 pr-4">
