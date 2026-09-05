@@ -9,6 +9,9 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
 import { SalesChart } from "@/components/dashboard/sales-chart";
+import { StatTiles } from "@/components/charts/figures";
+import { TicketTypeSplit, WeekdayBars } from "@/components/charts/bars";
+import { buildDashboardShape, countdown } from "@/lib/dashboard-shape";
 import type { SalesOrderRow } from "@/lib/sales-series";
 
 /**
@@ -40,6 +43,8 @@ export default function OverviewPage() {
   const [draftCount, setDraftCount] = useState(0);
   const [orders, setOrders] = useState<any[]>([]);
   const [chartOrders, setChartOrders] = useState<SalesOrderRow[]>([]);
+  const [tiers, setTiers] = useState<{ name: string; tickets: number; grossKobo: number }[]>([]);
+  const [nextEvent, setNextEvent] = useState<any>(null);
   const [audienceCount, setAudienceCount] = useState(0);
 
   const load = useCallback(async () => {
@@ -70,7 +75,7 @@ export default function OverviewPage() {
         // fraction of the month and look like a collapse in sales.
         supabase
           .from("orders")
-          .select("status, quantity, gross_kobo, net_kobo, paid_at, created_at")
+          .select("status, quantity, gross_kobo, net_kobo, platform_fee_kobo, paid_at, created_at")
           .eq("creator_id", user.id)
           .eq("status", "paid")
           .gte("created_at", since.toISOString())
@@ -80,6 +85,51 @@ export default function OverviewPage() {
           .select("id", { count: "exact", head: true })
           .eq("creator_id", user.id),
       ]);
+
+      // Which of THEIR tiers sell, and what is coming up next. Both are
+      // tolerant: a failure here must not take the dashboard down, it
+      // just leaves one panel out.
+      try {
+        const eventIds = (events.data ?? []).map((e: any) => e.id);
+        if (eventIds.length) {
+          const [{ data: tierRows }, { data: upcoming }] = await Promise.all([
+            supabase
+              .from("ticket_types")
+              .select("name, price_kobo, sold_count, event_id")
+              .in("event_id", eventIds),
+            supabase
+              .from("events")
+              .select("id, title, date, time, location, cover_image_url, publish_status")
+              .eq("creator_id", user.id)
+              .eq("publish_status", "published")
+              .gte("date", new Date().toISOString().slice(0, 10))
+              .order("date", { ascending: true })
+              .limit(1),
+          ]);
+
+          // Tiers with the same name across their events are one line —
+          // "VIP" is a thing an organiser thinks about once, not per event.
+          const byName = new Map<string, { tickets: number; grossKobo: number }>();
+          for (const t of tierRows ?? []) {
+            const name = (t.name ?? "Ticket").trim() || "Ticket";
+            const sold = Number(t.sold_count ?? 0) || 0;
+            if (sold <= 0) continue;
+            const cur = byName.get(name) ?? { tickets: 0, grossKobo: 0 };
+            cur.tickets += sold;
+            cur.grossKobo += sold * (Number(t.price_kobo ?? 0) || 0);
+            byName.set(name, cur);
+          }
+          setTiers(
+            Array.from(byName.entries())
+              .map(([name, v]) => ({ name, ...v }))
+              .sort((a, b) => b.tickets - a.tickets)
+              .slice(0, 5)
+          );
+          setNextEvent(upcoming?.[0] ?? null);
+        }
+      } catch (error) {
+        console.error("Could not load the extra panels", error);
+      }
 
       setHasBank(
         payout.data?.status === "active" && Boolean(payout.data?.provider_subaccount_id)
@@ -109,6 +159,11 @@ export default function OverviewPage() {
   const netKobo = paidOrders.reduce((sum, o) => sum + Number(o.net_kobo || 0), 0);
 
   const isNewCreator = publishedCount === 0 && paidOrders.length === 0;
+
+  // Thirty days against the thirty before them, from the same rows the
+  // chart already has. The owner's dashboard uses this exact function on
+  // the server, so the two screens cannot disagree about what a rise is.
+  const shape = buildDashboardShape(chartOrders as never);
 
   /* ── Daylight ────────────────────────────────────────────────────
      Colour lives in the paper. Everything drawn on it is a full-ink 2px
@@ -265,12 +320,6 @@ export default function OverviewPage() {
   }
 
   // ---------------- State 2: up and running ----------------
-  const figures = [
-    { n: formatKobo(grossKobo), l: "Taken", note: `${paidOrders.length} paid ${paidOrders.length === 1 ? "order" : "orders"}` },
-    { n: formatKobo(netKobo), l: "Settled to you", note: "after fees" },
-    { n: String(audienceCount), l: "Buyers", note: audienceCount === 0 ? "none yet" : "in your audience" },
-    { n: String(publishedCount), l: "Live", note: `${draftCount} in draft` },
-  ];
 
   return (
     <section>
@@ -315,26 +364,112 @@ export default function OverviewPage() {
         </div>
       )}
 
-      {/* One ruled block, not four drifting tiles. */}
-      <div className={`${panel} mt-7 flex flex-wrap`}>
-        {figures.map((f, i) => (
-          <div
-            key={f.l}
-            className={`min-w-[152px] flex-1 px-5 py-4 ${
-              i !== 0 ? "border-l-2 border-[var(--dl-line)]" : ""
-            }`}
-          >
-            <p className="text-[27px] font-extrabold tracking-[-0.035em] [font-variant-numeric:tabular-nums]">
-              {f.n}
-            </p>
-            <p className={`${label} mt-1`}>{f.l}</p>
-            <p className="mt-1 text-[12px] text-[var(--dl-ink-soft)]">{f.note}</p>
-          </div>
-        ))}
+      {/* Every figure carries a direction. A total on its own doesn't
+          tell an organiser whether their event is working. */}
+      <div className="mt-7">
+        <StatTiles
+          items={[
+            {
+              label: "Taken",
+              value: formatKobo(shape.grossTrend.value),
+              trend: shape.grossTrend,
+              spark: shape.dailyGross,
+              note: `${shape.ordersTrend.value} paid ${shape.ordersTrend.value === 1 ? "order" : "orders"}`,
+            },
+            {
+              label: "Settled to you",
+              value: formatKobo(shape.netTrend.value),
+              trend: shape.netTrend,
+              spark: shape.dailyNet,
+              note: "after fees",
+            },
+            {
+              label: "Tickets sold",
+              value: shape.ticketsTrend.value.toLocaleString("en-NG"),
+              trend: shape.ticketsTrend,
+              spark: shape.dailyTickets,
+              note: "last 30 days",
+            },
+            {
+              label: "Buyers",
+              value: String(audienceCount),
+              note: audienceCount === 0 ? "none yet" : "all time",
+              href: "/audience",
+            },
+          ]}
+        />
       </div>
 
-      <div className="mt-7">
+      <p className="mt-2.5 text-[12.5px] text-[var(--dl-ink-soft)]">
+        All time: {formatKobo(grossKobo)} taken, {formatKobo(netKobo)} settled to you across{" "}
+        {paidOrders.length} paid {paidOrders.length === 1 ? "order" : "orders"}.
+      </p>
+
+      {/* The one thing an organiser actually opens this page for. */}
+      {nextEvent && (
+        <div className={`${panel} mt-4 flex flex-wrap items-center gap-4 p-4`}>
+          {nextEvent.cover_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={nextEvent.cover_image_url}
+              alt=""
+              className="h-16 w-24 shrink-0 rounded-[3px] border-2 border-[var(--dl-line)] object-cover"
+            />
+          ) : (
+            <span className="grid h-16 w-24 shrink-0 place-items-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-paper)] text-[10px] font-extrabold uppercase tracking-[0.1em] text-[var(--dl-ink-faint)]">
+              no art
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className={label}>Next up</p>
+            <p className="mt-1 truncate text-[19px] font-extrabold tracking-[-0.03em]">
+              {nextEvent.title}
+            </p>
+            <p className="mt-0.5 text-[13.5px] text-[var(--dl-ink-soft)]">
+              {countdown(nextEvent.date)}
+              {nextEvent.time ? ` · doors ${nextEvent.time}` : ""}
+              {nextEvent.location ? ` · ${nextEvent.location}` : ""}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Link
+              href={`/events/${nextEvent.id}/message` as never}
+              className="rounded-[3px] border-2 border-[var(--dl-line)] px-3.5 py-2 text-[12px] font-extrabold uppercase tracking-[0.04em]"
+            >
+              Message guests
+            </Link>
+            <Link
+              href={`/events/${nextEvent.id}/door` as never}
+              className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-ink)] px-3.5 py-2 text-[12px] font-extrabold uppercase tracking-[0.04em] text-[var(--dl-paper)]"
+            >
+              Door scanner
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4">
         <SalesChart orders={chartOrders} />
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <div className={`${panel} lg:col-span-2`}>
+          <div className="flex items-baseline justify-between gap-4 border-b-2 border-[var(--dl-line)] px-5 py-3.5">
+            <p className={label}>When people buy</p>
+            <p className="text-[12px] text-[var(--dl-ink-soft)]">last 30 days</p>
+          </div>
+          <WeekdayBars data={shape.byWeekday} />
+        </div>
+
+        <div className={panel}>
+          <div className="flex items-baseline justify-between gap-4 border-b-2 border-[var(--dl-line)] px-5 py-3.5">
+            <p className={label}>What sells</p>
+            <Link href="/events" className="text-[12px] font-bold underline underline-offset-2">
+              Your events
+            </Link>
+          </div>
+          <TicketTypeSplit data={tiers} />
+        </div>
       </div>
 
       <div className="mt-9 flex items-baseline justify-between">

@@ -3,8 +3,8 @@ import { getPlatformStats } from "@/lib/platform-stats";
 import { getOverviewShape, listAttention, attentionSummary } from "@/lib/admin-queries";
 import { runDetectors } from "@/lib/attention";
 import { formatKobo } from "@/lib/money";
-import { StatTiles } from "@/components/admin/figures";
-import { TicketTypeSplit, WeekdayBars } from "@/components/admin/charts";
+import { StatTiles } from "@/components/charts/figures";
+import { TicketTypeSplit, WeekdayBars } from "@/components/charts/bars";
 import { panel, label, Badge, stateTone, niceDate } from "@/components/admin/ui";
 
 // Money that changes by the minute should never be served from a cache.

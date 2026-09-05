@@ -1049,28 +1049,10 @@ export async function getPlatformSettings() {
 
 // ── Trends and shape, for the overview ──────────────────────────
 
-/** A figure is not information until you know which way it is moving. */
-export interface Trend {
-  value: number;
-  previous: number;
-  /** Null when there is no previous period to compare against. */
-  changePct: number | null;
-  direction: "up" | "down" | "flat";
-}
-
-function trend(value: number, previous: number): Trend {
-  if (previous <= 0) {
-    return { value, previous, changePct: null, direction: value > 0 ? "up" : "flat" };
-  }
-  const pct = ((value - previous) / previous) * 100;
-  return {
-    value,
-    previous,
-    changePct: pct,
-    // A percent under half a point is noise, not a direction.
-    direction: Math.abs(pct) < 0.5 ? "flat" : pct > 0 ? "up" : "down",
-  };
-}
+// One definition of "a trend", shared with the organiser dashboard, so
+// the two screens can never quietly disagree about what a rise is.
+import { trend, WEEKDAYS, type Trend } from "@/lib/dashboard-shape";
+export type { Trend };
 
 export interface OverviewShape {
   feesTrend: Trend;
@@ -1098,8 +1080,6 @@ export interface OverviewShape {
     grossKobo: Kobo;
   }[];
 }
-
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 /**
  * Everything the overview needs beyond a plain total.

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Trend } from "@/lib/admin-queries";
+import type { Trend } from "@/lib/dashboard-shape";
 
 /**
  * A number, which way it is going, and its recent shape.
