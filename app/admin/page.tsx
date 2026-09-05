@@ -5,7 +5,7 @@ import { runDetectors } from "@/lib/attention";
 import { formatKobo } from "@/lib/money";
 import { TicketTypeSplit, WeekdayBars } from "@/components/charts/bars";
 import {
-  panel, label, Figures, Badge, stateTone, niceDate, th, td, tdNum, Scroll,
+  panel, label, Figures, Band, Badge, stateTone, niceDate, th, td, tdNum, Scroll,
 } from "@/components/admin/ui";
 
 // Money that changes by the minute should never be served from a cache.
@@ -104,7 +104,7 @@ export default async function AdminPage() {
           </Link>
         </div>
 
-        <div className={panel}>
+        <div className={`${panel} overflow-hidden`}>
           {clear ? (
             <p className="px-4 py-3.5 text-[14px]">
               <b>Nothing wrong.</b>{" "}
@@ -166,24 +166,28 @@ export default async function AdminPage() {
               l: "Your fees",
               n: formatKobo(shape.feesTrend.value),
               t: shape.feesTrend,
+              tone: "fee",
             },
             {
               l: "Moved through",
               n: formatKobo(shape.grossTrend.value),
               t: shape.grossTrend,
               x: "all organisers",
+              tone: "money",
             },
             {
               l: "Tickets sold",
               n: shape.ticketsTrend.value.toLocaleString("en-NG"),
               t: shape.ticketsTrend,
               x: `${shape.ordersTrend.value} orders`,
+              tone: "count",
             },
-            { l: "Effective take", n: takeRate, x: "fees ÷ gross, all time" },
+            { l: "Effective take", n: takeRate, x: "fees ÷ gross, all time", tone: "fee" },
             {
               l: "All-time fees",
               n: formatKobo(s.feesKobo),
               x: `on ${formatKobo(s.grossKobo)}`,
+              tone: "money",
             },
           ]}
         />
@@ -280,20 +284,20 @@ export default async function AdminPage() {
       {/* ── Background questions, at the bottom. ────────────── */}
       <div className="grid gap-5 xl:grid-cols-2">
         <div className={panel}>
-          <div className="flex items-baseline justify-between gap-4 border-b-2 border-[var(--dl-line)] px-5 py-3">
-            <p className={label}>When people buy</p>
-            <p className="text-[12px] text-[var(--dl-ink-soft)]">last 30 days</p>
-          </div>
+          <Band title="When people buy" note="last 30 days" tone="count" />
           <WeekdayBars data={shape.byWeekday} />
         </div>
 
         <div className={panel}>
-          <div className="flex items-baseline justify-between gap-4 border-b-2 border-[var(--dl-line)] px-5 py-3">
-            <p className={label}>What they buy</p>
-            <Link href="/admin/tickets" className="text-[12px] font-bold underline underline-offset-2">
-              All tickets
-            </Link>
-          </div>
+          <Band
+            title="What they buy"
+            tone="money"
+            right={
+              <Link href="/admin/tickets" className="text-[12px] font-bold underline underline-offset-2">
+                All tickets
+              </Link>
+            }
+          />
           <TicketTypeSplit data={shape.byTicketType} />
         </div>
       </div>

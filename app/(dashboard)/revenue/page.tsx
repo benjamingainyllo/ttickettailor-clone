@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Banknote, Download, Loader2, Search, ShoppingBag, Wallet,
 } from "lucide-react";
-import { StatTiles } from "@/components/charts/figures";
+import { StatTiles, PanelHead } from "@/components/charts/figures";
 import { TicketTypeSplit, WeekdayBars } from "@/components/charts/bars";
 import { useAuth } from "@/components/auth/auth-provider";
 import { createClient } from "@/lib/supabase/client";
@@ -249,6 +249,7 @@ export default function RevenuePage() {
             trend: shape.grossTrend,
             spark: shape.dailyGross,
             note: "last 30 days",
+            tone: "money",
           },
           {
             label: "Settled to you",
@@ -256,12 +257,14 @@ export default function RevenuePage() {
             trend: shape.netTrend,
             spark: shape.dailyNet,
             note: "after fees",
+            tone: "money",
           },
           {
             label: "Tickets sold",
             value: shape.ticketsTrend.value.toLocaleString("en-NG"),
             trend: shape.ticketsTrend,
             spark: shape.dailyTickets,
+            tone: "count",
           },
           {
             label: "Orders",
@@ -272,6 +275,7 @@ export default function RevenuePage() {
               shape.ordersTrend.value > 0
                 ? `${(shape.ticketsTrend.value / shape.ordersTrend.value).toFixed(1)} tickets each`
                 : undefined,
+            tone: "count",
           },
         ]}
       />
@@ -287,34 +291,31 @@ export default function RevenuePage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className={panel}>
-          <div className="border-b-2 border-[var(--dl-line)] px-5 py-4">
-            <p className={capLabel}>When people buy</p>
-            <p className="mt-1 text-[13px] text-[var(--dl-ink-soft)]">
-              Tickets by day of the week, last 30 days.
-            </p>
-          </div>
+          <PanelHead
+            title="When people buy"
+            note="Tickets by day of the week, last 30 days."
+            tone="count"
+          />
           <WeekdayBars data={shape.byWeekday} />
         </div>
 
         <div className={panel}>
-          <div className="border-b-2 border-[var(--dl-line)] px-5 py-4">
-            <p className={capLabel}>What sells</p>
-            <p className="mt-1 text-[13px] text-[var(--dl-ink-soft)]">
-              {tickets.length > 0 ? "By ticket type." : "By event."} All time.
-            </p>
-          </div>
+          <PanelHead
+            title="What sells"
+            note={`${tickets.length > 0 ? "By ticket type." : "By event."} All time.`}
+            tone="money"
+          />
           <TicketTypeSplit data={tierSplit} />
         </div>
       </div>
 
       {/* Where the money went. The one sum on this page that adds up. */}
       <div className={panel}>
-        <div className="border-b-2 border-[var(--dl-line)] px-5 py-4">
-          <p className={capLabel}>Where the money went</p>
-          <p className="mt-1 text-[13px] text-[var(--dl-ink-soft)]">
-            Every naira you have taken, all time.
-          </p>
-        </div>
+        <PanelHead
+          title="Where the money went"
+          note="Every naira you have taken, all time."
+          tone="fee"
+        />
 
         {lifetime.orders > 0 ? (
           <div className="p-5">
@@ -352,7 +353,10 @@ export default function RevenuePage() {
 
       {/* The ledger. */}
       <div className={panel}>
-        <div className="flex flex-col gap-4 border-b-2 border-[var(--dl-line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className="flex flex-col gap-4 border-b-2 border-[var(--dl-line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+          style={{ background: "var(--dl-neutral-wash)" }}
+        >
           <div>
             <p className={capLabel}>Orders</p>
             <p className="mt-1 text-[13px] text-[var(--dl-ink-soft)]">
@@ -475,7 +479,7 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
   return (
     <th
       scope="col"
-      className={`px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)] ${right ? "text-right" : ""}`}
+      className={`bg-[var(--dl-neutral-wash)] px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)] ${right ? "text-right" : ""}`}
     >
       {children}
     </th>

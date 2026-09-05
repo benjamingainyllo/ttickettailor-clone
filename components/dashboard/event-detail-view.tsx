@@ -10,6 +10,8 @@ import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
 import { buildDashboardShape, countdown } from "@/lib/dashboard-shape";
 import { TicketTypeSplit, WeekdayBars } from "@/components/charts/bars";
+import { PanelHead } from "@/components/charts/figures";
+import { TONE_HEX, TONE_TRACK } from "@/lib/tones";
 import { useOrigin } from "@/lib/use-origin";
 import { publishItem, unpublishItem } from "@/app/actions/publish";
 import { TicketTypesEditor } from "@/components/dashboard/ticket-types-editor";
@@ -351,7 +353,10 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
                 )}
               </div>
 
-              <div className="mt-3 h-3 w-full overflow-hidden rounded-[2px] bg-black/[0.055]">
+              <div
+                className="mt-3 h-3 w-full overflow-hidden rounded-[2px]"
+                style={{ background: TONE_TRACK.neutral }}
+              >
                 <div
                   className="h-full rounded-[2px]"
                   style={{
@@ -361,12 +366,12 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
                         : `${Math.max(pctSold > 0 ? 2 : 0, pctSold)}%`,
                     background:
                       pctSold === null
-                        ? "#4257C4"
+                        ? TONE_HEX.count
                         : pctSold >= 100
-                          ? "#17714A"
+                          ? TONE_HEX.money
                           : pctSold >= 90
-                            ? "#141018"
-                            : "#4257C4",
+                            ? TONE_HEX.fee
+                            : TONE_HEX.count,
                     opacity: pctSold === null ? 0.25 : 1,
                   }}
                 />
@@ -394,21 +399,13 @@ export function EventDetailView({ event, onBack, onChanged }: EventDetailViewPro
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
-                <div className="border-b-2 border-[var(--dl-line)] px-5 py-4">
-                  <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
-                    Which ticket sells
-                  </p>
-                </div>
+              <div className="overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
+                <PanelHead title="Which ticket sells" tone="money" />
                 <TicketTypeSplit data={tierSplit} />
               </div>
 
-              <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
-                <div className="border-b-2 border-[var(--dl-line)] px-5 py-4">
-                  <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
-                    When people buy
-                  </p>
-                </div>
+              <div className="overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
+                <PanelHead title="When people buy" tone="count" />
                 <WeekdayBars data={shape.byWeekday} />
               </div>
             </div>

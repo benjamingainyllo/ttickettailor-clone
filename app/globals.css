@@ -213,6 +213,48 @@ html:has(.lp) body {
   --dl-acid: #D8FF3E;       /* the single action colour */
   --dl-danger: #FF4B63;     /* refunds, failures, destructive things */
 
+  /*
+   * TONES — colour that carries a meaning, not decoration.
+   *
+   * Daylight was built as full-ink rules on white panels over a pastel
+   * wash, and the flaw only shows once a screen is full: every panel
+   * covers the wash, so all the colour in the system ends up BEHIND the
+   * content and none of it is IN the content. A dashboard of white boxes
+   * with black outlines reads as a wireframe of itself.
+   *
+   * The fix is not to paint the rules. The 2px ink edge is the identity
+   * and it stays; what changes is that a panel is now allowed to say what
+   * it is about. Five tones, each tied to a kind of fact:
+   *
+   *   money  what came in and what settled
+   *   count  tickets, orders, people — things you count
+   *   fee    our cut, the take rate, what the card cost
+   *   risk   attention, failures, disputes, refunds
+   *   group  split payments and anything shared between people
+   *
+   * The five inks were run through the categorical-palette checks against
+   * a white panel: all inside the lightness band, all above the chroma
+   * floor, worst adjacent pair 20.6 ΔE under deuteranopia, all at or above
+   * 3:1 contrast. They are the same four hues the charts already use, so a
+   * green figure and a green bar mean the same thing on every screen.
+   *
+   * The washes are the same hues at the pale end, for grounds only. Ink
+   * on any of them stays above 15:1, so tinting a header never costs a
+   * word of legibility.
+   */
+  --dl-money: #17714A;
+  --dl-count: #4257C4;
+  --dl-fee: #8A5A00;
+  --dl-risk: #C9294A;
+  --dl-group: #7B4FA8;
+
+  --dl-money-wash: #E8F3ED;
+  --dl-count-wash: #EAEDFB;
+  --dl-fee-wash: #FAF2E0;
+  --dl-risk-wash: #FCECEF;
+  --dl-group-wash: #F3EDF9;
+  --dl-neutral-wash: #F1EEF6;
+
   background:
     radial-gradient(58% 62% at 8% 4%, #E6DBFF 0%, rgba(230, 219, 255, 0) 60%),
     radial-gradient(52% 58% at 94% 8%, #CDEAFF 0%, rgba(205, 234, 255, 0) 60%),

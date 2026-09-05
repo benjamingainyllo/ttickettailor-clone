@@ -317,11 +317,13 @@ export default function AttendeesPage() {
             trend: shape.ticketsTrend,
             spark: shape.dailyTickets,
             note: "last 30 days",
+            tone: "count",
           },
           {
             label: "All-time tickets",
             value: live.length.toLocaleString("en-NG"),
             note: `${people.length.toLocaleString("en-NG")} ${people.length === 1 ? "person" : "people"}`,
+            tone: "count",
           },
           {
             label: "Turned up",
@@ -330,11 +332,13 @@ export default function AttendeesPage() {
               live.length > 0
                 ? `${Math.round((checkedInTotal / live.length) * 100)}% of tickets scanned`
                 : "nothing scanned yet",
+            tone: "money",
           },
           {
             label: "Came back",
             value: people.filter((p) => p.orders > 1).length.toLocaleString("en-NG"),
             note: "bought more than once",
+            tone: "group",
           },
         ]}
       />
@@ -572,7 +576,7 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
   return (
     <th
       scope="col"
-      className={`px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)] ${right ? "text-right" : ""}`}
+      className={`bg-[var(--dl-neutral-wash)] px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)] ${right ? "text-right" : ""}`}
     >
       {children}
     </th>

@@ -9,7 +9,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
 import { SalesChart } from "@/components/dashboard/sales-chart";
-import { StatTiles } from "@/components/charts/figures";
+import { StatTiles, PanelHead } from "@/components/charts/figures";
 import { TicketTypeSplit, WeekdayBars } from "@/components/charts/bars";
 import { buildDashboardShape, countdown } from "@/lib/dashboard-shape";
 import type { SalesOrderRow } from "@/lib/sales-series";
@@ -375,6 +375,7 @@ export default function OverviewPage() {
               trend: shape.grossTrend,
               spark: shape.dailyGross,
               note: `${shape.ordersTrend.value} paid ${shape.ordersTrend.value === 1 ? "order" : "orders"}`,
+              tone: "money",
             },
             {
               label: "Settled to you",
@@ -382,6 +383,7 @@ export default function OverviewPage() {
               trend: shape.netTrend,
               spark: shape.dailyNet,
               note: "after fees",
+              tone: "money",
             },
             {
               label: "Tickets sold",
@@ -389,12 +391,14 @@ export default function OverviewPage() {
               trend: shape.ticketsTrend,
               spark: shape.dailyTickets,
               note: "last 30 days",
+              tone: "count",
             },
             {
               label: "Buyers",
               value: String(audienceCount),
               note: audienceCount === 0 ? "none yet" : "all time",
               href: "/audience",
+              tone: "group",
             },
           ]}
         />
@@ -454,20 +458,20 @@ export default function OverviewPage() {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <div className={`${panel} lg:col-span-2`}>
-          <div className="flex items-baseline justify-between gap-4 border-b-2 border-[var(--dl-line)] px-5 py-3.5">
-            <p className={label}>When people buy</p>
-            <p className="text-[12px] text-[var(--dl-ink-soft)]">last 30 days</p>
-          </div>
+          <PanelHead title="When people buy" note="last 30 days" tone="count" />
           <WeekdayBars data={shape.byWeekday} />
         </div>
 
         <div className={panel}>
-          <div className="flex items-baseline justify-between gap-4 border-b-2 border-[var(--dl-line)] px-5 py-3.5">
-            <p className={label}>What sells</p>
-            <Link href="/events" className="text-[12px] font-bold underline underline-offset-2">
-              Your events
-            </Link>
-          </div>
+          <PanelHead
+            title="What sells"
+            tone="money"
+            right={
+              <Link href="/events" className="text-[12px] font-bold underline underline-offset-2">
+                Your events
+              </Link>
+            }
+          />
           <TicketTypeSplit data={tiers} />
         </div>
       </div>

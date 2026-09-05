@@ -154,11 +154,13 @@ export default function PayoutsPage() {
             note: settled.length > 0
               ? `${settled.length} ${settled.length === 1 ? "payout" : "payouts"}`
               : "nothing yet",
+            tone: "money",
           },
           {
             label: "On its way",
             value: formatKobo(onTheWay),
             note: onTheWay > 0 ? "sold, not landed yet" : "nothing outstanding",
+            tone: "fee",
           },
           {
             label: "Last payout",
@@ -168,6 +170,7 @@ export default function PayoutsPage() {
                   day: "numeric", month: "short", year: "numeric",
                 })
               : "no payouts yet",
+            tone: "money",
           },
           {
             label: "Bank account",
@@ -175,6 +178,7 @@ export default function PayoutsPage() {
             note: isConnected
               ? `${account.bank_name} ····${account.account_number_last4}`
               : "needed before you can sell",
+            tone: isConnected ? "count" : "risk",
           },
         ]}
       />
@@ -318,9 +322,12 @@ export default function PayoutsPage() {
 
       {/* Settlement history — reporting only. Nothing on this page moves
           money; it records money that has already moved. */}
-      <div className="rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
-        <div className="flex flex-wrap items-baseline justify-between gap-3 border-b-2 border-[var(--dl-line)] px-5 py-4">
-          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+      <div className="overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
+        <div
+          className="flex flex-wrap items-baseline justify-between gap-3 border-b-2 border-[var(--dl-line)] px-5 py-4"
+          style={{ background: "var(--dl-money-wash)" }}
+        >
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-money)]">
             Payout history
           </p>
           {settlements.length > 0 && (
@@ -347,13 +354,13 @@ export default function PayoutsPage() {
             <table className="w-full text-left text-[13.5px]">
               <thead>
                 <tr className="border-b-2 border-[var(--dl-line)]">
-                  <th scope="col" className="px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+                  <th scope="col" className="bg-[var(--dl-neutral-wash)] px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
                     Landed
                   </th>
-                  <th scope="col" className="px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+                  <th scope="col" className="bg-[var(--dl-neutral-wash)] px-5 py-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
                     Status
                   </th>
-                  <th scope="col" className="px-5 py-2.5 text-right text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
+                  <th scope="col" className="bg-[var(--dl-neutral-wash)] px-5 py-2.5 text-right text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]">
                     Amount
                   </th>
                 </tr>

@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { TrendChip } from "@/components/charts/figures";
 import type { Trend } from "@/lib/dashboard-shape";
+// The badge tones below are named states (ok/warn/bad); these are the
+// figure tones (money/count/fee/risk/group). Different jobs, so the
+// import is renamed rather than merged.
+import { TONE_INK, TONE_WASH, type Tone as FigureTone } from "@/lib/tones";
 
 /**
  * The furniture every admin list is built from.
@@ -56,7 +60,7 @@ export function PageHead({
 export function Figures({
   items,
 }: {
-  items: { n: string; l: string; x?: string; t?: Trend; invert?: boolean }[];
+  items: { n: string; l: string; x?: string; t?: Trend; invert?: boolean; tone?: FigureTone }[];
 }) {
   // The wrapper is shifted up and left by the rule width so the outer
   // edges of the first row and first column tuck under the panel's own
@@ -70,8 +74,14 @@ export function Figures({
         <div
           key={f.l}
           className="min-w-[148px] flex-1 border-l-2 border-t-2 border-[var(--dl-line)] px-5 py-3.5"
+          style={{ background: f.tone ? TONE_WASH[f.tone] : "var(--dl-panel)" }}
         >
-          <p className={label}>{f.l}</p>
+          <p
+            className="text-[10.5px] font-extrabold uppercase tracking-[0.18em]"
+            style={{ color: f.tone ? TONE_INK[f.tone] : "var(--dl-ink-faint)" }}
+          >
+            {f.l}
+          </p>
           <p className="mt-1.5 text-[24px] font-extrabold leading-none tracking-[-0.035em] [font-variant-numeric:tabular-nums]">
             {f.n}
           </p>
@@ -131,6 +141,37 @@ export function stateTone(state: string): Tone {
   }
 }
 
+/** A tinted band for an admin panel, matching the product's. */
+export function Band({
+  title,
+  note,
+  right,
+  tone = "neutral",
+}: {
+  title: string;
+  note?: string;
+  right?: React.ReactNode;
+  tone?: FigureTone;
+}) {
+  return (
+    <div
+      className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-[var(--dl-line)] px-5 py-3"
+      style={{ background: TONE_WASH[tone] }}
+    >
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <p
+          className="text-[10.5px] font-extrabold uppercase tracking-[0.18em]"
+          style={{ color: TONE_INK[tone] }}
+        >
+          {title}
+        </p>
+        {note && <p className="text-[12px] text-[var(--dl-ink-soft)]">{note}</p>}
+      </div>
+      {right}
+    </div>
+  );
+}
+
 export function Empty({ title, body }: { title: string; body: string }) {
   return (
     <div className="px-6 py-16 text-center">
@@ -148,7 +189,7 @@ export function Scroll({ children }: { children: React.ReactNode }) {
 }
 
 export const th =
-  "border-b-2 border-[var(--dl-line)] px-4 py-2.5 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--dl-ink-faint)] whitespace-nowrap";
+  "bg-[var(--dl-neutral-wash)] border-b-2 border-[var(--dl-line)] px-4 py-2.5 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--dl-ink-faint)] whitespace-nowrap";
 export const td = "border-b border-[var(--dl-line-soft)] px-4 py-3 text-[14px] align-top";
 export const tdNum = `${td} text-right [font-variant-numeric:tabular-nums] whitespace-nowrap`;
 

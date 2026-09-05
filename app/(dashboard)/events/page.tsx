@@ -13,6 +13,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { formatKobo } from "@/lib/money";
 import { buildDashboardShape, countdown } from "@/lib/dashboard-shape";
+import { TONE_HEX, TONE_TRACK } from "@/lib/tones";
 
 /**
  * Events.
@@ -263,6 +264,7 @@ export default function EventsPage() {
             trend: shape.grossTrend,
             spark: shape.dailyGross,
             note: "last 30 days",
+            tone: "money",
           },
           {
             label: "Tickets sold",
@@ -270,16 +272,19 @@ export default function EventsPage() {
             trend: shape.ticketsTrend,
             spark: shape.dailyTickets,
             note: "last 30 days",
+            tone: "count",
           },
           {
             label: "All-time tickets",
             value: totals.sold.toLocaleString("en-NG"),
             note: `${formatKobo(totals.gross)} taken`,
+            tone: "count",
           },
           {
             label: "On sale now",
             value: String(totals.live),
             note: totals.drafts > 0 ? `${totals.drafts} in draft` : "nothing in draft",
+            tone: "group",
           },
         ]}
       />
@@ -383,8 +388,17 @@ function EventCard({
   const pct = cap && cap > 0 ? Math.min(100, (stats.sold / cap) * 100) : null;
   const soldOut = pct !== null && stats.sold >= (cap ?? 0);
 
+  // Nearly-gone used to ink black, which made the one card you should act
+  // on the only colourless thing on the page. Amber is the warning step of
+  // the same system the rest of the product uses.
   const bar =
-    pct === null ? "#4257C4" : soldOut ? "#17714A" : pct >= 90 ? "#141018" : "#4257C4";
+    pct === null
+      ? TONE_HEX.count
+      : soldOut
+        ? TONE_HEX.money
+        : pct >= 90
+          ? TONE_HEX.fee
+          : TONE_HEX.count;
 
   return (
     <div className="flex flex-col overflow-hidden rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]">
@@ -454,7 +468,10 @@ function EventCard({
           </p>
         </div>
 
-        <div className="mt-2 h-2.5 w-full overflow-hidden rounded-[2px] bg-black/[0.055]">
+        <div
+          className="mt-2 h-2.5 w-full overflow-hidden rounded-[2px]"
+          style={{ background: TONE_TRACK.neutral }}
+        >
           <div
             className="h-full rounded-[2px]"
             style={{
