@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { recordDispute } from "@/lib/disputes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPaymentProvider } from "@/lib/payments";
 import { markOrderFailed, settleOrder } from "@/lib/orders";
@@ -74,6 +75,16 @@ export async function POST(request: NextRequest) {
       await markOrderFailed(event.reference, "failed");
     } else if (event.type === "settlement.succeeded") {
       await recordSettlement(provider.name, event);
+    }
+
+    // Disputes arrive on the same endpoint with a different event name, so
+    // they are parsed from the raw payload rather than squeezed into the
+    // normalised transaction shape. Handled outside the if-chain above
+    // because charge.dispute.* is not a payment lifecycle event at all.
+    const dispute = provider.parseDisputeEvent(payload);
+    if (dispute) {
+      const recorded = await recordDispute(provider.name, dispute);
+      if (!recorded.ok) processingError = recorded.error ?? "Dispute not recorded";
     }
   } catch (error) {
     processingError = error instanceof Error ? error.message : "Unknown processing error";

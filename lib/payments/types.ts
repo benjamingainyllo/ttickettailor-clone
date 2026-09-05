@@ -84,6 +84,35 @@ export interface Bank {
   code: string;
 }
 
+export interface RefundParams {
+  /** Our own order reference. Providers key refunds off the transaction. */
+  reference: string;
+  amountKobo: Kobo;
+  reason?: string;
+}
+
+export interface RefundResult {
+  ok: boolean;
+  /** Provider's id for the refund, when it gives one. */
+  providerRefundId?: string | null;
+  /** Providers often accept a refund and settle it later. */
+  status: "processing" | "refunded" | "failed";
+  error?: string;
+}
+
+/** What a dispute looks like once the provider shape is stripped off. */
+export interface NormalizedDispute {
+  providerDisputeId: string;
+  /** Our order reference, so it can be joined to a sale. */
+  reference: string | null;
+  amountKobo: Kobo;
+  category: string | null;
+  reason: string | null;
+  status: "open" | "evidence_submitted" | "won" | "lost" | "closed";
+  /** When the provider stops accepting evidence. */
+  deadlineAt: string | null;
+}
+
 export interface NormalizedWebhookEvent {
   /** The creator subaccount this event relates to, when the event carries one. */
   providerSubaccountId: string | null;
@@ -111,6 +140,11 @@ export interface PaymentProvider {
   listBanks(): Promise<Bank[]>;
   resolveAccountNumber(accountNumber: string, bankCode: string): Promise<ResolvedBankAccount>;
 
+  /** Send money back to the buyer. Partial amounts allowed. */
+  refund(params: RefundParams): Promise<RefundResult>;
+
   verifyWebhookSignature(rawBody: string, signature: string | null): boolean;
   parseWebhookEvent(payload: unknown): NormalizedWebhookEvent;
+  /** Null when the payload isn't a dispute event. */
+  parseDisputeEvent(payload: unknown): NormalizedDispute | null;
 }

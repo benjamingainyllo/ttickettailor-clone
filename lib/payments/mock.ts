@@ -8,6 +8,9 @@ import type {
   PaymentProvider,
   ResolvedBankAccount,
   VerifiedTransaction,
+  RefundParams,
+  RefundResult,
+  NormalizedDispute,
 } from "./types";
 
 /**
@@ -112,5 +115,20 @@ export class MockPaymentProvider implements PaymentProvider {
       paidAt: null,
       raw: payload,
     };
+  }
+
+  async refund(params: RefundParams): Promise<RefundResult> {
+    console.log(
+      `\n──── REFUND (demo — no money moved) ────\n` +
+        `Order:  ${params.reference}\n` +
+        `Amount: ${params.amountKobo} kobo\n` +
+        `Reason: ${params.reason ?? "—"}\n`
+    );
+    return { ok: true, providerRefundId: `demo-refund-${Date.now()}`, status: "refunded" };
+  }
+
+  /** The demo provider never raises a dispute against itself. */
+  parseDisputeEvent(): NormalizedDispute | null {
+    return null;
   }
 }

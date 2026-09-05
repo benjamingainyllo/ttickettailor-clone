@@ -11,6 +11,9 @@ import type {
   PaymentProvider,
   ResolvedBankAccount,
   VerifiedTransaction,
+  RefundParams,
+  RefundResult,
+  NormalizedDispute,
 } from "./types";
 
 const BASE_URL = "https://api.paystack.co";
@@ -228,5 +231,86 @@ export class PaystackProvider implements PaymentProvider {
       default:
         return { ...base, type: "unhandled" };
     }
+  }
+
+  /**
+   * Send money back.
+   *
+   * Paystack takes the amount in the SUBUNIT — kobo — which is what we
+   * hold anyway, so no conversion and no float ever enters this path.
+   *
+   * A refund is accepted and then settled later, so "ok" here means
+   * "Paystack took the instruction", not "the buyer has the money". The
+   * status it returns is carried through rather than flattened to a
+   * boolean, because a screen that says "Refunded" when the truth is
+   * "pending" is how a buyer ends up told twice.
+   */
+  async refund(params: RefundParams): Promise<RefundResult> {
+    try {
+      const json = await call<any>("/refund", {
+        method: "POST",
+        body: {
+          transaction: params.reference,
+          amount: params.amountKobo,
+          merchant_note: params.reason?.slice(0, 200) || undefined,
+        },
+      });
+
+      const raw = String(json?.data?.status ?? "").toLowerCase();
+      // Paystack's vocabulary, mapped to ours. Anything unrecognised is
+      // treated as still in flight rather than as success.
+      const status: RefundResult["status"] =
+        raw === "processed" || raw === "success" || raw === "refunded"
+          ? "refunded"
+          : raw === "failed"
+            ? "failed"
+            : "processing";
+
+      return { ok: true, providerRefundId: json?.data?.id?.toString() ?? null, status };
+    } catch (error) {
+      return {
+        ok: false,
+        status: "failed",
+        error: error instanceof Error ? error.message : "Refund request failed",
+      };
+    }
+  }
+
+  /**
+   * A dispute event, or null.
+   *
+   * Paystack sends charge.dispute.create when one is raised, .remind every
+   * four hours until it is answered, and .resolve at the end. All three
+   * carry the same dispute object, so all three are parsed — a reminder
+   * arriving for a dispute we somehow missed still gets it into the queue.
+   */
+  parseDisputeEvent(payload: any): NormalizedDispute | null {
+    const event = String(payload?.event ?? "");
+    if (!event.startsWith("charge.dispute.")) return null;
+
+    const d = payload?.data;
+    if (!d?.id) return null;
+
+    const raw = String(d.status ?? "").toLowerCase();
+    const status: NormalizedDispute["status"] =
+      raw === "resolved"
+        ? d.resolution === "merchant-accepted"
+          ? "lost"
+          : "won"
+        : raw === "awaiting-merchant-feedback" || raw === "pending"
+          ? "open"
+          : raw === "awaiting-bank-feedback"
+            ? "evidence_submitted"
+            : "open";
+
+    return {
+      providerDisputeId: String(d.id),
+      reference: d.transaction?.reference ?? null,
+      amountKobo: Number(d.refund_amount ?? d.transaction_amount ?? 0) || 0,
+      category: d.category ?? null,
+      reason: d.reason ?? d.message ?? null,
+      status: event.endsWith(".resolve") ? status : status,
+      deadlineAt: d.due_at ?? d.dueAt ?? null,
+    };
   }
 }

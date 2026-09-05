@@ -26,6 +26,22 @@ const GROUPS: {
     ],
   },
   {
+    label: "Commerce",
+    items: [
+      { href: "/admin/orders", label: "Orders" },
+      { href: "/admin/tickets", label: "Tickets" },
+      { href: "/admin/payouts", label: "Payouts" },
+      { href: "/admin/refunds", label: "Refunds" },
+    ],
+  },
+  {
+    label: "Risk",
+    items: [
+      { href: "/admin/attention", label: "Needs attention" },
+      { href: "/admin/disputes", label: "Disputes" },
+    ],
+  },
+  {
     label: "System",
     items: [
       { href: "/admin/admins", label: "Admin users", needs: ["super_admin"] },

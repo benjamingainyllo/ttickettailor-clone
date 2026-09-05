@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, recordAdminAction } from "@/lib/admin";
+import { getPaymentProvider } from "@/lib/payments";
 import type { AdminRole } from "@/lib/admin-roles";
 
 /**
@@ -276,6 +277,178 @@ export async function removeAdmin(userId: string, reason: string) {
     });
 
     revalidatePath("/admin/admins");
+    return { success: true as const };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ── Refunds ─────────────────────────────────────────────────────
+
+/**
+ * Send a buyer their money back.
+ *
+ * THE ORDER OF OPERATIONS IS THE SAFETY. A row is written as "processing"
+ * BEFORE the provider is called, and updated after. If the process dies
+ * mid-call, the record says a refund was attempted — which is
+ * recoverable — rather than saying nothing, which would leave money moved
+ * and no trace of who moved it.
+ *
+ * Refunding is capped at what was actually taken, minus anything already
+ * refunded. Two admins clicking at once is the case that matters: without
+ * the check, a ₦20,000 order could be refunded ₦40,000.
+ */
+export async function refundOrder(orderId: string, amountKobo: number, reason: string) {
+  try {
+    const admin = await requireAdmin("write:money");
+    if (!Number.isSafeInteger(amountKobo) || amountKobo <= 0) {
+      return fail(new Error("Enter a real amount."));
+    }
+    if (!reason.trim()) return fail(new Error("Say why. It goes in the log."));
+
+    const db = createAdminClient();
+    const { data: order } = await db
+      .from("orders")
+      .select("id, reference, status, gross_kobo, event_id, creator_id, buyer_email")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (!order) return fail(new Error("Order not found."));
+    if (order.status !== "paid") {
+      return fail(new Error(`That order is ${order.status}, not paid. Nothing to refund.`));
+    }
+
+    // What has already gone back, counting attempts still in flight — a
+    // refund that is processing is money committed, not money available.
+    const { data: existing } = await db
+      .from("refunds")
+      .select("amount_kobo, status")
+      .eq("order_id", orderId);
+
+    const alreadyOut = (existing ?? [])
+      .filter((r: any) => r.status !== "failed")
+      .reduce((s: number, r: any) => s + Number(r.amount_kobo ?? 0), 0);
+
+    const gross = Number(order.gross_kobo ?? 0);
+    if (alreadyOut + amountKobo > gross) {
+      return fail(
+        new Error(
+          `That order took ${gross} kobo and ${alreadyOut} is already refunded. ` +
+            `The most you can send back now is ${gross - alreadyOut}.`
+        )
+      );
+    }
+
+    const { data: row, error: insertError } = await db
+      .from("refunds")
+      .insert({
+        order_id: orderId,
+        event_id: order.event_id,
+        creator_id: order.creator_id,
+        amount_kobo: amountKobo,
+        reason: reason.trim(),
+        status: "processing",
+        requested_by: admin.userId,
+        requested_by_role: "admin",
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !row) return fail(new Error("Could not start that refund."));
+
+    const provider = getPaymentProvider();
+    const result = await provider.refund({
+      reference: order.reference,
+      amountKobo,
+      reason: reason.trim(),
+    });
+
+    await db
+      .from("refunds")
+      .update({
+        status: result.ok ? result.status : "failed",
+        provider_refund_id: result.providerRefundId ?? null,
+        failure_reason: result.ok ? null : (result.error ?? "The provider refused it."),
+        completed_at: result.status === "refunded" ? new Date().toISOString() : null,
+      })
+      .eq("id", row.id);
+
+    // The order only becomes "refunded" when the whole of it has gone
+    // back. A partial refund leaves it paid, because it still is.
+    if (result.ok && alreadyOut + amountKobo >= gross) {
+      await db.from("orders").update({ status: "refunded" }).eq("id", orderId);
+    }
+
+    await recordAdminAction({
+      admin,
+      action: result.ok ? "order.refunded" : "order.refund_failed",
+      subjectType: "order",
+      subjectId: orderId,
+      subjectLabel: order.reference,
+      previousValue: { status: order.status, already_refunded_kobo: alreadyOut },
+      newValue: { amount_kobo: amountKobo, provider_status: result.status },
+      reason: reason.trim(),
+    });
+
+    revalidatePath("/admin/refunds");
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    if (!result.ok) return fail(new Error(result.error ?? "The provider refused it."));
+    return { success: true as const, status: result.status };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ── The attention queue ─────────────────────────────────────────
+
+const ITEM_STATES = ["open", "investigating", "resolved", "ignored"] as const;
+
+export async function setAttentionStatus(
+  itemId: string,
+  status: (typeof ITEM_STATES)[number],
+  note: string
+) {
+  try {
+    // Working the queue is operations, not finance — anybody who can act
+    // on events and organisers can also say an issue is handled.
+    const admin = await requireAdmin("write:event_state");
+    if (!ITEM_STATES.includes(status)) return fail(new Error("Unknown status."));
+
+    const db = createAdminClient();
+    const { data: before } = await db
+      .from("attention_items")
+      .select("id, status, title")
+      .eq("id", itemId)
+      .maybeSingle();
+    if (!before) return fail(new Error("That item is gone."));
+
+    const done = status === "resolved" || status === "ignored";
+    const { error } = await db
+      .from("attention_items")
+      .update({
+        status,
+        resolved_by: done ? admin.userId : null,
+        resolved_note: note.trim() || null,
+        resolved_at: done ? new Date().toISOString() : null,
+      })
+      .eq("id", itemId);
+
+    if (error) return fail(new Error("Could not update that."));
+
+    await recordAdminAction({
+      admin,
+      action: `attention.${status}`,
+      subjectType: "order",
+      subjectId: itemId,
+      subjectLabel: before.title,
+      previousValue: { status: before.status },
+      newValue: { status },
+      reason: note.trim() || null,
+    });
+
+    revalidatePath("/admin/attention");
+    revalidatePath("/admin");
     return { success: true as const };
   } catch (e) {
     return fail(e);

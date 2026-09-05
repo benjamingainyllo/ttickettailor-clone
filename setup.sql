@@ -1533,6 +1533,145 @@ CREATE POLICY "Admins read notes" ON public.admin_notes
     EXISTS (SELECT 1 FROM public.platform_admins p WHERE p.user_id = auth.uid())
   );
 
+-- ============================================================
+-- PART 12  Refunds, disputes, and the attention queue
+-- ============================================================
+
+-- ---- Refunds ------------------------------------------------
+-- A refund is a request, an attempt, and an outcome -- three things, not
+-- one boolean on the order. The provider can accept it and still fail it
+-- days later, and "we told the buyer it was refunded" has to survive that.
+CREATE TABLE IF NOT EXISTS public.refunds (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
+  creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+
+  -- Integer kobo, like everything else that is money.
+  amount_kobo BIGINT NOT NULL CHECK (amount_kobo > 0),
+  reason TEXT,
+
+  status TEXT NOT NULL DEFAULT 'requested'
+    CHECK (status IN ('requested', 'processing', 'refunded', 'failed')),
+
+  provider TEXT NOT NULL DEFAULT 'paystack',
+  provider_refund_id TEXT,
+  failure_reason TEXT,
+
+  -- Who asked. An organiser refunding their own buyer and an admin doing
+  -- it are different acts and the record has to tell them apart.
+  requested_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  requested_by_role TEXT NOT NULL DEFAULT 'admin'
+    CHECK (requested_by_role IN ('admin', 'organiser', 'system')),
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS refunds_order_idx ON public.refunds (order_id);
+CREATE INDEX IF NOT EXISTS refunds_status_idx ON public.refunds (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS refunds_creator_idx ON public.refunds (creator_id, created_at DESC);
+
+ALTER TABLE public.refunds ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Creators read own refunds" ON public.refunds;
+CREATE POLICY "Creators read own refunds" ON public.refunds
+  FOR SELECT USING (auth.uid() = creator_id);
+
+-- Nothing writes here through the API. Refunds are created by the server
+-- action that actually calls the provider, so a row can never claim money
+-- was returned when it wasn't.
+
+
+-- ---- Disputes -----------------------------------------------
+-- Paystack gives us sixteen hours to answer one, and reminds every four.
+-- deadline_at is stored so a screen can sort by "how long have I got"
+-- rather than making somebody do that arithmetic at 2am.
+CREATE TABLE IF NOT EXISTS public.disputes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_id UUID REFERENCES public.orders(id) ON DELETE SET NULL,
+  event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
+  creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+
+  provider TEXT NOT NULL DEFAULT 'paystack',
+  provider_dispute_id TEXT NOT NULL,
+  provider_reference TEXT,
+
+  amount_kobo BIGINT NOT NULL DEFAULT 0 CHECK (amount_kobo >= 0),
+  category TEXT,
+  reason TEXT,
+
+  status TEXT NOT NULL DEFAULT 'open'
+    CHECK (status IN ('open', 'evidence_submitted', 'won', 'lost', 'closed')),
+
+  deadline_at TIMESTAMPTZ,
+  evidence_submitted_at TIMESTAMPTZ,
+  resolved_at TIMESTAMPTZ,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  -- The provider's own id is the idempotency key: the same dispute
+  -- webhook arriving twice must not become two rows in the queue.
+  UNIQUE (provider, provider_dispute_id)
+);
+
+CREATE INDEX IF NOT EXISTS disputes_status_idx ON public.disputes (status, deadline_at);
+CREATE INDEX IF NOT EXISTS disputes_creator_idx ON public.disputes (creator_id, created_at DESC);
+
+ALTER TABLE public.disputes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Creators read own disputes" ON public.disputes;
+CREATE POLICY "Creators read own disputes" ON public.disputes
+  FOR SELECT USING (auth.uid() = creator_id);
+
+
+-- ---- The attention queue ------------------------------------
+-- Things that need a human. Written by detectors, worked by admins.
+--
+-- dedupe_key is what stops the same stuck order becoming forty rows: a
+-- detector runs on a schedule and would otherwise re-report every problem
+-- every time it ran.
+CREATE TABLE IF NOT EXISTS public.attention_items (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+
+  kind TEXT NOT NULL,
+  severity TEXT NOT NULL DEFAULT 'medium'
+    CHECK (severity IN ('critical', 'high', 'medium', 'low')),
+
+  title TEXT NOT NULL,
+  detail TEXT,
+
+  subject_type TEXT,
+  subject_id TEXT,
+  event_id UUID REFERENCES public.events(id) ON DELETE CASCADE,
+  creator_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
+
+  status TEXT NOT NULL DEFAULT 'open'
+    CHECK (status IN ('open', 'investigating', 'resolved', 'ignored')),
+
+  dedupe_key TEXT NOT NULL UNIQUE,
+
+  resolved_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  resolved_note TEXT,
+  resolved_at TIMESTAMPTZ,
+
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS attention_open_idx
+  ON public.attention_items (status, severity, last_seen_at DESC);
+
+ALTER TABLE public.attention_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins read attention items" ON public.attention_items;
+CREATE POLICY "Admins read attention items" ON public.attention_items
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.platform_admins p WHERE p.user_id = auth.uid())
+  );
+
 
 -- ============================================================
 -- Done. You should see "Success. No rows returned".

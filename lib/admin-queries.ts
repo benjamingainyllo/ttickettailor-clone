@@ -511,3 +511,341 @@ export async function getCustomerDetail(email: string) {
     events: Array.from(eventById.values()),
   };
 }
+
+// ── Orders, tickets, payments ───────────────────────────────────
+
+export interface AdminOrderRow {
+  id: string;
+  reference: string;
+  buyerName: string | null;
+  buyerEmail: string | null;
+  eventId: string | null;
+  eventTitle: string;
+  organiserId: string | null;
+  organiserName: string;
+  grossKobo: Kobo;
+  feeKobo: Kobo;
+  status: string;
+  channel: string | null;
+  createdAt: string;
+  quantity: number;
+}
+
+export async function listOrders(opts: {
+  page?: number;
+  q?: string;
+  status?: string;
+  eventId?: string;
+}): Promise<Page<AdminOrderRow>> {
+  const admin = createAdminClient();
+  const page = Math.max(1, opts.page ?? 1);
+  const from = (page - 1) * PAGE_SIZE;
+
+  let query = admin
+    .from("orders")
+    .select(
+      "id, reference, buyer_name, buyer_email, event_id, creator_id, quantity, gross_kobo, platform_fee_kobo, status, payment_channel, created_at",
+      { count: "exact" }
+    )
+    .order("created_at", { ascending: false })
+    .range(from, from + PAGE_SIZE - 1);
+
+  if (opts.q?.trim()) {
+    const t = like(opts.q);
+    query = query.or(`reference.ilike.${t},buyer_email.ilike.${t},buyer_name.ilike.${t}`);
+  }
+  if (opts.status && opts.status !== "all") query = query.eq("status", opts.status);
+  if (opts.eventId) query = query.eq("event_id", opts.eventId);
+
+  const { data, count } = await query;
+  const rows = data ?? [];
+
+  const eventIds = Array.from(new Set(rows.map((o: any) => o.event_id).filter(Boolean)));
+  const creatorIds = Array.from(new Set(rows.map((o: any) => o.creator_id).filter(Boolean)));
+
+  const [events, profiles] = await Promise.all([
+    eventIds.length
+      ? admin.from("events").select("id, title").in("id", eventIds)
+      : Promise.resolve({ data: [] as any[] }),
+    creatorIds.length
+      ? admin
+          .from("profiles")
+          .select("id, first_name, last_name, handle, box_office_name")
+          .in("id", creatorIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+
+  const eventById = new Map<string, any>();
+  for (const e of (events as any).data ?? []) eventById.set(e.id, e);
+  const profileById = new Map<string, any>();
+  for (const p of (profiles as any).data ?? []) profileById.set(p.id, p);
+
+  return {
+    rows: rows.map((o: any) => ({
+      id: o.id,
+      reference: o.reference,
+      buyerName: o.buyer_name,
+      buyerEmail: o.buyer_email,
+      eventId: o.event_id,
+      eventTitle: eventById.get(o.event_id)?.title ?? "—",
+      organiserId: o.creator_id,
+      organiserName: organiserName(profileById.get(o.creator_id)),
+      grossKobo: toNum(o.gross_kobo),
+      feeKobo: toNum(o.platform_fee_kobo),
+      status: o.status,
+      channel: o.payment_channel,
+      createdAt: o.created_at,
+      quantity: Math.max(1, toNum(o.quantity) || 1),
+    })),
+    total: count ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+  };
+}
+
+/** One order, end to end: buyer, payment, tickets, refunds, disputes. */
+export async function getOrderDetail(id: string) {
+  const admin = createAdminClient();
+  const { data: order } = await admin.from("orders").select("*").eq("id", id).maybeSingle();
+  if (!order) return null;
+
+  const [event, profile, tickets, refunds, disputes, notes] = await Promise.all([
+    order.event_id
+      ? admin.from("events").select("id, title, date, location").eq("id", order.event_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    order.creator_id
+      ? admin
+          .from("profiles")
+          .select("id, first_name, last_name, handle, box_office_name")
+          .eq("id", order.creator_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    admin
+      .from("tickets")
+      .select("id, code, status, checked_in_at, holder_email, created_at")
+      .eq("order_id", id),
+    admin
+      .from("refunds")
+      .select("id, amount_kobo, status, reason, failure_reason, created_at, completed_at")
+      .eq("order_id", id)
+      .order("created_at", { ascending: false }),
+    admin
+      .from("disputes")
+      .select("id, provider_dispute_id, status, amount_kobo, reason, deadline_at, created_at")
+      .eq("order_id", id),
+    admin
+      .from("admin_notes")
+      .select("body, author_email, created_at")
+      .eq("subject_type", "order")
+      .eq("subject_id", id)
+      .order("created_at", { ascending: false }),
+  ]).catch(
+    () => [{ data: null }, { data: null }, { data: [] }, { data: [] }, { data: [] }, { data: [] }] as any
+  );
+
+  const refundRows = (refunds as any).data ?? [];
+  const refundedKobo = refundRows
+    .filter((r: any) => r.status !== "failed")
+    .reduce((s: number, r: any) => s + toNum(r.amount_kobo), 0);
+
+  return {
+    order,
+    event: (event as any).data ?? null,
+    organiser: (profile as any).data ?? null,
+    organiserName: organiserName((profile as any).data),
+    tickets: (tickets as any).data ?? [],
+    refunds: refundRows,
+    disputes: (disputes as any).data ?? [],
+    notes: (notes as any).data ?? [],
+    refundedKobo,
+    refundableKobo: Math.max(0, toNum(order.gross_kobo) - refundedKobo),
+  };
+}
+
+export interface AdminTicketRow {
+  id: string;
+  code: string;
+  status: string;
+  holderEmail: string | null;
+  checkedInAt: string | null;
+  createdAt: string;
+  eventId: string | null;
+  eventTitle: string;
+  orderId: string | null;
+}
+
+export async function listTickets(opts: {
+  page?: number;
+  q?: string;
+  status?: string;
+}): Promise<Page<AdminTicketRow>> {
+  const admin = createAdminClient();
+  const page = Math.max(1, opts.page ?? 1);
+  const from = (page - 1) * PAGE_SIZE;
+
+  let query = admin
+    .from("tickets")
+    .select("id, code, status, holder_email, checked_in_at, created_at, event_id, order_id", {
+      count: "exact",
+    })
+    .order("created_at", { ascending: false })
+    .range(from, from + PAGE_SIZE - 1);
+
+  if (opts.q?.trim()) {
+    const t = like(opts.q);
+    query = query.or(`code.ilike.${t},holder_email.ilike.${t}`);
+  }
+  if (opts.status === "checked_in") query = query.not("checked_in_at", "is", null);
+  else if (opts.status && opts.status !== "all") query = query.eq("status", opts.status);
+
+  const { data, count } = await query;
+  const rows = data ?? [];
+  const eventIds = Array.from(new Set(rows.map((t: any) => t.event_id).filter(Boolean)));
+
+  const events = eventIds.length
+    ? await admin.from("events").select("id, title").in("id", eventIds)
+    : { data: [] as any[] };
+  const eventById = new Map<string, any>();
+  for (const e of (events as any).data ?? []) eventById.set(e.id, e);
+
+  return {
+    rows: rows.map((t: any) => ({
+      id: t.id,
+      code: t.code,
+      status: t.status,
+      holderEmail: t.holder_email,
+      checkedInAt: t.checked_in_at,
+      createdAt: t.created_at,
+      eventId: t.event_id,
+      eventTitle: eventById.get(t.event_id)?.title ?? "—",
+      orderId: t.order_id,
+    })),
+    total: count ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+  };
+}
+
+// ── Settlements, refunds, disputes, attention ───────────────────
+
+export async function listSettlements(opts: { page?: number; status?: string }) {
+  const admin = createAdminClient();
+  const page = Math.max(1, opts.page ?? 1);
+  const from = (page - 1) * PAGE_SIZE;
+
+  let query = admin
+    .from("settlements")
+    .select("*", { count: "exact" })
+    .order("settled_at", { ascending: false, nullsFirst: false })
+    .range(from, from + PAGE_SIZE - 1);
+  if (opts.status && opts.status !== "all") query = query.eq("status", opts.status);
+
+  const { data, count } = await query;
+  const rows = data ?? [];
+  const ids = Array.from(new Set(rows.map((s: any) => s.creator_id).filter(Boolean)));
+  const profiles = ids.length
+    ? await admin
+        .from("profiles")
+        .select("id, first_name, last_name, handle, box_office_name")
+        .in("id", ids)
+    : { data: [] as any[] };
+  const byId = new Map<string, any>();
+  for (const p of (profiles as any).data ?? []) byId.set(p.id, p);
+
+  return {
+    rows: rows.map((s: any) => ({ ...s, organiserName: organiserName(byId.get(s.creator_id)) })),
+    total: count ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+  };
+}
+
+async function listWithEventAndBuyer(table: "refunds" | "disputes", opts: { page?: number; status?: string }) {
+  const admin = createAdminClient();
+  const page = Math.max(1, opts.page ?? 1);
+  const from = (page - 1) * PAGE_SIZE;
+
+  let query = admin
+    .from(table)
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, from + PAGE_SIZE - 1);
+  if (opts.status && opts.status !== "all") query = query.eq("status", opts.status);
+
+  const { data, count } = await query;
+  const rows = data ?? [];
+
+  const orderIds = Array.from(new Set(rows.map((r: any) => r.order_id).filter(Boolean)));
+  const eventIds = Array.from(new Set(rows.map((r: any) => r.event_id).filter(Boolean)));
+
+  const [orders, events] = await Promise.all([
+    orderIds.length
+      ? admin.from("orders").select("id, reference, buyer_email, buyer_name").in("id", orderIds)
+      : Promise.resolve({ data: [] as any[] }),
+    eventIds.length
+      ? admin.from("events").select("id, title").in("id", eventIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+
+  const orderById = new Map<string, any>();
+  for (const o of (orders as any).data ?? []) orderById.set(o.id, o);
+  const eventById = new Map<string, any>();
+  for (const e of (events as any).data ?? []) eventById.set(e.id, e);
+
+  return {
+    rows: rows.map((r: any) => ({
+      ...r,
+      order: orderById.get(r.order_id) ?? null,
+      eventTitle: eventById.get(r.event_id)?.title ?? "—",
+    })),
+    total: count ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+  };
+}
+
+export const listRefunds = (o: { page?: number; status?: string }) =>
+  listWithEventAndBuyer("refunds", o);
+export const listDisputes = (o: { page?: number; status?: string }) =>
+  listWithEventAndBuyer("disputes", o);
+
+export async function listAttention(opts: { page?: number; status?: string; severity?: string }) {
+  const admin = createAdminClient();
+  const page = Math.max(1, opts.page ?? 1);
+  const from = (page - 1) * PAGE_SIZE;
+
+  let query = admin
+    .from("attention_items")
+    .select("*", { count: "exact" })
+    // Critical first, then most recently seen. An admin opening this
+    // should be looking at the worst thing on the platform, not the newest.
+    .order("severity", { ascending: true })
+    .order("last_seen_at", { ascending: false })
+    .range(from, from + PAGE_SIZE - 1);
+
+  query = query.eq("status", opts.status && opts.status !== "all" ? opts.status : "open");
+  if (opts.severity && opts.severity !== "all") query = query.eq("severity", opts.severity);
+
+  const { data, count } = await query;
+  return { rows: data ?? [], total: count ?? 0, page, pageSize: PAGE_SIZE };
+}
+
+/** Just the counts, for the overview. */
+export async function attentionSummary() {
+  const admin = createAdminClient();
+  try {
+    const { data } = await admin
+      .from("attention_items")
+      .select("severity")
+      .eq("status", "open");
+    const rows = data ?? [];
+    return {
+      total: rows.length,
+      critical: rows.filter((r: any) => r.severity === "critical").length,
+      high: rows.filter((r: any) => r.severity === "high").length,
+      available: true,
+    };
+  } catch {
+    return { total: 0, critical: 0, high: 0, available: false };
+  }
+}

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getPlatformStats } from "@/lib/platform-stats";
+import { listAttention, attentionSummary } from "@/lib/admin-queries";
+import { runDetectors } from "@/lib/attention";
 import { formatKobo } from "@/lib/money";
 
 // Money that changes by the minute should never be served from a cache.
@@ -54,7 +56,14 @@ function Alert({
 }
 
 export default async function AdminPage() {
-  const s = await getPlatformStats();
+  // The detectors run here too, so the overview is current the moment it
+  // opens rather than showing whatever the queue last happened to hold.
+  await runDetectors();
+  const [s, summary, top] = await Promise.all([
+    getPlatformStats(),
+    attentionSummary(),
+    listAttention({ page: 1, status: "open" }),
+  ]);
 
   const takeRate =
     s.grossKobo > 0 ? `${((s.feesKobo / s.grossKobo) * 100).toFixed(1)}%` : "—";
@@ -126,7 +135,50 @@ export default async function AdminPage() {
         />
       </div>
 
-      <p className={`${label} mt-9`}>Needs looking at</p>
+      <div className="mt-9 flex items-baseline justify-between gap-4">
+        <p className={label}>Needs looking at</p>
+        <Link href="/admin/attention" className="text-[12.5px] font-bold underline underline-offset-2">
+          {summary.total > 0 ? `See all ${summary.total}` : "See all"}
+        </Link>
+      </div>
+
+      {/* The real queue, worst first. The hand-written checks below it
+          stay because they answer questions the queue does not — they are
+          about the shape of the platform, not about individual incidents. */}
+      {summary.available && top.rows.length > 0 && (
+        <div className={`${panel} mt-3`}>
+          {top.rows.slice(0, 6).map((item: any, i: number) => (
+            <div
+              key={item.id}
+              className={`flex items-start gap-3 px-4 py-3 text-[14px] ${i !== 0 ? "border-t-2 border-[var(--dl-line)]" : ""}`}
+            >
+              <span
+                className={`grid h-[26px] min-w-[26px] shrink-0 place-items-center rounded-[2px] px-1 font-mono text-[10px] font-semibold uppercase ${
+                  item.severity === "critical"
+                    ? "bg-[var(--dl-danger)] text-white"
+                    : item.severity === "high"
+                      ? "bg-[#8A5A00] text-white"
+                      : "bg-[var(--dl-ink)] text-[var(--dl-paper)]"
+                }`}
+              >
+                {item.severity.slice(0, 4)}
+              </span>
+              <span className="min-w-0 pt-[3px]">
+                <b>{item.title}</b>
+                {item.detail ? ` ${item.detail}` : ""}
+              </span>
+            </div>
+          ))}
+          {summary.total > 6 && (
+            <div className="border-t-2 border-[var(--dl-line)] px-4 py-3">
+              <Link href="/admin/attention" className="text-[13.5px] font-bold underline underline-offset-2">
+                {summary.total - 6} more
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className={`${panel} mt-3`}>
         {nothingWrong && s.failedOrders === 0 ? (
           <Alert count="✓" tone="ok">
