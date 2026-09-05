@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { FOOTER_COLUMNS } from "./nav-links";
+import {
+  DEFAULT_PLATFORM_FEE_VALUE,
+  PLATFORM_FEE_CAP_KOBO,
+  PLATFORM_FEE_FREE_BELOW_KOBO,
+  formatKobo,
+} from "@/lib/money";
 
 /**
  * The footer, in columns.
@@ -49,8 +55,14 @@ export function SiteFooter() {
           <p className="text-[12.5px] text-[var(--on-ground-faint)]">
             © {new Date().getFullYear()} Paylance
           </p>
+          {/* Read from the live fee engine rather than typed in. This line
+              said "a flat fee per ticket, never a percentage" long after
+              the product moved to a capped percentage — a pricing claim
+              that was false on every page of the site, footer included. */}
           <p className="text-[12.5px] text-[var(--on-ground-faint)]">
-            A flat fee per ticket. Never a percentage.
+            {DEFAULT_PLATFORM_FEE_VALUE / 100}% a ticket, capped at{" "}
+            {formatKobo(PLATFORM_FEE_CAP_KOBO)}. Free under{" "}
+            {formatKobo(PLATFORM_FEE_FREE_BELOW_KOBO)}.
           </p>
         </div>
       </div>

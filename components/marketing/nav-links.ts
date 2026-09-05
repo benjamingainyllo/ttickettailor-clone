@@ -7,6 +7,7 @@
  * can't map over one.
  */
 export const MARKETING_NAV = [
+  ["/explore", "Explore"],
   ["/features", "Features"],
   ["/pricing", "Pricing"],
   ["/event-types", "Event types"],
@@ -30,6 +31,7 @@ export const FOOTER_COLUMNS = [
   {
     title: "Product",
     links: [
+      ["/explore", "Explore events"],
       ["/features", "Features"],
       ["/pricing", "Pricing"],
       ["/sell", "What you'd keep"],
