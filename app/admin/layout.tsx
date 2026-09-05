@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getAdminIdentity } from "@/lib/admin";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { GlobalSearch } from "@/components/admin/global-search";
 
 /**
  * The gate, at the door of the whole section.
@@ -26,7 +27,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <AdminNav role={admin.role} email={admin.email} />
         </aside>
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1">
+          {/* One box that finds anything, on every screen. */}
+          <div className="mb-7 max-w-[440px]">
+            <GlobalSearch />
+          </div>
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -1046,3 +1046,228 @@ export async function getPlatformSettings() {
     return null;
   }
 }
+
+// ── Trends and shape, for the overview ──────────────────────────
+
+/** A figure is not information until you know which way it is moving. */
+export interface Trend {
+  value: number;
+  previous: number;
+  /** Null when there is no previous period to compare against. */
+  changePct: number | null;
+  direction: "up" | "down" | "flat";
+}
+
+function trend(value: number, previous: number): Trend {
+  if (previous <= 0) {
+    return { value, previous, changePct: null, direction: value > 0 ? "up" : "flat" };
+  }
+  const pct = ((value - previous) / previous) * 100;
+  return {
+    value,
+    previous,
+    changePct: pct,
+    // A percent under half a point is noise, not a direction.
+    direction: Math.abs(pct) < 0.5 ? "flat" : pct > 0 ? "up" : "down",
+  };
+}
+
+export interface OverviewShape {
+  feesTrend: Trend;
+  grossTrend: Trend;
+  ticketsTrend: Trend;
+  ordersTrend: Trend;
+  /** Last 30 days, one point per day. Drives the sparklines. */
+  dailyFees: number[];
+  dailyGross: number[];
+  dailyTickets: number[];
+  dailyOrders: number[];
+  /** Which tiers actually sell. */
+  byTicketType: { name: string; tickets: number; grossKobo: Kobo }[];
+  /** When people buy — Monday first. */
+  byWeekday: { day: string; tickets: number }[];
+  /** Newest events, with their cover art. */
+  recentEvents: {
+    id: string;
+    title: string;
+    date: string | null;
+    cover: string | null;
+    organiserName: string;
+    publishStatus: string;
+    ticketsSold: number;
+    grossKobo: Kobo;
+  }[];
+}
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/**
+ * Everything the overview needs beyond a plain total.
+ *
+ * ONE PASS OVER SIXTY DAYS. Sixty days of paid orders is read once and
+ * every figure on this page is derived from it in memory — the two
+ * periods, the four sparklines, the weekday split and the tier split.
+ * Asking the database eleven separate questions for one screen is how a
+ * dashboard becomes the slowest page in a product.
+ */
+export async function getOverviewShape(): Promise<OverviewShape> {
+  const admin = createAdminClient();
+  const now = new Date();
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const today = startOfDay(now);
+  const thirtyAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
+  const sixtyAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 59);
+
+  const { data: orders } = await admin
+    .from("orders")
+    .select("gross_kobo, platform_fee_kobo, quantity, paid_at, created_at, event_id")
+    .eq("status", "paid")
+    .gte("created_at", sixtyAgo.toISOString())
+    .limit(20000);
+
+  const rows = orders ?? [];
+
+  // Buckets for the last 30 days, indexed by how many days ago.
+  const fees = new Array(30).fill(0);
+  const gross = new Array(30).fill(0);
+  const tix = new Array(30).fill(0);
+  const ords = new Array(30).fill(0);
+  const weekday = new Array(7).fill(0);
+
+  let prevFees = 0, prevGross = 0, prevTix = 0, prevOrds = 0;
+
+  for (const o of rows) {
+    const stamp = o.paid_at ?? o.created_at;
+    if (!stamp) continue;
+    const when = new Date(stamp);
+    if (Number.isNaN(when.getTime())) continue;
+
+    const day = startOfDay(when);
+    const daysAgo = Math.round((today.getTime() - day.getTime()) / 86400000);
+    const qty = Math.max(1, toNum(o.quantity) || 1);
+
+    if (daysAgo >= 0 && daysAgo < 30) {
+      const i = 29 - daysAgo;
+      fees[i] += toNum(o.platform_fee_kobo);
+      gross[i] += toNum(o.gross_kobo);
+      tix[i] += qty;
+      ords[i] += 1;
+      // JS weeks start Sunday; ours start Monday, like a working week.
+      weekday[(when.getDay() + 6) % 7] += qty;
+    } else if (daysAgo >= 30 && daysAgo < 60) {
+      prevFees += toNum(o.platform_fee_kobo);
+      prevGross += toNum(o.gross_kobo);
+      prevTix += qty;
+      prevOrds += 1;
+    }
+  }
+
+  const sum = (a: number[]) => a.reduce((s, n) => s + n, 0);
+
+  // Tier split and recent events are separate questions, so separate
+  // queries — but only two more, and both are small.
+  const [{ data: tiers }, { data: events }] = await Promise.all([
+    admin
+      .from("ticket_types")
+      .select("name, price_kobo, sold_count")
+      .gt("sold_count", 0)
+      .limit(500),
+    admin
+      .from("events")
+      .select("id, title, date, cover_image_url, publish_status, creator_id")
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+
+  // Tiers with the same name across events are one line — "VIP" is a
+  // thing buyers recognise, not one per organiser.
+  const byName = new Map<string, { tickets: number; grossKobo: number }>();
+  for (const t of tiers ?? []) {
+    const name = (t.name ?? "Ticket").trim() || "Ticket";
+    const sold = toNum(t.sold_count);
+    const cur = byName.get(name) ?? { tickets: 0, grossKobo: 0 };
+    cur.tickets += sold;
+    cur.grossKobo += sold * toNum(t.price_kobo);
+    byName.set(name, cur);
+  }
+  const byTicketType = Array.from(byName.entries())
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a, b) => b.tickets - a.tickets)
+    .slice(0, 6);
+
+  const eventRows = events ?? [];
+  const creatorIds = Array.from(new Set(eventRows.map((e: any) => e.creator_id).filter(Boolean)));
+  const eventIds = eventRows.map((e: any) => e.id);
+
+  const [profiles, eventOrders] = await Promise.all([
+    creatorIds.length
+      ? admin.from("profiles").select("id, first_name, last_name, handle, box_office_name").in("id", creatorIds)
+      : Promise.resolve({ data: [] as any[] }),
+    eventIds.length
+      ? admin.from("orders").select("event_id, quantity, gross_kobo").in("event_id", eventIds).eq("status", "paid")
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+
+  const profileById = new Map<string, any>();
+  for (const p of (profiles as any).data ?? []) profileById.set(p.id, p);
+  const perEvent = new Map<string, { sold: number; gross: number }>();
+  for (const o of (eventOrders as any).data ?? []) {
+    const cur = perEvent.get(o.event_id) ?? { sold: 0, gross: 0 };
+    cur.sold += Math.max(1, toNum(o.quantity) || 1);
+    cur.gross += toNum(o.gross_kobo);
+    perEvent.set(o.event_id, cur);
+  }
+
+  return {
+    feesTrend: trend(sum(fees), prevFees),
+    grossTrend: trend(sum(gross), prevGross),
+    ticketsTrend: trend(sum(tix), prevTix),
+    ordersTrend: trend(sum(ords), prevOrds),
+    dailyFees: fees,
+    dailyGross: gross,
+    dailyTickets: tix,
+    dailyOrders: ords,
+    byTicketType,
+    byWeekday: WEEKDAYS.map((day, i) => ({ day, tickets: weekday[i] })),
+    recentEvents: eventRows.map((e: any) => {
+      const m = perEvent.get(e.id) ?? { sold: 0, gross: 0 };
+      return {
+        id: e.id,
+        title: e.title,
+        date: e.date,
+        cover: e.cover_image_url ?? null,
+        organiserName: organiserName(profileById.get(e.creator_id)),
+        publishStatus: e.publish_status,
+        ticketsSold: m.sold,
+        grossKobo: m.gross,
+      };
+    }),
+  };
+}
+
+/** One box that finds anything: order, ticket, event, organiser, buyer. */
+export async function globalSearch(q: string) {
+  const term = q.trim();
+  if (term.length < 2) return { orders: [], tickets: [], events: [], organisers: [], customers: [] };
+
+  const admin = createAdminClient();
+  const t = like(term);
+
+  const [orders, tickets, events, organisers] = await Promise.all([
+    admin.from("orders").select("id, reference, buyer_name, buyer_email, status").or(`reference.ilike.${t},buyer_email.ilike.${t}`).limit(5),
+    admin.from("tickets").select("id, code, event_id, status, order_id").ilike("code", t).limit(5),
+    admin.from("events").select("id, title, date").ilike("title", t).limit(5),
+    admin.from("profiles").select("id, first_name, last_name, handle, box_office_name")
+      .or(`first_name.ilike.${t},last_name.ilike.${t},handle.ilike.${t},box_office_name.ilike.${t}`).limit(5),
+  ]);
+
+  return {
+    orders: orders.data ?? [],
+    tickets: tickets.data ?? [],
+    events: events.data ?? [],
+    organisers: (organisers.data ?? []).map((p: any) => ({ id: p.id, name: organiserName(p), handle: p.handle })),
+    customers: (orders.data ?? [])
+      .filter((o: any) => o.buyer_email)
+      .map((o: any) => ({ email: o.buyer_email, name: o.buyer_name })),
+  };
+}

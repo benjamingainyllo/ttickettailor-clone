@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { getPlatformStats } from "@/lib/platform-stats";
-import { listAttention, attentionSummary } from "@/lib/admin-queries";
+import { getOverviewShape, listAttention, attentionSummary } from "@/lib/admin-queries";
 import { runDetectors } from "@/lib/attention";
 import { formatKobo } from "@/lib/money";
+import { StatTiles } from "@/components/admin/figures";
+import { TicketTypeSplit, WeekdayBars } from "@/components/admin/charts";
+import { panel, label, Badge, stateTone, niceDate } from "@/components/admin/ui";
 
 // Money that changes by the minute should never be served from a cache.
 export const dynamic = "force-dynamic";
@@ -12,55 +15,24 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-const panel = "rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-panel)]";
-const label =
-  "text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-[var(--dl-ink-faint)]";
-
-function Figure({ n, l, x }: { n: string; l: string; x?: string }) {
-  return (
-    <div className="min-w-[150px] flex-1 border-l-2 border-[var(--dl-line)] px-5 py-4 first:border-l-0">
-      <p className="text-[26px] font-extrabold tracking-[-0.035em] [font-variant-numeric:tabular-nums]">
-        {n}
-      </p>
-      <p className={`${label} mt-1`}>{l}</p>
-      {x && <p className="mt-1 text-[12px] text-[var(--dl-ink-soft)]">{x}</p>}
-    </div>
-  );
-}
-
-function Alert({
-  count,
-  tone,
-  children,
-}: {
-  count: string;
-  tone: "bad" | "flat" | "ok";
-  children: React.ReactNode;
-}) {
-  const chip =
-    tone === "bad"
-      ? "bg-[var(--dl-danger)] text-white"
-      : tone === "ok"
-        ? "bg-[var(--mint)] text-white"
-        : "bg-[var(--dl-ink)] text-[var(--dl-paper)]";
-  return (
-    <div className="flex items-start gap-3 border-t-2 border-[var(--dl-line)] px-4 py-3 text-[14px] first:border-t-0">
-      <span
-        className={`grid h-[26px] min-w-[26px] shrink-0 place-items-center rounded-[2px] px-1 font-mono text-[13px] font-semibold ${chip}`}
-      >
-        {count}
-      </span>
-      <span className="pt-[3px]">{children}</span>
-    </div>
-  );
-}
-
+/**
+ * The command centre.
+ *
+ * EVERY FIGURE CARRIES A DIRECTION. A total on its own is not
+ * information — "₦3,000 in fees" says nothing until you know it was ₦900
+ * the month before. The delta answers "is this going well", the
+ * sparkline answers "steadily, or one big Saturday".
+ *
+ * The two charts underneath answer the two questions a ticketing
+ * platform's owner actually has: which tiers people buy, and when they
+ * buy them.
+ */
 export default async function AdminPage() {
-  // The detectors run here too, so the overview is current the moment it
-  // opens rather than showing whatever the queue last happened to hold.
   await runDetectors();
-  const [s, summary, top] = await Promise.all([
+
+  const [s, shape, summary, top] = await Promise.all([
     getPlatformStats(),
+    getOverviewShape(),
     attentionSummary(),
     listAttention({ page: 1, status: "open" }),
   ]);
@@ -68,73 +40,84 @@ export default async function AdminPage() {
   const takeRate =
     s.grossKobo > 0 ? `${((s.feesKobo / s.grossKobo) * 100).toFixed(1)}%` : "—";
 
-  const month = new Date().toLocaleDateString("en-NG", { month: "long", year: "numeric" });
-  const nothingWrong =
-    s.stuckOrders === 0 &&
-    s.paidEventsWithoutBank.length === 0 &&
-    s.soldButNobodyCameIn.length === 0;
-
   return (
-    <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 lg:py-14">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <section>
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[36px] font-extrabold leading-[1] tracking-[-0.04em] sm:text-[44px]">
+          <h1 className="text-[34px] font-extrabold leading-[1] tracking-[-0.04em] sm:text-[42px]">
             Paylance,{" "}
-            <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic tracking-[-0.01em]">
+            <span className="font-[family-name:var(--font-instrument-serif)] font-normal italic">
               this month.
             </span>
           </h1>
-          <p className="mt-3 text-[15px] text-[var(--dl-ink-soft)]">
-            {month} · {s.organisers} {s.organisers === 1 ? "organiser" : "organisers"} ·{" "}
+          <p className="mt-2.5 text-[14.5px] text-[var(--dl-ink-soft)]">
+            {new Date().toLocaleDateString("en-NG", { month: "long", year: "numeric" })} ·{" "}
+            {s.organisers} {s.organisers === 1 ? "organiser" : "organisers"} ·{" "}
             {s.eventsPublishedPaid} selling, {s.eventsPublishedFree} free,{" "}
             {s.eventsDraft} in draft
           </p>
         </div>
         <Link
           href="/overview"
-          className="rounded-[3px] border-2 border-[var(--dl-line)] px-4 py-2 text-[12.5px] font-extrabold uppercase tracking-[0.04em]"
+          className="rounded-[3px] border-2 border-[var(--dl-line)] px-4 py-2.5 text-[12.5px] font-extrabold uppercase tracking-[0.04em] transition-transform hover:-translate-y-[1px]"
         >
           Your own dashboard
         </Link>
       </div>
 
-      {/* Money first. It is the reason this screen exists. */}
-      <div className={`${panel} mt-8 flex flex-wrap`}>
-        <Figure n={formatKobo(s.feesThisMonthKobo)} l="Your fees" x="this month" />
-        <Figure
-          n={formatKobo(s.grossThisMonthKobo)}
-          l="Moved through"
-          x="gross, all organisers"
-        />
-        <Figure n={takeRate} l="Effective take" x="fees ÷ gross, all time" />
-        <Figure
-          n={String(s.ticketsPaid)}
-          l="Tickets sold"
-          x={`${s.paidOrders} paid ${s.paidOrders === 1 ? "order" : "orders"}`}
-        />
+      {/* Last 30 days against the 30 before it. */}
+      <StatTiles
+        items={[
+          {
+            label: "Your fees",
+            value: formatKobo(shape.feesTrend.value),
+            trend: shape.feesTrend,
+            spark: shape.dailyFees,
+            note: "last 30 days",
+          },
+          {
+            label: "Moved through",
+            value: formatKobo(shape.grossTrend.value),
+            trend: shape.grossTrend,
+            spark: shape.dailyGross,
+            note: "gross, all organisers",
+          },
+          {
+            label: "Tickets sold",
+            value: shape.ticketsTrend.value.toLocaleString("en-NG"),
+            trend: shape.ticketsTrend,
+            spark: shape.dailyTickets,
+            note: `${shape.ordersTrend.value} paid orders`,
+          },
+          {
+            label: "Effective take",
+            value: takeRate,
+            note: "fees ÷ gross, all time",
+          },
+        ]}
+      />
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <div className={`${panel} lg:col-span-2`}>
+          <div className="flex items-baseline justify-between gap-4 border-b-2 border-[var(--dl-line)] px-5 py-3.5">
+            <p className={label}>When people buy</p>
+            <p className="text-[12px] text-[var(--dl-ink-soft)]">last 30 days</p>
+          </div>
+          <WeekdayBars data={shape.byWeekday} />
+        </div>
+
+        <div className={panel}>
+          <div className="flex items-baseline justify-between gap-4 border-b-2 border-[var(--dl-line)] px-5 py-3.5">
+            <p className={label}>What they buy</p>
+            <Link href="/admin/tickets" className="text-[12px] font-bold underline underline-offset-2">
+              All tickets
+            </Link>
+          </div>
+          <TicketTypeSplit data={shape.byTicketType} />
+        </div>
       </div>
 
-      {/* Free, kept on its own row and out of every number above it. Worth
-          watching — free events are how a lot of organisers arrive — but
-          reading them beside the money is how you fool yourself. */}
-      <div className={`${panel} mt-3 flex flex-wrap`}>
-        <Figure
-          n={String(s.ticketsFree)}
-          l="Free tickets"
-          x="no fee charged, no revenue"
-        />
-        <Figure
-          n={String(s.freeRegistrations)}
-          l="Free registrations"
-          x="settled orders with nothing on them"
-        />
-        <Figure
-          n={String(s.eventsPublishedFree)}
-          l="Free events"
-          x="on sale at ₦0"
-        />
-      </div>
-
+      {/* ── Needs looking at ───────────────────────────────── */}
       <div className="mt-9 flex items-baseline justify-between gap-4">
         <p className={label}>Needs looking at</p>
         <Link href="/admin/attention" className="text-[12.5px] font-bold underline underline-offset-2">
@@ -142,126 +125,149 @@ export default async function AdminPage() {
         </Link>
       </div>
 
-      {/* The real queue, worst first. The hand-written checks below it
-          stay because they answer questions the queue does not — they are
-          about the shape of the platform, not about individual incidents. */}
-      {summary.available && top.rows.length > 0 && (
-        <div className={`${panel} mt-3`}>
-          {top.rows.slice(0, 6).map((item: any, i: number) => (
-            <div
-              key={item.id}
-              className={`flex items-start gap-3 px-4 py-3 text-[14px] ${i !== 0 ? "border-t-2 border-[var(--dl-line)]" : ""}`}
-            >
-              <span
-                className={`grid h-[26px] min-w-[26px] shrink-0 place-items-center rounded-[2px] px-1 font-mono text-[10px] font-semibold uppercase ${
-                  item.severity === "critical"
-                    ? "bg-[var(--dl-danger)] text-white"
-                    : item.severity === "high"
-                      ? "bg-[#8A5A00] text-white"
-                      : "bg-[var(--dl-ink)] text-[var(--dl-paper)]"
-                }`}
-              >
-                {item.severity.slice(0, 4)}
-              </span>
-              <span className="min-w-0 pt-[3px]">
-                <b>{item.title}</b>
-                {item.detail ? ` ${item.detail}` : ""}
-              </span>
-            </div>
-          ))}
-          {summary.total > 6 && (
-            <div className="border-t-2 border-[var(--dl-line)] px-4 py-3">
-              <Link href="/admin/attention" className="text-[13.5px] font-bold underline underline-offset-2">
-                {summary.total - 6} more
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
-
       <div className={`${panel} mt-3`}>
-        {nothingWrong && s.failedOrders === 0 ? (
-          <Alert count="✓" tone="ok">
-            Nothing wrong. No stuck payments, nothing selling without a bank
-            connected, no event that sold and never opened its doors.
-          </Alert>
+        {!summary.available || top.rows.length === 0 ? (
+          <div className="flex items-start gap-3 px-4 py-3.5 text-[14px]">
+            <span className="grid h-[26px] min-w-[26px] shrink-0 place-items-center rounded-[2px] bg-[var(--mint)] px-1 font-mono text-[13px] font-semibold text-white">
+              ✓
+            </span>
+            <span className="pt-[3px]">
+              Nothing wrong. No stuck payments, no failed refunds, no chargebacks, nobody
+              selling without a bank connected.
+            </span>
+          </div>
         ) : (
           <>
-            {s.stuckOrders > 0 && (
-              <Alert count={String(s.stuckOrders)} tone="bad">
-                <b>Paid, no ticket issued.</b> Money taken over half an hour ago
-                and settlement never finished.
-              </Alert>
-            )}
-            {s.paidEventsWithoutBank.map((e) => (
-              <Alert key={`bank-${e.title}`} count="!" tone="bad">
-                <b>{e.title}</b> — {e.organiser} is charging for tickets with no
-                bank account connected. {formatKobo(e.grossKobo)} taken so far.
-              </Alert>
+            {top.rows.slice(0, 6).map((item: any, i: number) => (
+              <div
+                key={item.id}
+                className={`flex items-start gap-3 px-4 py-3 text-[14px] ${i !== 0 ? "border-t-2 border-[var(--dl-line)]" : ""}`}
+              >
+                <span
+                  className={`grid h-[26px] min-w-[26px] shrink-0 place-items-center rounded-[2px] px-1 font-mono text-[10px] font-semibold uppercase ${
+                    item.severity === "critical"
+                      ? "bg-[var(--dl-danger)] text-white"
+                      : item.severity === "high"
+                        ? "bg-[#8A5A00] text-white"
+                        : "bg-[var(--dl-ink)] text-[var(--dl-paper)]"
+                  }`}
+                >
+                  {item.severity.slice(0, 4)}
+                </span>
+                <span className="min-w-0 pt-[3px]">
+                  <b>{item.title}</b>
+                  {item.detail ? ` ${item.detail}` : ""}
+                </span>
+              </div>
             ))}
-            {s.soldButNobodyCameIn.map((e) => (
-              <Alert key={`door-${e.title}`} count="?" tone="bad">
-                <b>{e.title}</b> — {e.detail}. {e.organiser},{" "}
-                {formatKobo(e.grossKobo)} taken.
-              </Alert>
-            ))}
-            {s.failedOrders > 0 && (
-              <Alert count={String(s.failedOrders)} tone="flat">
-                <b>Payments failed.</b> Normal in small numbers. Worth watching
-                if it climbs.
-              </Alert>
-            )}
-            {nothingWrong && (
-              <Alert count="✓" tone="ok">
-                Everything else settled cleanly.
-              </Alert>
+            {summary.total > 6 && (
+              <div className="border-t-2 border-[var(--dl-line)] px-4 py-3">
+                <Link href="/admin/attention" className="text-[13.5px] font-bold underline underline-offset-2">
+                  {summary.total - 6} more
+                </Link>
+              </div>
             )}
           </>
         )}
       </div>
 
+      {/* ── Newest events ──────────────────────────────────── */}
+      <div className="mt-9 flex items-baseline justify-between gap-4">
+        <p className={label}>Newest events</p>
+        <Link href="/admin/events" className="text-[12.5px] font-bold underline underline-offset-2">
+          All events
+        </Link>
+      </div>
+
+      <div className={`${panel} mt-3`}>
+        {shape.recentEvents.length === 0 ? (
+          <p className="px-5 py-10 text-center text-[14px] text-[var(--dl-ink-soft)]">
+            Nobody has created an event yet.
+          </p>
+        ) : (
+          shape.recentEvents.map((e, i) => (
+            <Link
+              key={e.id}
+              href={`/admin/events/${e.id}` as never}
+              className={`flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-black/[0.02] ${i !== 0 ? "border-t-2 border-[var(--dl-line)]" : ""}`}
+            >
+              {e.cover ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={e.cover}
+                  alt=""
+                  className="h-12 w-16 shrink-0 rounded-[3px] border-2 border-[var(--dl-line)] object-cover"
+                />
+              ) : (
+                <span className="grid h-12 w-16 shrink-0 place-items-center rounded-[3px] border-2 border-[var(--dl-line)] bg-[var(--dl-paper)] text-[10px] font-extrabold uppercase tracking-[0.1em] text-[var(--dl-ink-faint)]">
+                  no art
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-extrabold tracking-[-0.02em]">
+                  {e.title}
+                </span>
+                <span className="block truncate text-[12.5px] text-[var(--dl-ink-soft)]">
+                  {e.organiserName} · {niceDate(e.date)}
+                </span>
+              </span>
+              <span className="hidden shrink-0 text-right sm:block">
+                <span className="block text-[14px] font-extrabold [font-variant-numeric:tabular-nums]">
+                  {formatKobo(e.grossKobo)}
+                </span>
+                <span className="block text-[12px] text-[var(--dl-ink-soft)]">
+                  {e.ticketsSold} sold
+                </span>
+              </span>
+              <Badge tone={stateTone(e.publishStatus)}>
+                {e.publishStatus === "published" ? "Live" : "Draft"}
+              </Badge>
+            </Link>
+          ))
+        )}
+      </div>
+
+      {/* ── Who is carrying it ─────────────────────────────── */}
       <p className={`${label} mt-9`}>Who is carrying it</p>
       <div className={`${panel} mt-3 overflow-x-auto`}>
         {s.topOrganisers.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <p className="text-[16px] font-extrabold tracking-[-0.02em]">No sales yet</p>
-            <p className="mx-auto mt-1 max-w-sm text-[13.5px] leading-relaxed text-[var(--dl-ink-soft)]">
-              Your organisers appear here as soon as one of them sells something.
+            <p className="mt-1 text-[13.5px] text-[var(--dl-ink-soft)]">
+              The moment somebody sells a ticket, they appear here.
             </p>
           </div>
         ) : (
-          <table className="w-full border-collapse text-[14.5px]">
+          <table className="w-full min-w-[620px] border-collapse">
             <thead>
               <tr>
-                {["Organiser", "Their sales", "Your fees", "Orders"].map((h, i) => (
-                  <th
-                    key={h}
-                    className={`px-4 py-3 ${label} ${i === 0 ? "text-left" : "text-right"}`}
-                  >
-                    {h}
-                  </th>
-                ))}
+                <th className="border-b-2 border-[var(--dl-line)] px-5 py-2.5 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--dl-ink-faint)]">
+                  Organiser
+                </th>
+                <th className="border-b-2 border-[var(--dl-line)] px-5 py-2.5 text-right text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--dl-ink-faint)]">
+                  Their sales
+                </th>
+                <th className="border-b-2 border-[var(--dl-line)] px-5 py-2.5 text-right text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--dl-ink-faint)]">
+                  Your fees
+                </th>
+                <th className="border-b-2 border-[var(--dl-line)] px-5 py-2.5 text-right text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--dl-ink-faint)]">
+                  Orders
+                </th>
               </tr>
             </thead>
             <tbody>
-              {s.topOrganisers.map((o) => (
-                <tr key={o.name} className="border-t-2 border-[var(--dl-line)]">
-                  <td className="px-4 py-3 font-bold">
-                    {o.handle ? (
-                      <a href={`/${o.handle}`} target="_blank" rel="noreferrer" className="underline underline-offset-2">
-                        {o.name}
-                      </a>
-                    ) : (
-                      o.name
-                    )}
+              {s.topOrganisers.map((o: any) => (
+                <tr key={o.name} className="hover:bg-black/[0.02]">
+                  <td className="border-b border-[var(--dl-line-soft)] px-5 py-3 text-[14px] font-extrabold">
+                    {o.name}
                   </td>
-                  <td className="px-4 py-3 text-right font-extrabold [font-variant-numeric:tabular-nums]">
+                  <td className="border-b border-[var(--dl-line-soft)] px-5 py-3 text-right text-[14px] [font-variant-numeric:tabular-nums]">
                     {formatKobo(o.grossKobo)}
                   </td>
-                  <td className="px-4 py-3 text-right font-extrabold [font-variant-numeric:tabular-nums]">
+                  <td className="border-b border-[var(--dl-line-soft)] px-5 py-3 text-right text-[14px] [font-variant-numeric:tabular-nums]">
                     {formatKobo(o.feesKobo)}
                   </td>
-                  <td className="px-4 py-3 text-right [font-variant-numeric:tabular-nums]">
+                  <td className="border-b border-[var(--dl-line-soft)] px-5 py-3 text-right text-[14px] [font-variant-numeric:tabular-nums]">
                     {o.orders}
                   </td>
                 </tr>
@@ -271,11 +277,10 @@ export default async function AdminPage() {
         )}
       </div>
 
-      <p className="mt-8 text-[12.5px] leading-relaxed text-[var(--dl-ink-soft)]">
+      <p className="mt-6 text-[13px] text-[var(--dl-ink-soft)]">
         All time: {formatKobo(s.feesKobo)} earned on {formatKobo(s.grossKobo)} across{" "}
-        {s.paidOrders} paid {s.paidOrders === 1 ? "order" : "orders"}. Read-only —
-        nothing on this page changes anything.
+        {s.paidOrders} paid {s.paidOrders === 1 ? "order" : "orders"}.
       </p>
-    </main>
+    </section>
   );
 }
